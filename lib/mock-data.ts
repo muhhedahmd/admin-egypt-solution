@@ -1,0 +1,190 @@
+// Mock data based on your Prisma schema
+export const mockServices = [
+  {
+    id: "1",
+    name: "Web Development",
+    slug: "web-development",
+    description: "Custom web applications built with modern technologies",
+    icon: "Code",
+    price: "Starting from $5000",
+  },
+  {
+    id: "2",
+    name: "Mobile App Development",
+    slug: "mobile-app-development",
+    description: "Native and cross-platform mobile applications",
+    icon: "Smartphone",
+    price: "Starting from $8000",
+  },
+  {
+    id: "3",
+    name: "UI/UX Design",
+    slug: "ui-ux-design",
+    description: "Beautiful and intuitive user interfaces",
+    icon: "Palette",
+    price: "Starting from $3000",
+  },
+  {
+    id: "4",
+    name: "Cloud Solutions",
+    slug: "cloud-solutions",
+    description: "Scalable cloud infrastructure and deployment",
+    icon: "Cloud",
+    price: "Starting from $2000",
+  },
+  {
+    id: "5",
+    name: "AI & Machine Learning",
+    slug: "ai-machine-learning",
+    description: "Intelligent solutions powered by AI",
+    icon: "Zap",
+    price: "Starting from $10000",
+  },
+]
+
+export const mockClients = [
+  {
+    id: "1",
+    name: "TechCorp Inc",
+    slug: "techcorp-inc",
+    description: "Leading technology solutions provider",
+    industry: "Technology",
+  },
+  {
+    id: "2",
+    name: "FinanceHub",
+    slug: "financehub",
+    description: "Digital banking and financial services",
+    industry: "Finance",
+  },
+  {
+    id: "3",
+    name: "HealthPlus",
+    slug: "healthplus",
+    description: "Healthcare management platform",
+    industry: "Healthcare",
+  },
+  {
+    id: "4",
+    name: "RetailMax",
+    slug: "retailmax",
+    description: "E-commerce and retail solutions",
+    industry: "Retail",
+  },
+  {
+    id: "5",
+    name: "EduLearn",
+    slug: "edulearn",
+    description: "Online education platform",
+    industry: "Education",
+  },
+]
+
+export const mockTeamMembers = [
+  {
+    id: "1",
+    name: "Sarah Johnson",
+    slug: "sarah-johnson",
+    position: "Lead Developer",
+    bio: "Full-stack developer with 8+ years of experience",
+    email: "sarah@company.com",
+    linkedin: "https://linkedin.com",
+  },
+  {
+    id: "2",
+    name: "Michael Chen",
+    slug: "michael-chen",
+    position: "UI/UX Designer",
+    bio: "Creative designer focused on user experience",
+    email: "michael@company.com",
+    linkedin: "https://linkedin.com",
+  },
+  {
+    id: "3",
+    name: "Emma Davis",
+    slug: "emma-davis",
+    position: "Project Manager",
+    bio: "Experienced project manager and team lead",
+    email: "emma@company.com",
+    linkedin: "https://linkedin.com",
+  },
+  {
+    id: "4",
+    name: "Alex Rodriguez",
+    slug: "alex-rodriguez",
+    position: "DevOps Engineer",
+    bio: "Cloud infrastructure and deployment specialist",
+    email: "alex@company.com",
+    linkedin: "https://linkedin.com",
+  },
+]
+
+export const mockTestimonials = [
+  {
+    id: "1",
+    clientName: "John Smith",
+    clientPosition: "CEO",
+    clientCompany: "TechCorp Inc",
+    content: "Exceptional work! The team delivered exactly what we needed on time and within budget.",
+    rating: 5,
+  },
+  {
+    id: "2",
+    clientName: "Lisa Wang",
+    clientPosition: "Product Manager",
+    clientCompany: "FinanceHub",
+    content: "Outstanding quality and attention to detail. Highly recommended!",
+    rating: 5,
+  },
+  {
+    id: "3",
+    clientName: "David Brown",
+    clientPosition: "CTO",
+    clientCompany: "HealthPlus",
+    content: "Great communication and technical expertise throughout the project.",
+    rating: 4,
+  },
+  {
+    id: "4",
+    clientName: "Maria Garcia",
+    clientPosition: "Founder",
+    clientCompany: "RetailMax",
+    content: "Professional team that understands business needs and delivers results.",
+    rating: 5,
+  },
+]
+
+export const mockProjects = [
+  {
+    id: "1",
+    title: "E-Commerce Platform",
+    slug: "ecommerce-platform",
+    description: "Full-featured online store with payment integration",
+    clientName: "RetailMax",
+    status: "COMPLETED",
+  },
+  {
+    id: "2",
+    title: "Mobile Banking App",
+    slug: "mobile-banking-app",
+    description: "Secure mobile application for financial transactions",
+    clientName: "FinanceHub",
+    status: "COMPLETED",
+  },
+  {
+    id: "3",
+    title: "Healthcare Management System",
+    slug: "healthcare-system",
+    description: "Comprehensive patient management and scheduling system",
+    clientName: "HealthPlus",
+    status: "COMPLETED",
+  },
+  {
+    id: "4",
+    title: "AI Analytics Dashboard",
+    slug: "ai-analytics-dashboard",
+    description: "Real-time analytics with machine learning insights",
+    clientName: "TechCorp Inc",
+    status: "IN_PROGRESS",
+  },
+]
