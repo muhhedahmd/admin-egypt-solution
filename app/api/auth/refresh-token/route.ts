@@ -1,5 +1,5 @@
 import axios from "axios"
-import { jwtVerify, SignJWT } from "jose"
+import { jwtVerify } from "jose"
 import { NextRequest, NextResponse } from "next/server"
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest, response: NextResponse) {
     }
 
     const backendRes = await axios.post(
-      `http://localhost:5000/api/auth/refresh-token`,
+      `${process.env.BACKEND_URL || "http://localhost:5000" }/api/auth/refresh-token`,
       {
         refreshToken
       },
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest, response: NextResponse) {
       }
     )
 
-    // Get set-cookie header(s)
+
     const setCookieHeader = backendRes.headers["set-cookie"]
     
     // Handle both single cookie string and array of cookies
