@@ -1,7 +1,14 @@
+"use client"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { TeamTable } from "@/components/admin/team-table"
+
 import Link from "next/link"
+import dynamic from "next/dynamic"
+const TeamTable = dynamic(
+  () => import("@/components/admin/team-table").then((mod) => mod.TeamTable),
+  { ssr: false }
+);
+
 
 export default function TeamPage() {
   return (

@@ -1,22 +1,26 @@
 "use client"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { SlideshowsTable } from "@/components/admin/slideshows-table"
 import Link from "next/link"
 import { useGetAllSlideShowsMinmalQuery } from "@/lib/store/api/slideShow-api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { SlideshowReorderDialog } from "./_composnents/ReorderSlideShowDialog"
+
+import dynamic from "next/dynamic"
+const SlideShowTable = dynamic(
+  () => import("@/components/admin/slideshows-table").then((mod) => mod.SlideshowsTable),
+  { ssr: false }
+);
+
 export default function SlideshowsPage() {
 
-  const { 
-    isError ,
-    data , 
-    isLoading ,
-    
-  }= useGetAllSlideShowsMinmalQuery()
-  const senesor =  useSensors( 
-    useSensor( PointerSensor, { activationConstraint: { distance: 8 } } )
+  const {
+    data,
+    isLoading,
+  } = useGetAllSlideShowsMinmalQuery()
+  const senesor = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
   return (
     <div className="p-6 space-y-6">
@@ -32,21 +36,19 @@ export default function SlideshowsPage() {
           </Link>
         </Button>
         {
-          isLoading  ? <Skeleton className="w-20 h-6 animate-wave"/>  :
-          <SlideshowReorderDialog
-            allSlideshows={data?.data}
-
-            onDragEnd={() => { }}
-            sensors={senesor}
-          // onDragEnd={onDragEnd}
-          />
+          isLoading ? <Skeleton className="w-20 h-6 animate-wave" /> :
+            <SlideshowReorderDialog
+              allSlideshows={data?.data}
+              onDragEnd={() => { }}
+              sensors={senesor}
+            />
 
         }
 
-        
+
       </div>
 
-      <SlideshowsTable />
+      <SlideShowTable />
     </div>
   )
 }

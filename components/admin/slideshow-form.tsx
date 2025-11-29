@@ -14,25 +14,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Eye, Settings, Loader2, Expand } from "lucide-react";
-// import { useToast } from "@/hooks/use-toast";
 
 import { CompositionBuilder } from "./utils/slides/CompositionBuilder";
 import SlideShowSelect from "./utils/slideShowSelect";
 import { CompositionPreview } from "./utils/slides/compositionPreviw";
 import {
   ClientWithImages,
-  ClientWithRelationsSlide,
   CompositionType,
   CreateAndAttachMany,
   ProjectWithRelations,
-  ProjectWithRelationsSlide,
   ServiceWithImage,
   slide,
   SlideshowType,
   TeamMemberWithImage,
-  TeamMemberWithImageSlide,
   TestimonialWithImage,
-  TestimonialWithImageSlide,
 } from "@/types/schema";
 import {
   PaginatedSlidesResponse,
@@ -40,7 +35,6 @@ import {
 } from "@/lib/store/api/slideShow-api";
 import { SlideShow } from "@/types/slideShows";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
-import { ScrollArea } from "../ui/scroll-area";
 import { toast } from "sonner";
 
 const SLIDESHOW_TYPES = [
@@ -213,7 +207,7 @@ export function SlideshowForm({
         title,
         type: SlideshowType[type],
         autoPlay: autoplay,
-        composition: CompositionType[composition as any],
+        composition: CompositionType[composition as keyof typeof CompositionType] as any,
         description: Description,
         interval: autoplayInterval,
         order: 0,

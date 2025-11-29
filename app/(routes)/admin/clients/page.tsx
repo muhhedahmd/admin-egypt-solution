@@ -1,7 +1,13 @@
+"use client"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { ClientsTable } from "@/components/admin/clients-table"
 import Link from "next/link"
+import dynamic from "next/dynamic"
+const ClientsTable = dynamic(
+  () => import("@/components/admin/clients-table").then((mod) => mod.ClientsTable),
+  { ssr: false }
+);
+
 
 export default function ClientsPage() {
   return (

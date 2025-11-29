@@ -1,7 +1,14 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { ServicesTable } from "@/components/admin/services-table"
 import Link from "next/link"
+
+import dynamic from "next/dynamic"
+const DynamicServicesTable = dynamic(
+  () => import("@/components/admin/services-table").then((mod) => mod.ServicesTable),
+  { ssr: false }
+);
 
 export default function ServicesPage() {
   return (
@@ -19,7 +26,7 @@ export default function ServicesPage() {
         </Button>
       </div>
 
-      <ServicesTable />
+      <DynamicServicesTable />
     </div>
   )
 }
