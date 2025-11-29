@@ -14,12 +14,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Eye, Settings, Loader2, Expand } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+// import { useToast } from "@/hooks/use-toast";
 
-import { CompositionBuilder } from "./utils/CompositionBuilder";
+import { CompositionBuilder } from "./utils/slides/CompositionBuilder";
 import SlideShowSelect from "./utils/slideShowSelect";
-import { CompositionPreview } from "./utils/compositionPreviw";
+import { CompositionPreview } from "./utils/slides/compositionPreviw";
 import {
+  ClientWithImages,
+  ClientWithRelationsSlide,
   CompositionType,
   CreateAndAttachMany,
   ProjectWithRelations,
@@ -27,6 +29,10 @@ import {
   ServiceWithImage,
   slide,
   SlideshowType,
+  TeamMemberWithImage,
+  TeamMemberWithImageSlide,
+  TestimonialWithImage,
+  TestimonialWithImageSlide,
 } from "@/types/schema";
 import {
   PaginatedSlidesResponse,
@@ -35,6 +41,7 @@ import {
 import { SlideShow } from "@/types/slideShows";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
+import { toast } from "sonner";
 
 const SLIDESHOW_TYPES = [
   { value: "HERO", label: "Hero Banner" },
@@ -63,10 +70,14 @@ export function SlideshowForm({
   initialData,
   slidesForEdit,
 }: EnhancedSlideshowFormProps) {
-  const { toast } = useToast();
   const [title, setTitle] = useState(initialData?.title || "");
   const [Description, setDescription] = useState(initialData?.title || "");
   const [type, setType] = useState<SlideshowType>(SlideshowType.SERVICES);
+  const [selectedClients, setSelectedclients] = useState<ClientWithImages[]>([])
+  const [selectedTeam, setSelectedTeam] = useState<TeamMemberWithImage[]>([])
+  const [selectedTestimonial, setSelectedTestimonial] = useState<TestimonialWithImage[]>([])
+
+
   const [composition, setComposition] = useState<CompositionType>(
     CompositionType.CAROUSEL
   );
@@ -104,124 +115,88 @@ export function SlideshowForm({
           _order: s.order,
           tag: "existing",
         })),
-      ];
+      ] as any
 
       SetAllSlides(FixedUpcomingData);
     }
   }, [slidesForEdit]);
 
   useEffect(() => {
-    SetAllSlides((slides: any) => {
-      if (slides.length > 0) {
-        const merged = [...slides, ...selectedServices];
-        return merged.filter(
-          (item, index, self) =>
-            index === self.findIndex((s) => s.id === item.id)
-        );
-      }
-      return [...selectedServices];
-    });
-  }, [selectedServices]);
+    const allSelected = [
 
-  useEffect(() => {
-    console.log(selectedProjects);
+      { items: selectedServices, type: 'service' },
+      { items: selectedProjects.map(p => ({ ...p.project, image: p.image })), type: 'project' },
+      { items: selectedClients.map(c => ({ ...c.client, logo: c.logo, image: c.image })), type: 'client' },
+      { items: selectedTeam, type: 'team' },
+      { items: selectedTestimonial.map(t => ({ ...t, avatar: t.avatar })), type: 'testimonial' },
+    ];
+
     SetAllSlides((slides) => {
-      const fixed = selectedProjects.map((s) => ({
-        ...s.project,
-        type: "project",
-        _order: slides.length + 1,
-        tag: "new",
-        image: s.image,
-      })) as ProjectWithRelationsSlide[];
-      console.log(fixed);
-      if (slides.length > 0) {
-        const merged = [...slides, ...fixed];
-        console.log(merged);
-        return merged.filter(
-          (item, index, self) =>
-            index === self.findIndex((s) => s.id === item.id)
-        );
-      }
-      return [...fixed];
+      // Start with slides that are NOT any of the types we are updating
+      let filteredSlides = slides.filter(
+        (s) => !allSelected.some((sel) => sel.type === s.type)
+      );
+
+      // Map each selected array to slides
+      allSelected.forEach(({ items, type }) => {
+        const mapped = items.map((item: any) => ({
+          ...item,
+          type,
+          _order: filteredSlides.length + 1,
+          tag: 'new',
+        }));
+
+        filteredSlides = [...filteredSlides, ...mapped];
+      });
+
+      // Remove duplicates just in case
+      const uniqueSlides = filteredSlides.filter(
+        (item, index, self) =>
+          index === self.findIndex((s) => s.id === item.id)
+      );
+
+      return uniqueSlides;
     });
-  }, [selectedProjects]);
-
-  useEffect(() => {
-    if (isSuccess) {
-      toast({
-        title: "Success",
-        description: "Slideshow saved successfully",
-      });
-    }
-  }, [isSuccess, toast]);
-
-  useEffect(() => {
-    if (isError) {
-      const e = error as any;
-      const errorMsg =
-        e?.data?.message || e?.message || "Failed to save slideshow";
-      toast({
-        title: "Error",
-        description: errorMsg,
-        variant: "destructive",
-        color: "white",
-        className: "text-white",
-      });
-    }
-  }, [isError, error, toast]);
+  }, [
+    selectedServices,
+    selectedProjects,
+    selectedClients,
+    selectedTeam,
+    selectedTestimonial,
+  ]);
 
   const validateForm = (): boolean => {
     if (!title.trim()) {
-      toast({
-        title: "Validation Error",
+      toast.error("Validation Error", {
         description: "Slideshow title is required",
-        variant: "destructive",
-        color: "white",
-        className: "text-white",
       });
       return false;
     }
 
     if (title.trim().length < 3) {
-      toast({
-        title: "Validation Error",
+      toast.error("Validation Error", {
         description: "Title must be at least 3 characters",
-        variant: "destructive",
-        color: "white",
-        className: "text-white",
       });
       return false;
     }
 
-    if (!Description.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Description is required",
-        variant: "destructive",
-        color: "white",
-        className: "text-white",
+    if (!Description.trim() || (Description.length < 10 || Description.length > 499)) {
+      toast.error("Validation Error", {
+        description: "Description is required and must be between 10 and 500 characters",
       });
       return false;
     }
 
     if (allSlides.length === 0) {
-      toast({
-        title: "Validation Error",
+      toast.error("Validation Error", {
         description: "Please add at least one slide",
-        variant: "destructive",
-        color: "white",
-        className: "text-white",
       });
       return false;
     }
 
     if (autoplay && autoplayInterval < 1000) {
-      toast({
-        title: "Validation Error",
+      toast.error("Validation Error", {
         description: "Autoplay interval must be at least 1000ms",
-        variant: "destructive",
-        color: "white",
-        className: "text-white",
       });
       return false;
     }
@@ -229,29 +204,56 @@ export function SlideshowForm({
     return true;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
 
-    const data: CreateAndAttachMany = {
-      title,
-      type: SlideshowType[type],
-      autoPlay: autoplay,
-      composition: CompositionType[composition],
-      description: Description,
-      interval: autoplayInterval,
-      order: 1,
-      isActive: status === "ACTIVE",
-      slides: allSlides.map((slide: any): any => ({
-        attachId: slide?.id || slide?.project?.id,
-        isVisible: slide.isVisible || false,
-        order: slide._order || 1,
-        attachType: slide.type || "service",
-        customTitle: slide.customTitle || "",
-        customDesc: slide.customDesc || "",
-      })),
-    };
+    try {
 
-    Save(data);
+      const data: CreateAndAttachMany = {
+        title,
+        type: SlideshowType[type],
+        autoPlay: autoplay,
+        composition: CompositionType[composition as any],
+        description: Description,
+        interval: autoplayInterval,
+        order: 0,
+        isActive: status === "ACTIVE",
+        slides: allSlides.map((slide: any, i): any => ({
+          attachId: slide?.id || slide?.project?.id,
+          isVisible: slide.isVisible || false,
+          order: i,
+          attachType: slide.type === "team" ? "teamMember" : slide.type,
+          customTitle: slide.customTitle || "",
+          customDesc: slide.customDesc || "",
+        })),
+      };
+
+      console.log(data);
+      const res = await Save(data).unwrap();
+      SetAllSlides([])
+      setSelectedServices([])
+      setSelectedProjects([])
+      setSelectedclients([])
+      setSelectedTeam([])
+      setSelectedTestimonial([])
+      setTitle("")
+      setDescription("")
+      if (res) {
+        toast.success("Success", {
+          description: "Slideshow saved successfully",
+        });
+      }
+
+
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Error", {
+        description: "Failed to save slideshow",
+
+      })
+    }
+    // Save(data);
   };
 
   return (
@@ -395,23 +397,16 @@ export function SlideshowForm({
                   setSelectedServices={setSelectedServices}
                   selectedProjects={selectedProjects}
                   setSelectedProjects={setSelectedProjects}
+                  selectedClients={selectedClients}
+                  setSelectedclients={setSelectedclients}
+                  selectedTeam={selectedTeam}
+                  setSelectedTeam={setSelectedTeam}
+                  setSelectedTestimonial={setSelectedTestimonial}
+                  selectedTestimonial={selectedTestimonial}
                 />
               </div>
 
-              {/* <div className="border-t pt-6">
-                <Label className="text-base font-semibold mb-4 block">
-                  Preview
-                </Label>
-                <Card className="p-6 bg-muted/30">
-                  {allSlides.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <p>Add slides to see preview</p>
-                    </div>
-                  ) : (
-                    
-                  )}
-                </Card>
-              </div> */}
+
             </div>
 
             {/* Action Buttons */}
@@ -517,34 +512,39 @@ export function SlideshowForm({
 
                   </button>
                 </DialogTrigger>
-                <DialogContent className="min-w-[95vw] h-[90vh] ">
+                <DialogContent className="min-w-[95vw] flex flex-col  gap-12 h-[90vh] ">
                   <DialogHeader className="px-6 py-4 border-b h-fit">
                     <DialogTitle className="flex items-center gap-3 text-xl">
                       <div className="p-2 bg-primary/10 rounded-lg">
                         <Eye className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <span className="block">Arrange Slides</span>
+                        <span className="block">Preview Slides</span>
                         <span className="text-sm font-normal text-muted-foreground">
                           {allSlides.length} {allSlides.length === 1 ? 'slide' : 'slides'} • {selectedComposition}
                         </span>
                       </div>
                     </DialogTitle>
                   </DialogHeader>
-                  <ScrollArea className="overflow-auto cursor-default">
+                  <div className="overflow-auto cursor-default w-full  flex align-top items-start justify-start">
 
-                    <CompositionPreview
-                      composition={
-                        selectedComposition as
-                        | "CAROUSEL"
-                        | "GRID"
-                        | "STACKED"
-                        | "FADE"
-                        | "SINGLE"
-                      }
-                      slides={allSlides}
-                    />
-                  </ScrollArea>
+                    <div className="w-5xl mx-auto">
+
+
+                      <CompositionPreview
+
+                        composition={
+                          selectedComposition as
+                          | "CAROUSEL"
+                          | "GRID"
+                          | "STACKED"
+                          | "FADE"
+                          | "SINGLE"
+                        }
+                        slides={allSlides}
+                      />
+                    </div>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>

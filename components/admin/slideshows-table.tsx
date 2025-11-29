@@ -12,9 +12,11 @@ import { useGetSlideShowsQuery, usePaginatedSlidesMutation } from "@/lib/store/a
 import { SlidesEmptyState, SlidesErrorState, SlidesLoader } from "./utils/slides-loader"
 import { InfiniteScrollSlides } from "./utils/slide-show-infinty-scroller"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
+import { SlideshowReorderDialog } from "@/app/(routes)/admin/slideshows/_composnents/ReorderSlideShowDialog"
+import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 
 export function SlideshowsTable() {
-  const router = useRouter()
+
   const [page, setPage] = useState(0)
   const [ref, entry] = useIntersectionObserver({
     rootMargin: "0px",
@@ -34,6 +36,13 @@ export function SlideshowsTable() {
 
   const [allSlideshows, setAllSlideshows] = useState<any[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
   const [expandedSlideshow, setExpandedSlideshow] = useState<string | null>(null)
   const [pagesPerType, setPagesPerType] = useState<Record<string, number>>({
     services: 1,
@@ -123,6 +132,7 @@ export function SlideshowsTable() {
 
   return (
     <>
+
       <div className="space-y-4">
         {allSlideshows.map((slideshow) => (
           <Card
@@ -154,13 +164,13 @@ export function SlideshowsTable() {
                       <Layers className="h-3 w-3 mr-1" />
                       {slideshow.type}
                     </Badge>
-                    <Badge 
+                    <Badge
                       variant={slideshow.isActive ? "default" : "secondary"}
                       className="shadow-sm"
                     >
                       {slideshow.isActive ? "Active" : "Inactive"}
                     </Badge>
-                    <Badge 
+                    <Badge
                       variant={slideshow.autoPlay ? "default" : "outline"}
                       className="shadow-sm"
                     >
@@ -203,7 +213,7 @@ export function SlideshowsTable() {
                       </>
                     )}
                   </Button>
-                  
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon">

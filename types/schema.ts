@@ -2,7 +2,7 @@
 // ENUMS
 // ============================================================================
 
-  import { ServiceType, serviceWithImage } from "./services";
+  import { ServiceType } from "./services";
 
 export enum UserRole {
   ADMIN = "ADMIN",
@@ -36,7 +36,6 @@ export enum SlideshowType {
   HERO = "HERO",
   CUSTOM = "CUSTOM",
 }
-
 export enum CompositionType {
   SINGLE = "SINGLE",
   GRID = "GRID",
@@ -44,6 +43,17 @@ export enum CompositionType {
   STACKED = "STACKED",
   FADE = "FADE",
   CUSTOM = "CUSTOM",
+  ZOOM = "ZOOM",
+  PARALLAX = "PARALLAX",
+  COVERFLOW = "COVERFLOW",
+  KEN_BURNS = "KEN_BURNS",
+  FLIP = "FLIP",
+  CUBE_ROTATION = "CUBE",
+  AUTO_GRID = "AUTO_GRID",
+  STORY = "STORY",
+  FILMSTRIP = "FILMSTRIP",
+  LIGHTBOX = "LIGHTBOX",
+  MARQUEE = "MARQUEE",
 }
 
 export enum ProjectStatus {
@@ -703,6 +713,31 @@ export interface ProjectWithRelationsSlide  extends  Project   {
   customDesc?: string;
   isVisible?: boolean;
 }
+export interface ClientWithRelationsSlide  extends  Client   {
+  image?: Image;
+  logo?: Image;
+  type?: "client";
+  _order?: number;
+  customTitle?: string;
+  customDesc?: string;
+  isVisible?: boolean;
+}
+export interface TestimonialWithImageSlide  extends  Testimonial   {
+  image?: Image;
+  type?: "testimonial";
+  _order?: number;
+  customTitle?: string;
+  customDesc?: string;
+  isVisible?: boolean;
+}
+export interface TeamMemberWithImageSlide  extends  TeamMember   {
+  image?: Image;
+  type?: "team";
+  _order?: number;
+  customTitle?: string;
+  customDesc?: string;
+  isVisible?: boolean;
+}
 
 export interface BlogWithRelations extends Blog {
   image?: Image;
@@ -710,7 +745,8 @@ export interface BlogWithRelations extends Blog {
   categories?: Category[];
 }
 
-export interface ClientWithImages extends Client {
+export interface ClientWithImages   {
+  client: Client
   image?: Image;
   logo?: Image;
   type?: "client";
@@ -721,7 +757,8 @@ export interface ClientWithImages extends Client {
 }
 
 export interface TeamMemberWithImage extends TeamMember {
-  image?: Image;
+  
+  image: Image | null;
   type?: "teamMember";
   _order?: number;
   customTitle?: string;
@@ -748,7 +785,7 @@ export interface SlideShowWithRelations extends SlideShow {
 
 export type slide =
   | ServiceWithImage
-  | ClientWithImages
+  | ClientWithRelationsSlide
   | ProjectWithRelationsSlide
-  | TestimonialWithImage
-  | TeamMemberWithImage;
+  | TestimonialWithImageSlide
+  | TeamMemberWithImageSlide;

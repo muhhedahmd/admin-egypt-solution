@@ -11,6 +11,7 @@ import { useGetServicesQuery } from "@/lib/store/api/services-api"
 import Blurredimage from "@/app/_comp/BlurredHashImage"
 import Image from "next/image"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
+import { ServiceWithImage } from "@/types/schema"
 
 export function ServicesTable() {
   const router = useRouter()
@@ -31,14 +32,14 @@ export function ServicesTable() {
     take: 10
   })
 
-  const [allServices, setAllServices] = useState<any[]>([])
+  const [allServices, setAllServices] = useState<ServiceWithImage[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     if (servicesData?.data) {
-      setAllServices((prev: any) => {
+      setAllServices((prev) => {
         const existing = prev.map((s: any) => s.id)
-        const newServices = servicesData.data.data.filter((s: any) => !existing.includes(s.id))
+        const newServices = servicesData?.data?.filter((s: any) => !existing.includes(s.id))
         return [...prev, ...newServices]
       })
     }
@@ -48,9 +49,9 @@ export function ServicesTable() {
     if (entry?.isIntersecting && !isFetching && servicesData?.data) {
       console.log( 
         allServices.length ,
-        servicesData.data.pagination.totalItems
+        servicesData.pagination.totalItems
       )
-      const hasMore = allServices.length < (servicesData.data.pagination.totalItems || 0)
+      const hasMore = allServices.length < (servicesData.pagination.totalItems || 0)
       if (hasMore) setPage(prev => prev + 1)
     }
   }, [entry, isFetching, servicesData, allServices.length])
@@ -267,9 +268,9 @@ export function ServicesTable() {
           </div>
         )}
         {servicesData?.data && 
-          allServices.length >= (servicesData.data.pagination.totalItems || 0) && (
+          allServices.length >= (servicesData.pagination.totalItems || 0) && (
             <p className="text-sm text-muted-foreground">
-              All {servicesData.data.pagination.totalItems} services loaded
+              All {servicesData.pagination.totalItems} services loaded
             </p>
           )}
       </div>

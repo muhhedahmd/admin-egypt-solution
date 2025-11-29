@@ -1,18 +1,28 @@
+"use client"
 import { TestimonialForm } from "@/components/admin/testimonial-form"
 import { Button } from "@/components/ui/button"
+import { useGetTestimonialByIdQuery } from "@/lib/store/api/testimonials-api"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { use } from "react"
 
-export default function EditTestimonialPage({ params }: { params: { id: string } }) {
+export default function EditTestimonialPage({ params }: { params: Promise<{ id: string }> }) {
+    const _params = use(params)
+  
+    const { isLoading, isError, data } = useGetTestimonialByIdQuery(_params.id)
+  
+
+    const mockMember = {
+     ...data?.data?.testimonial,
+     avatar : data?.data.Avatar
+    }
+    console.log({
+      mockMember
+    })
+  
   const mockTestimonial = {
-    id: params.id,
-    content: "Working with this team was an absolute pleasure. They delivered beyond our expectations.",
-    author: "John Smith",
-    position: "CEO",
-    company: "TechCorp Inc",
-    rating: 5,
-    status: "APPROVED",
-    featured: true,
+  ...data?.data?.testimonial,
+     avatar : data?.data?.Avatar
   }
 
   return (
@@ -29,7 +39,7 @@ export default function EditTestimonialPage({ params }: { params: { id: string }
         </div>
       </div>
 
-      <TestimonialForm initialData={mockTestimonial} />
+      <TestimonialForm initialData={mockTestimonial as any} />
     </div>
   )
 }

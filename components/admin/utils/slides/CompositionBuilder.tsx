@@ -1,21 +1,35 @@
 
 "use client"
 
+import {
+  Zap,
+  Grid3x3,
+  Layers,
+  Square,
+  Maximize,
+  Layers2,
+  RotateCw,
+  Wind,
+  Repeat2,
+  Cable as Cube,
+  Grid,
+  Bookmark,
+  Lightbulb,
+  ArrowRight,
+} from "lucide-react"
 import React, { useState } from "react"
 import { Label } from "@/components/ui/label"
-import { Grid3x3, Layers, Zap, Square, GripVertical, ArrowUpDown, X } from "lucide-react"
-import { ProjectWithRelationsSlide, ServiceWithImage, slide, } from "@/types/schema"
+import {  GripVertical, ArrowUpDown, X } from "lucide-react"
+import { ClientWithImages, ClientWithRelationsSlide, CompositionType, ProjectWithRelationsSlide, ServiceWithImage, slide, TeamMemberWithImage, TestimonialWithImage,  } from "@/types/schema"
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, UniqueIdentifier, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, rectSortingStrategy, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToParentElement } from "@dnd-kit/modifiers";
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { CompositionType } from "@/types/schema"
-import { ProjectCard, ServiceCard } from "./compositionBuliderCards"
+import { ClientCard, ProjectCard, ServiceCard, TeamMemberCard, TestimonialCard } from "./compositionBuliderCards"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import TypeToSquareRender from "./ArrangMinmalCard"
-
+import TypeToSquareRender from "../ArrangMinmalCard"
 
 
 
@@ -32,38 +46,110 @@ interface CompositionBuilderProps {
 
 }
 
-const COMPOSITIONS: { value: CompositionType, label: string, icon: any, description: string }[] = [
+export const COMPOSITIONS: {
+  value: CompositionType
+  label: string
+  icon: any
+  description: string
+}[] = [
   {
-    value: CompositionType["CAROUSEL"],
+    value: CompositionType.CAROUSEL,
     label: "Carousel",
     icon: Zap,
     description: "Slides transition one at a time",
   },
   {
-    value: CompositionType["GRID"],
+    value: CompositionType.GRID,
     label: "Grid",
     icon: Grid3x3,
     description: "Display slides in a grid layout",
   },
   {
-    value: CompositionType["STACKED"],
+    value: CompositionType.STACKED,
     label: "Stacked",
     icon: Layers,
     description: "Slides stacked vertically",
   },
   {
-    value: CompositionType["FADE"],
+    value: CompositionType.FADE,
     label: "Fade",
     icon: Square,
     description: "Slides fade in and out",
   },
   {
-    value: CompositionType["SINGLE"],
+    value: CompositionType.SINGLE,
     label: "Single",
     icon: Square,
     description: "Display one slide at a time",
   },
+  {
+    value: CompositionType.ZOOM,
+    label: "Zoom",
+    icon: Maximize,
+    description: "Smooth zoom in/out transitions",
+  },
+  {
+    value: CompositionType.PARALLAX,
+    label: "Parallax",
+    icon: Wind,
+    description: "Mouse-driven parallax depth effect",
+  },
+  {
+    value: CompositionType.COVERFLOW,
+    label: "Coverflow",
+    icon: Layers2,
+    description: "Apple-style 3D card rotation",
+  },
+  {
+    value: CompositionType.KEN_BURNS,
+    label: "Ken Burns",
+    icon: RotateCw,
+    description: "Cinematic zoom and pan effect",
+  },
+  {
+    value: CompositionType.FLIP,
+    label: "Flip",
+    icon: Repeat2,
+    description: "Card flip animation transitions",
+  },
+  {
+    value: CompositionType.CUBE_ROTATION,
+    label: "Cube",
+    icon: Cube,
+    description: "3D cube rotation between slides",
+  },
+  {
+    value: CompositionType.AUTO_GRID,
+    label: "Auto Grid",
+    icon: Grid,
+    description: "Responsive grid layout",
+  },
+  {
+    value: CompositionType.STORY,
+    label: "Story",
+    icon: Bookmark,
+    description: "Instagram Stories-style with progress bars",
+  },
+  {
+    value: CompositionType.FILMSTRIP,
+    label: "Filmstrip",
+    icon: Lightbulb,
+    description: "Large preview with scrolling thumbnails",
+  },
+  {
+    value: CompositionType.LIGHTBOX,
+    label: "Lightbox",
+    icon: Maximize,
+    description: "Grid thumbnails with modal lightbox",
+  },
+  {
+    value: CompositionType.MARQUEE,
+    label: "Marquee",
+    icon: ArrowRight,
+    description: "Continuous horizontal scrolling",
+  },
 ]
+
 
 export function CompositionBuilder({ isDialogOpen, setIsDialogOpen, setSlides, selectedComposition, composition, slides, onCompositionChange, setSelectedComposition }: CompositionBuilderProps) {
 
@@ -80,7 +166,7 @@ export function CompositionBuilder({ isDialogOpen, setIsDialogOpen, setSlides, s
 
       <div>
         <Label className="text-base font-semibold mb-4 block">Choose Layout Composition</Label>
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto pr-2">
           {COMPOSITIONS.map((comp) => {
             const Icon = comp.icon
             return (
@@ -241,109 +327,6 @@ const ArrangeSlidesDialog = ({
 };
 
 
-// const ArrangeSlides = ({
-
-//   setSlides,
-//   slides
-// }: {
-//   setSlides:
-//   React.Dispatch<React.SetStateAction<slide[]>>
-//   slides: slide[]
-// }) => {
-//   const senesors = useSensors(
-//     useSensor(PointerSensor),
-//   )
-
-//   const handleDragEnd = (event: DragEndEvent) => {
-//     setIsDragging(false)
-
-//     setDraggingSlide(null)
-
-//     const { active, over } = event;
-//     console.log({ active, over })
-//     if (!over) {
-//       return;
-//     }
-//     if (active.id !== over.id) {
-//       setSlides((prevSlides) => {
-//         const oldIndex = prevSlides.findIndex(s => String(s.id) === String(active.id));
-//         const newIndex = prevSlides.findIndex(s => String(s.id) === String(over.id));
-
-//         if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-//           return prevSlides;
-//         }
-
-//         const SlidesToUpdate = arrayMove(prevSlides, oldIndex, newIndex);
-
-//         return SlidesToUpdate.map((s, index) => ({ ...s, _order: index + 1 }))
-//       });
-//     }
-//   }
-
-//   const handleDragStart = (event: DragStartEvent) => {
-//     setIsDragging(true)
-//     if (event.active.id === undefined) return
-//     else {
-//       const find = slides.find(s => s.id === event.active.id)
-//       if (!find) return
-//       setDraggingSlide(find)
-//     }
-//   }
-
-//   const [isDragging, setIsDragging] = useState(false);
-//   const [DraggingSlide, setDraggingSlide] = useState<slide | null>(null);
-
-
-//   if (!slides?.length) {
-//     return <>
-//     </>
-//   }
-//   return (
-//     <div
-//       className="  shadow-md p-3 rounded-xl "
-//       style={{
-//         width: "100%",
-//         position: "relative",
-//         overflow: "hidden",
-//       }}
-//     >
-
-//       <DndContext
-//         modifiers={[restrictToParentElement]}
-//         sensors={senesors}
-//         onDragEnd={handleDragEnd}
-//         onDragStart={handleDragStart}
-//       >
-
-//         <SortableContext
-
-//           items={slides}
-//           strategy={verticalListSortingStrategy}
-//         >
-
-//           {slides.map((slide) => (
-//             <SortableItem key={slide.id} slide={slide}>
-//               <TypeToArrangeRender isDragging={true} slide={slide} />
-//             </SortableItem>
-//           ))}
-//         </SortableContext>
-
-//         <DragOverlay>
-//           {isDragging && DraggingSlide ? (
-//             <>
-//               <TypeToArrangeRender isDragging={true} slide={DraggingSlide} />
-//             </>
-//           ) : null}
-//         </DragOverlay>
-//       </DndContext>
-//     </div>
-
-//   )
-
-
-
-// }
-
 
 
 function SortableItem({
@@ -364,7 +347,6 @@ function SortableItem({
       duration: 150, // milliseconds
       easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
     },
-
   });
 
   const style = {
@@ -423,24 +405,30 @@ const SortableRow: React.FC<{
 };
 
 
-export const TypeToRender = ({ slide }: {
-  slide: slide
+export const TypeToRender = ({ slide  , imaged , minmal , split , index , story }: {
+  slide: slide ,
+  imaged ?: boolean ,
+  minmal ?: boolean, 
+  split ?: boolean,
+  index ?: number,
+  story?:boolean
 }) => {
 
+
   if (slide?.type === "service") {
-    return <ServiceCard data={slide as ServiceWithImage} />
+    return <ServiceCard data={slide as ServiceWithImage} imaged={imaged} story={story} />
   }
   if (slide?.type === "project") {
-    return <ProjectCard data={slide as ProjectWithRelationsSlide} />
+    return <ProjectCard  imagePosition="left" data={slide as ProjectWithRelationsSlide} split={split}  index={index || 0} story={story} />
   }
-  // if ('name' in slide && 'industry' in slide) {
-  //   return <ClientCard data={slide as ClientWithImages} />
-  // }
-  // if ('clientName' in slide && 'rating' in slide) {
-  //   return <TestimonialCard data={slide as TestimonialWithImage} />
-  // }
-  // if ('position' in slide) {
-  //   return <TeamMemberCard data={slide as TeamMemberWithImage} />
-  // }
+  if (slide.type === "client") {
+    return <ClientCard data={slide as ClientWithRelationsSlide} />
+  }
+  if (slide.type === "testimonial") {
+    return <TestimonialCard data={slide as TestimonialWithImage} minmal={minmal} />
+  }
+  if (slide.type === "team") {
+    return <TeamMemberCard data={slide as TeamMemberWithImage} />
+  }
   return <div />
 }

@@ -1,50 +1,143 @@
-import { baseApi } from "./base-api"
+import { PaginatedResponse, successResponse } from "@/types/services";
+import { baseApi } from "./base-api";
+import { Image, TeamMember, TeamMemberWithImage } from "@/types/schema";
+import { createEntityAdapter } from "@reduxjs/toolkit";
 
-interface TeamMember {
-  id: string
-  name: string
-  role: string
-  bio?: string
-  image?: string
-  expertise?: string[]
-  [key: string]: any
-}
+
+
+
+
+
+
+
+// const teamAdapter = createEntityAdapter<TeamMemberWithImage>({
+//   selectId: (teamMember : TeamMemberWithImage) => teamMember.id,
+//   sortComparer: (a, b) => a.id.localeCompare(b.id),
+// });
+
+// const getEmptyNormalized = () => ({
+//   ...teamAdapter.getInitialState(), 
+//   pages: [] as string[][],
+//   pagination: { totalItems: 0 },
+// });
 
 export const teamApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getTeamMembers: builder.query<TeamMember[], void>({
+    getTeamMembers: builder.query<
+      PaginatedResponse<TeamMemberWithImage>,
+      {
+        skip?: number;
+        take?: number;
+      }
+    >({
       query: () => "/team",
       providesTags: ["Team"],
     }),
-    getTeamMemberById: builder.query<TeamMember, string>({
+    getTeamMemberById: builder.query<
+      {
+        Image: Image | null;
+        teamMember: TeamMember;
+        message :string
+      },
+      string
+    >({
       query: (id) => `/team/${id}`,
       providesTags: (result, error, id) => [{ type: "Team", id }],
     }),
-    createTeamMember: builder.mutation<TeamMember, Partial<TeamMember>>({
+
+    createTeamMember: builder.mutation<
+      successResponse<{
+        Image: Image | null;
+        TeamMember: TeamMember;
+      }>,
+      FormData
+    >({
       query: (body) => ({
         url: "/team",
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Team"],
+      // invalidatesTags: ["Team"],
+      async onQueryStarted(queryArgument, { dispatch, queryFulfilled, extra }) {
+        const result = (await queryFulfilled).data;
+        const patchResult = dispatch(
+          teamApi.util.updateQueryData(
+            "getTeamMembers",
+            {
+              skip: 0,
+              take: 10,
+            },
+            (draft) => {
+              draft.data.unshift({
+                ...result.data.TeamMember,
+                image: result.data.Image || null,
+              });
+              draft.pagination.totalItems += 1;
+            }
+          )
+        );
+
+        try {
+          await queryFulfilled;
+        } catch (error) {
+          patchResult.undo();
+        }
+      },
     }),
-    updateTeamMember: builder.mutation<TeamMember, { id: string; body: Partial<TeamMember> }>({
+    updateTeamMember: builder.mutation<
+      TeamMember,
+      { id: string; body: FormData}
+    >({
       query: ({ id, body }) => ({
         url: `/team/${id}`,
         method: "PUT",
-        body,
+        body : body,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Team", id }, "Team"],
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Team", id },
+        "Team",
+      ],
     }),
     deleteTeamMember: builder.mutation<void, string>({
       query: (id) => ({
         url: `/team/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Team"],
+      async onQueryStarted(queryArgument, { dispatch, queryFulfilled, extra  , getCacheEntry ,getState ,requestId}) {
+
+        
+        const cacheEntry = getState() 
+
+        const teamMembers = cacheEntry.api.queries['getTeamMembers']?.data
+
+        if(teamMembers){
+
+        }
+
+        const patchResult = dispatch(
+          teamApi.util.updateQueryData(
+            "getTeamMembers",
+            {
+              skip: 0,
+              take: 10,
+            },
+            (draft) => {
+              draft.data = draft.data.filter(
+                (teamMember) => teamMember.id !== queryArgument
+              );
+              draft.pagination.totalItems -= 1;
+            }
+          )
+        );
+        try {
+          await queryFulfilled;
+        } catch (error) {
+          // Handle error
+        }
+      },
     }),
   }),
-})
+});
 
 export const {
   useGetTeamMembersQuery,
@@ -52,4 +145,4 @@ export const {
   useCreateTeamMemberMutation,
   useUpdateTeamMemberMutation,
   useDeleteTeamMemberMutation,
-} = teamApi
+} = teamApi;

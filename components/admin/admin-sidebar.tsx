@@ -27,6 +27,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/app/_comp/theme-toggle"
@@ -79,6 +80,7 @@ export function AdminSidebar() {
             <p className="text-xs text-muted-foreground">Software Company</p>
           </div>
         </div>
+        <SidebarTrigger />
       </SidebarHeader>
       <SidebarContent>
         {menuItems.map((group) => (

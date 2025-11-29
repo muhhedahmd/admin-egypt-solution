@@ -1,191 +1,267 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Briefcase, FolderKanban, Users, UserCircle, MessageSquare } from "lucide-react"
+import { SlideHeader } from "@/components/admin/utils/slides/CastomHeaderSlideShow";
+import { CompositionPreview } from "@/components/admin/utils/slides/compositionPreviw";
+import {
+  useGetSlideShowsQuery,
+  usePaginatedSlidesMutation,
+} from "@/lib/store/api/slideShow-api";
+import { CompositionType, SlideshowType } from "@/types/schema";
+import { SlideShow } from "@/types/slideShows";
+import {  useMemo, useRef, useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import HeroSection from "./_comp/Hero";
+import Header from "./_comp/header";
+import Footer from "./_comp/Footer";
 
-const relationshipData = {
-  services: [
-    { id: "1", name: "Web Development", slideshow: "Hero Slideshow", type: "HERO", slides: 5 },
-    { id: "2", name: "Mobile Apps", slideshow: "Service Hero", type: "HERO", slides: 3 },
-    { id: "3", name: "Cloud Solutions", slideshow: "Tech Showcase", type: "PORTFOLIO", slides: 4 },
-  ],
-  projects: [
-    { id: "1", name: "E-commerce Platform", slideshow: "Project Gallery", type: "PROJECT", slides: 8 },
-    { id: "2", name: "SaaS Dashboard", slideshow: "Portfolio Showcase", type: "PORTFOLIO", slides: 6 },
-  ],
-  team: [
-    { id: "1", name: "Engineering Team", slideshow: "Team Showcase", type: "TEAM", slides: 12 },
-    { id: "2", name: "Design Team", slideshow: "Team Members", type: "TEAM", slides: 8 },
-  ],
-  clients: [
-    { id: "1", name: "Fortune 500 Corp", slideshow: "Client Logos", type: "CLIENT", slides: 15 },
-    { id: "2", name: "Tech Startup", slideshow: "Client Testimonials", type: "TESTIMONIAL", slides: 5 },
-  ],
-  testimonials: [
-    { id: "1", name: "Success Stories", slideshow: "Testimonials", type: "TESTIMONIAL", slides: 10 },
-    { id: "2", name: "Client Reviews", slideshow: "Reviews Carousel", type: "TESTIMONIAL", slides: 7 },
-  ],
-}
+// Virtual list constants
+const ITEM_HEIGHT = 600; // Approximate height of each slideshow card
+const BUFFER_SIZE = 3; // Number of items to render outside viewport
+
+const RenderSlides = ({
+  id,
+  composition,
+}: {
+  id: string;
+  composition: CompositionType;
+}) => {
+  const [triggerGetSlides, { data: slidesData, isLoading: slidesLoading }] =
+    usePaginatedSlidesMutation();
+
+  const hasTriggered = useRef(false);
+
+  useEffect(() => {
+    if (!hasTriggered.current) {
+      hasTriggered.current = true;
+      triggerGetSlides({
+        id,
+        page: 1,
+        perPage: 50,
+      });
+    }
+  }, [id, triggerGetSlides]);
+
+  if (slidesLoading) {
+    return <div className="h-96 bg-gray-200 rounded-lg animate-pulse" />;
+  }
+
+  if (!slidesData?.data.slides || slidesData.data.slides.length === 0) {
+    return null;
+  }
+
+  const transformedSlides = slidesData.data.slides.map((item) => ({
+    ...item.data,
+    type: item.type,
+    order: item.order,
+  }));
+
+  return (
+    <CompositionPreview slides={transformedSlides} composition={composition} />
+  );
+};
+
+const SlideshowCard = ({
+  item,
+  index,
+  bgColor,
+  textColor,
+}: {
+  item: SlideShow;
+  index: number;
+  bgColor?: string;
+  textColor?: string;
+}) => {
+  const compositionType = useMemo(
+    () => CompositionType[item.composition as keyof typeof CompositionType],
+    [item.composition]
+  );
+
+  return (
+    <motion.div
+      key={item.id}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      viewport={{ once: true, margin: "100px" }}
+      className="w-full"
+    >
+      <div
+        style={{
+          backgroundColor: bgColor,
+          color: textColor ,
+        }}
+        className="rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+      >
+        <SlideHeader item={item} />
+        <div className="p-6">
+          <RenderSlides id={item.id} composition={compositionType} />
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 export default function SlideshowRelationshipsPage() {
-  const [activeTab, setActiveTab] = useState("overview")
+  const [page, setPage] = useState(0);
+  const [allSlides, setAllSlides] = useState<SlideShow[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const totalRelationships = Object.values(relationshipData).reduce((sum, arr) => sum + arr.length, 0)
+  const ITEMS_PER_PAGE = 10;
+  const observerTarget = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+
+  const { data: slideshowsData, isLoading, isError } = useGetSlideShowsQuery({
+    skip: page * ITEMS_PER_PAGE,
+    take: ITEMS_PER_PAGE,
+  });
+
+  // Update slides when new data arrives
+  useEffect(() => {
+    if (!slideshowsData?.data) return;
+
+    setIsLoadingMore(false);
+
+    const newSlides = slideshowsData.data.filter(
+      (newSlide) => !allSlides.some((existing) => existing.id === newSlide.id)
+    );
+
+    if (newSlides.length > 0) {
+      setAllSlides((prev) => [...prev, ...newSlides]);
+    }
+
+    if (slideshowsData.pagination) {
+      const { currentPage, totalPages } = slideshowsData.pagination;
+      setHasMore(currentPage < totalPages);
+    }
+  }, [slideshowsData]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasMore &&
+          !isLoading &&
+          !loadingRef.current
+        ) {
+          loadingRef.current = true;
+          setIsLoadingMore(true);
+          setPage((prev) => prev + 1);
+
+          // Reset flag after a small delay to prevent duplicate requests
+          setTimeout(() => {
+            loadingRef.current = false;
+          }, 500);
+        }
+      },
+      {
+        rootMargin: "500px",
+        threshold: 0.1,
+      }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, isLoading]);
+
+  if (isError && allSlides.length === 0) {
+    return (
+      <div className="min-h-screen ">
+        <Header />
+        <HeroSection />
+        <div className="max-w-6xl mx-auto px-4 py-16">
+          <div className="text-center">
+            <p className="text-gray-600 mb-6 text-lg">
+              Failed to load slideshows
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-muted text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Slideshow Relationships</h1>
-        <p className="text-muted-foreground mt-2">Manage slideshow attachments across all content types</p>
-      </div>
+    <div className="min-h-screen ">
+      <Header />
+      <HeroSection />
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-blue-600" />
-              Services
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{relationshipData.services.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">slideshows attached</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <FolderKanban className="h-4 w-4 text-green-600" />
-              Projects
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{relationshipData.projects.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">slideshows attached</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4 text-purple-600" />
-              Team
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{relationshipData.team.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">slideshows attached</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <UserCircle className="h-4 w-4 text-orange-600" />
-              Clients
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{relationshipData.clients.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">slideshows attached</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-red-600" />
-              Testimonials
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{relationshipData.testimonials.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">slideshows attached</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Relationships by Type */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="services">Services</TabsTrigger>
-          <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="clients">Clients</TabsTrigger>
-          <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="services" className="space-y-4">
-          <RelationshipCards items={relationshipData.services} type="service" />
-        </TabsContent>
-
-        <TabsContent value="projects" className="space-y-4">
-          <RelationshipCards items={relationshipData.projects} type="project" />
-        </TabsContent>
-
-        <TabsContent value="team" className="space-y-4">
-          <RelationshipCards items={relationshipData.team} type="team" />
-        </TabsContent>
-
-        <TabsContent value="clients" className="space-y-4">
-          <RelationshipCards items={relationshipData.clients} type="client" />
-        </TabsContent>
-
-        <TabsContent value="testimonials" className="space-y-4">
-          <RelationshipCards items={relationshipData.testimonials} type="testimonial" />
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
-}
-
-function RelationshipCards({
-  items,
-  type,
-}: {
-  items: Array<{ id: string; name: string; slideshow: string; type: string; slides: number }>
-  type: string
-}) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {items.map((item) => (
-        <Card key={item.id} className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-base">{item.name}</CardTitle>
-                <CardDescription className="mt-1">
-                  <Badge variant="outline" className="mt-1">
-                    {item.type}
-                  </Badge>
-                </CardDescription>
+      <main className=" container mx-auto px-4 py-12">
+        {/* Initial Loading State */}
+        {isLoading && allSlides.length === 0 ? (
+          <div className="space-y-8">
+            {[...Array(3)].map((_, i) => (
+              <div
+                key={i}
+                className=" rounded-lg shadow-sm overflow-hidden"
+              >
+                <div className="h-20  animate-pulse" />
+                <div className="p-6 space-y-4">
+                  <div className="h-96 animate-pulse rounded" />
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm font-medium text-muted-foreground">Attached Slideshow</p>
-              <p className="text-base font-semibold mt-1">{item.slideshow}</p>
-              <p className="text-xs text-muted-foreground mt-1">{item.slides} slides</p>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                View
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                Edit
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Slideshows Grid */}
+            <AnimatePresence mode="popLayout">
+              <div className="space-y-6">
+                {allSlides.map((item, index) => (
+                  <SlideshowCard
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    bgColor={item.bgColor}
+                    textColor={item.textColor}
+                  />
+                ))}
+              </div>
+            </AnimatePresence>
+
+            {/* Empty State */}
+            {!isLoading && allSlides.length === 0 && (
+              <div className="text-center py-16">
+                <p className=" text-lg">No slideshows available</p>
+              </div>
+            )}
+
+            {/* Load More Trigger */}
+            {hasMore && (
+              <div ref={observerTarget} className="h-10 flex items-center justify-center mt-12">
+                {isLoadingMore && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-muted rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                    <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* End of List */}
+            {!hasMore && allSlides.length > 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">You've reached the end</p>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+
+      <Footer />
     </div>
-  )
+  );
 }

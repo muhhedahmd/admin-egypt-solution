@@ -32,7 +32,7 @@ import { DeleteDialog } from "@/components/admin/delete-dialog"
 import { useGetSlideShowByIdQuery, usePaginatedSlidesMutation } from "@/lib/store/api/slideShow-api"
 import { motion, AnimatePresence } from "framer-motion"
 import { SlidesEmptyState, SlidesErrorState } from "@/components/admin/utils/slides-loader"
-import { CompositionPreview } from "@/components/admin/utils/compositionPreviw"
+import { CompositionPreview } from "@/components/admin/utils/slides/compositionPreviw"
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
@@ -51,6 +51,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { data: slideshowData, isLoading, isError } = useGetSlideShowByIdQuery(p.id)
   const [triggerGetSlides, { data: slidesData, isLoading: slidesLoading, error: slidesError }] =
     usePaginatedSlidesMutation()
+    
   const [allSlides, setAllSlides] = useState<any[]>([])
 
   useEffect(() => {
@@ -334,9 +335,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
                   <div className="aspect-video bg-muted/30 rounded-xl overflow-hidden">
                     <CompositionPreview
-                      onScroll={onScroll}
+
+                      // onScroll={onScroll}
                       composition={slideshow.composition as any}
-                      slides={allSlides.slice(0, 5)}
+                      slides={allSlides.map((s)=>{
+                        return {
+                          ...s.data,
+                          order : s.order ,
+                          type: s.type
+                        }
+                      })}
                     />
                   </div>
                 </Card>
@@ -538,7 +546,11 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   <CompositionPreview
                   onScroll={onScroll}
                     composition={slideshow.composition as any}
-                    slides={allSlides}
+                    slides={allSlides.map((slide: any) => ({
+                      ...slide.data,
+                      order : slide.order,
+                      type: slide.type 
+                    }))}
                   />
                 </div>
               </div>

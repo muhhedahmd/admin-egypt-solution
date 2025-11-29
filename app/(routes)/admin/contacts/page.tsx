@@ -10,7 +10,6 @@ export default function ContactsPage() {
       </div>
 
       <ContactsStats />
-
       <ContactsTable />
     </div>
   )

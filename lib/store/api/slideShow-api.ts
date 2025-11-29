@@ -53,7 +53,6 @@ export const slideshowApi = baseApi.injectEndpoints({
       }
     >({
       query: ({ skip, take } = { skip: 0, take: 10 }) => {
-
         return {
           url: "/slide-show",
           params: {
@@ -71,6 +70,9 @@ export const slideshowApi = baseApi.injectEndpoints({
       providesTags: ["SlideShows"],
     }),
 
+    getAllSlideShowsMinmal: builder.query<successResponse<Partial<SlideShow>[]>, void>({
+      query: () => `/slide-show/all-minimal`,
+    }),
     getSlideShowById: builder.query<successResponse<SlideShow>, string>({
       query: (id) => `/slide-show/${id}`,
       providesTags: (result, error, id) => [{ type: "SlideShows", id }],
@@ -262,9 +264,7 @@ export const slideshowApi = baseApi.injectEndpoints({
           pagesPerType,
         },
       }),
-  // Merge logic for infinite scroll
- 
-      
+      // Merge logic for infinite scroll
     }),
 
     attachMany: builder.mutation<successResponse<SlideShow>, AttachManyDTO>({
@@ -329,6 +329,7 @@ export const slideshowApi = baseApi.injectEndpoints({
 
 export const {
   usePaginatedSlidesMutation,
+ useGetAllSlideShowsMinmalQuery,
   useCreateSlideShowAndAttachManyMutation,
   useGetSlideShowsQuery,
   useGetSlideShowByIdQuery,

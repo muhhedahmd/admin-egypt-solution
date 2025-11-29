@@ -34,7 +34,7 @@ const BlurredImage =  memo<Props>(({ imageUrl, width, height, className, alt, qu
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-md ${className}`}>
+    <div className={`relative overflow-hidden  ${className}`}>
       {isLoading && blurhash && (
         <div className="absolute inset-0 w-full h-full">
           <BlurhashCanvas hash={blurhash} className="w-full h-full" />

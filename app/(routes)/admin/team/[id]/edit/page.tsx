@@ -1,24 +1,22 @@
+"use client"
 import { TeamMemberForm } from "@/components/admin/team-member-form"
 import { Button } from "@/components/ui/button"
+import { useGetTeamMemberByIdQuery } from "@/lib/store/api/team-api"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { use } from "react"
 
-export default function EditTeamMemberPage({ params }: { params: { id: string } }) {
+export default function EditTeamMemberPage({ params }: { params: Promise<{ id: string }> }) {
+
+  const _params = use(params)
+
+  const { isLoading, isError, data } = useGetTeamMemberByIdQuery(_params.id)
+
   const mockMember = {
-    id: params.id,
-    name: "John Doe",
-    role: "Lead Developer",
-    email: "john.doe@company.com",
-    phone: "+1 (555) 123-4567",
-    bio: "Experienced full-stack developer with 10+ years in the industry",
-    status: "ACTIVE",
-    order: 1,
-    socialLinks: {
-      linkedin: "https://linkedin.com/in/johndoe",
-      twitter: "https://twitter.com/johndoe",
-      github: "https://github.com/johndoe",
-    },
+   ...data?.teamMember,
+   image : data?.Image
   }
+
 
   return (
     <div className="p-6 space-y-6">
@@ -34,7 +32,7 @@ export default function EditTeamMemberPage({ params }: { params: { id: string } 
         </div>
       </div>
 
-      <TeamMemberForm initialData={mockMember} />
+      <TeamMemberForm isLoadingFetchingToUpdate={isLoading} initialData={mockMember as any || undefined} />
     </div>
   )
 }

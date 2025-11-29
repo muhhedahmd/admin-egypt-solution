@@ -5,8 +5,8 @@ import Link from "next/link"
 
 export default function NewTeamMemberPage() {
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="p-6 space-y-6 h-screen">
+      <div className="flex items-center gap-4  h-20">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/admin/team">
             <ArrowLeft className="h-4 w-4" />

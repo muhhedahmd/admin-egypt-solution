@@ -18,47 +18,29 @@ import { MouseEvent, useEffect } from "react"
 interface DeleteDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  id: string | null
   title: string
   description: string,
-  skip: number,
-  take: number
+
+  onConfirm: () => void,
+  isLoading: boolean,
+  isError: boolean
 
 }
 
 export function DeleteDialog({
-  skip,
-  take
-  , id, open, onOpenChange, title, description }: DeleteDialogProps) {
+
+  onConfirm,
+  isError,
+  isLoading,  open, onOpenChange, title, description }: DeleteDialogProps) {
 
 
-  const [deleteService, { isLoading, isError, isSuccess }] = useDeleteServiceMutation()
-  const onConfirm = async (e: MouseEvent<HTMLButtonElement>) => {
-    try {
-      e.preventDefault()
-      e.stopPropagation()
 
-      if (id) {
-
-        const del = await deleteService({
-          id,
-          skip,
-          take,
-        })
-        if (del.data) onOpenChange(false)
-
-      }
-    } catch (error) {
-      console.log(error)
-      throw error
-    }
-  }
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       {
         isError ?
-          <AlertDialogContent className="bg-white">
+          <AlertDialogContent className="">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-red-600">
                 {title || "Something went wrong"}
@@ -68,13 +50,13 @@ export function DeleteDialog({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="cursor-pointer bg-gray-50 hover:bg-gray-100">
+              <AlertDialogCancel className="cursor-pointer ">
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction
                 disabled={isLoading}
-                onClick={onConfirm}
-                className="cursor-pointer bg-red-500 hover:bg-red-400 text-destructive-foreground"
+                onClick={() => onConfirm()}
+                className="cursor-pointer bg-red-500 hover:bg-red-400 text-white"
               >
                 {isLoading ? (
                   <Loader2 className="animate-spin w-4 h-4" />
@@ -85,18 +67,18 @@ export function DeleteDialog({
             </AlertDialogFooter>
           </AlertDialogContent>
 
-          : <AlertDialogContent className="bg-white">
+          : <AlertDialogContent className="">
 
             <AlertDialogHeader>
               <AlertDialogTitle>{title}</AlertDialogTitle>
               <AlertDialogDescription>{description}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="cursor-pointer bg-gray-50 hover:bg-gray-100">Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="cursor-pointer ">Cancel</AlertDialogCancel>
               <AlertDialogAction
                 disabled={isLoading}
                 onClick={onConfirm}
-                className=" cursor-pointer bg-red-500 hover:bg-red-400  text-destructive-foreground "
+                className=" cursor-pointer bg-red-500 hover:bg-red-400 text-white"
               >
                 {
                   isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Delete"

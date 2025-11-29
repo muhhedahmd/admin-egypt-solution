@@ -19,7 +19,7 @@ interface Service {
 export const servicesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getServices: builder.query<
-      { data: PaginatedResponse<ServiceWithImage> },
+       PaginatedResponse<ServiceWithImage> ,
       {
         skip: number;
         take: number;
@@ -60,9 +60,9 @@ export const servicesApi = baseApi.injectEndpoints({
       providesTags: ["Services"],
     }),
 
-    SearchServices: builder.query< { data: PaginatedResponse<ServiceWithImage> }, { search: string }>(      {
+    SearchServices: builder.query< { data: PaginatedResponse<ServiceWithImage> }, { q: string }>(      {
 
-      query: ({ search }) => `/services/search?q=${search}`,
+      query: ({ q }) => `/services/search?q=${q}`,
       
 
     }),
