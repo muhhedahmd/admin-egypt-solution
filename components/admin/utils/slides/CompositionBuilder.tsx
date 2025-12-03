@@ -19,8 +19,8 @@ import {
 } from "lucide-react"
 import React, { useState } from "react"
 import { Label } from "@/components/ui/label"
-import {  GripVertical, ArrowUpDown, X } from "lucide-react"
-import { ClientWithImages, ClientWithRelationsSlide, CompositionType, ProjectWithRelationsSlide, ServiceWithImage, slide, TeamMemberWithImage, TestimonialWithImage,  } from "@/types/schema"
+import {  GripVertical,  } from "lucide-react"
+import { ClientWithRelationsSlide, CompositionType, ProjectWithRelationsSlide, ServiceWithImage, slide, TeamMemberWithImage, TestimonialWithImage,  } from "@/types/schema"
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, UniqueIdentifier, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, rectSortingStrategy, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToParentElement } from "@dnd-kit/modifiers";

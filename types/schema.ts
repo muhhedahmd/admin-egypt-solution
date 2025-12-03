@@ -76,6 +76,23 @@ export enum BlogStatus {
   PUBLISHED = "PUBLISHED",
   ARCHIVED = "ARCHIVED",
 }
+export enum ContactCategory {
+  GENERAL = "GENERAL",
+  SUPPORT = "SUPPORT",
+  SALES = "SALES",
+  FEEDBACK = "FEEDBACK",
+  PARTNERSHIP = "PARTNERSHIP",
+  COMPLAINT = "COMPLAINT",
+  SERVICE_INQUIRY = "SERVICE_INQUIRY",
+  OTHER = "OTHER",
+}
+
+export enum ContactPriority {
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  URGENT = "URGENT",
+}
 
 // ============================================================================
 // USER MANAGEMENT TYPES
@@ -547,21 +564,33 @@ export interface TeamSlideShow {
 // CONTACT TYPES
 // ============================================================================
 
-export interface Contact {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  company?: string;
-  subject?: string;
-  message: string;
-  status: ContactStatus;
-  ipAddress?: string;
-  userAgent?: string;
-  respondedAt?: Date;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
+export type Contact = {
+    email: string;
+    name: string;
+    phone: string | null;
+    company: string | null;
+    subject: string;
+    message: string;
+    category: ContactCategory;
+    status: ContactStatus;
+    priority: ContactPriority;
+    budget: string | null;
+    timeline: string | null;
+    id: string;
+    serviceId: string | null;
+    ipAddress: string | null;
+    userAgent: string | null;
+    source: string | null;
+    referrer: string | null;
+    respondedAt: Date | null;
+    respondedBy: string | null;
+    notes: string | null;
+    response: string | null;
+    resolved: boolean;
+    readAt: Date | null;
+    viewCount: number;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface CreateContactDTO {

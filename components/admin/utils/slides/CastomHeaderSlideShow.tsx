@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { CompositionType } from "@/types/schema";
 
 // ==================== TYPES ====================
 // Update these based on your actual schema
@@ -12,17 +13,7 @@ type SlideshowType =
   | "TEAM" 
   | "CUSTOM";
 
-type CompositionType = 
-  | "SINGLE" 
-  | "PARALLAX" 
-  | "ZOOM" 
-  | "FADE" 
-  | "GRID" 
-  | "CAROUSEL" 
-  | "MARQUEE" 
-  | "STACKED" 
-  | "AUTO_GRID" 
-  | "STORY";
+
 
 interface SlideHeaderProps {
   title: string;

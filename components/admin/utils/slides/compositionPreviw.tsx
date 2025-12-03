@@ -656,7 +656,7 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
             ))}
           </div>
 
-          <div className="relative  rounded-3xl overflow-hidden">
+          <div className="relative  w-full  rounded-3xl overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentSlide}
@@ -666,7 +666,7 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
                 transition={{ duration: 0.3 }}
                 className=" inset-0 glass-card premium-shadow h-full gradient-border"
               >
-                <TypeToRender slide={slides[currentSlide]} story={true} />
+                <TypeToRender slide={slides[2]} story={true} />
               </motion.div>
             </AnimatePresence>
           </div>

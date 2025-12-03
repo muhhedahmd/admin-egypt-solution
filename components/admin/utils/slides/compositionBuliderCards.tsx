@@ -10,9 +10,9 @@ import { useRef } from "react"
 
 export const ServiceCard = ({ data, imaged = false }: { data: any, imaged?: boolean }) => {
 
-    console.log({
-        data
-    })
+    // console.log({
+    //     data
+    // })
 
     const DataToRender = data?.name ? data : data.data
 
@@ -269,7 +269,7 @@ export const ClientCard = ({ data }: { data: ClientWithRelationsSlide }) => {
 
 export const ProjectCard = ({ data, split, index = 0, imagePosition, story }: { story?: boolean, data: ProjectWithRelationsSlide, split?: boolean, index: number, imagePosition?: string }) => {
 
-    console.log({ data })
+    // console.log({ data })
 
     if (split) {
         return <ProjectCardParallax data={data} split={split} index={index} imagePosition={imagePosition} />
@@ -385,7 +385,6 @@ export const ProjectCardParallax = ({
     // const containerRef = useRef(null);
 
     const { scrollYProgress } = useScroll({
-        // target: ,
         offset: ["start end", "end start"]
     });
 
@@ -536,7 +535,7 @@ const ProjectCardStory = ({ data }: { data: ProjectWithRelationsSlide }) => {
     return (
         <article className="w-full  flex flex-col md:flex-row gap-6  mx-auto px-6 py-16">
             {/* Hero Image */}
-            <div className="aspect-3/1 w-full relative mb-3 overflow-hidden group">
+            <div className="aspect-3/1 h-[40vh] w-[60rem]   relative mb-3 overflow-hidden group">
 
                 {data.image && (
                     <div className="h-full w-full overflow-hidden bg-gray-100">
@@ -555,6 +554,7 @@ const ProjectCardStory = ({ data }: { data: ProjectWithRelationsSlide }) => {
 
             {/* Story Content */}
             <div className="space-y-8">
+
                 {/* Tag */}
 
 
@@ -587,9 +587,11 @@ const ProjectCardStory = ({ data }: { data: ProjectWithRelationsSlide }) => {
                 {/* Rich Description */}
                 {data.richDescription && (
                     <div className="prose prose-lg max-w-3xl text-muted-foreground">
-                        {data.richDescription.split('\n').map((paragraph, idx) => (
-                            paragraph.trim() && <p key={idx} className="mb-4">{paragraph}</p>
-                        ))}
+                        {data.richDescription.split('\n').map((paragraph, idx) => {
+
+                          return paragraph.trim() && <p key={idx} className="mb-4">{paragraph}</p>
+                        }
+                        )}
                     </div>
                 )}
 
