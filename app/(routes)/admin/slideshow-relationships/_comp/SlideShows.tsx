@@ -15,7 +15,7 @@ const RenderSlides = dynamic(
   { ssr: false }
 );
 
-export function slideShowsDemoPreview() {
+export function slideShowsDemoPreview({ onLoad }: { onLoad?: () => void }) {
   const [page, setPage] = useState(0);
   const [allSlides, setAllSlides] = useState<SlideShow[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -34,10 +34,15 @@ export function slideShowsDemoPreview() {
     take: ITEMS_PER_PAGE,
   });
 
+    useEffect(() => {
+    if (!isLoading && slideshowsData) {
+      onLoad?.()
+    }
+  }, [isLoading, slideshowsData])
+  
   // Update slides when new data arrives
   useEffect(() => {
     if (!slideshowsData?.data) return;
-
     setIsLoadingMore(false);
 
     const newSlides = slideshowsData.data.filter(
@@ -157,7 +162,7 @@ const SlideshowCard = ({
           backgroundColor: bgColor,
           color: textColor,
         }}
-        className="rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
+        className="rounded-lg   duration-200 overflow-hidden"
       >
         <SlideHeader
           compositionType={
@@ -174,59 +179,3 @@ const SlideshowCard = ({
     </motion.div>
   );
 };
-
-// {/* <Header />
-// <HeroSection />
-
-// <main className=" container mx-auto px-4 py-12">
-//   {/* Initial Loading State */}
-//   {isLoading && allSlides.length === 0 ? (
-//     <div className="space-y-8">
-//       {[...Array(3)].map((_, i) => (
-//         <div
-//           key={i}
-//           className=" rounded-lg shadow-sm overflow-hidden"
-//         >
-//           <div className="h-20  animate-pulse" />
-//           <div className="p-6 space-y-4">
-//             <div className="h-96 animate-pulse rounded" />
-//           </div>
-//         </div>
-//       ))}
-//     </div>
-//   ) : (
-//     <>
-//       {/* Slideshows Grid */}
-
-//       {/* Empty State */}
-//       {!isLoading && allSlides.length === 0 && (
-//         <div className="text-center py-16">
-//           <p className=" text-lg">No slideshows available</p>
-//         </div>
-//       )}
-
-//       {/* Load More Trigger */}
-//       {hasMore && (
-//         <div ref={observerTarget} className="h-10 flex items-center justify-center mt-12">
-//           {isLoadingMore && (
-//             <div className="flex items-center gap-2">
-//               <div className="w-2 h-2 bg-muted rounded-full animate-bounce" />
-//               <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
-//               <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />
-//             </div>
-//           )}
-//         </div>
-//       )}
-
-//       {/* End of List */}
-//       {!hasMore && allSlides.length > 0 && (
-//         <div className="text-center py-12">
-//           <p className="text-muted-foreground">You've reached the end</p>
-//         </div>
-//       )}
-//     </>
-//   )}
-// </main>
-
-// <ContactForm />
-// <Footer /> */}

@@ -34,6 +34,11 @@ export interface CompanyInfo {
   updatedAt: string;
 }
 
+export interface Achivement { 
+  stats : {label : string , value : number}[]
+
+}
+
 export const companyInfoApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Get company info
@@ -42,6 +47,9 @@ export const companyInfoApi = baseApi.injectEndpoints({
       providesTags: ["CompanyInfo"],
     }),
 
+    getAchivements: builder.query<successResponse<Achivement>, void>({
+      query: () => "/company-info/achivements",
+    }),
     // Create company info
     createCompanyInfo: builder.mutation<
       successResponse<CompanyInfo>,
@@ -67,6 +75,9 @@ export const companyInfoApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["CompanyInfo"],
     }),
+
+
+
   }),
 });
 
@@ -74,4 +85,5 @@ export const {
   useGetCompanyInfoQuery,
   useCreateCompanyInfoMutation,
   useUpdateCompanyInfoMutation,
+  useGetAchivementsQuery
 } = companyInfoApi;

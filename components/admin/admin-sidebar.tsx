@@ -15,6 +15,10 @@ import {
   Mail,
   Star,
   Settings,
+  DoorClosed,
+  DoorOpen,
+  RectangleEllipsisIcon,
+  RectangleHorizontalIcon,
 } from "lucide-react"
 import {
   Sidebar,
@@ -36,6 +40,22 @@ const menuItems = [
   {
     title: "Overview",
     items: [{ title: "Dashboard", icon: LayoutDashboard, href: "/admin" }],
+  },
+  {
+
+
+    title: "Sections",
+    items: [
+      {
+        title: "Header", icon: DoorOpen, DoorOpen: "/admin/sections/header",
+      },
+      {
+        title: "Footer", icon: DoorClosed, href: "/admin/sections/footer",
+      },
+      {
+        title: "Hero", icon: RectangleHorizontalIcon, href: "/admin/sections/hero",
+      }
+    ]
   },
   {
     title: "Content",
@@ -80,20 +100,20 @@ export function AdminSidebar() {
             <p className="text-xs text-muted-foreground">Software Company</p>
           </div>
         </div>
-        <SidebarTrigger />
       </SidebarHeader>
       <SidebarContent>
         {menuItems.map((group) => (
+
           <SidebarGroup key={group.title}>
             <SidebarGroupLabel>{group.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {group.items.map((item) => {
+                {group.items.map((item , i) => {
                   const isActive = pathname === item.href
                   return (
-                    <SidebarMenuItem key={item.href}>
+                    <SidebarMenuItem key={i}>
                       <SidebarMenuButton asChild isActive={isActive}>
-                        <Link href={item.href}>
+                        <Link href={item.href || ""}>
                           <item.icon className="h-4 w-4" />
                           <span>{item.title}</span>
                         </Link>
@@ -107,16 +127,16 @@ export function AdminSidebar() {
         ))}
       </SidebarContent>
       <SidebarFooter className="border-t p-4 flex ">
-     
+
         <Button variant="outline" size="sm" className="w-full bg-transparent">
           Sign Out
         </Button>
-     <div className="border-border w-full p-4 border-2 rounded-md flex  justify-between items-center">
-       <span className="text-muted-foreground flex items-center gap-2 text-md [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4">
-        Theme
-       </span>
-        <ThemeToggle/>
-     </div>
+        <div className="border-border w-full p-4 border-2 rounded-md flex  justify-between items-center">
+          <span className="text-muted-foreground flex items-center gap-2 text-md [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4">
+            Theme
+          </span>
+          <ThemeToggle />
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

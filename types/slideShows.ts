@@ -270,3 +270,44 @@ export interface AttachMany {
     customDesc?: string | undefined;
   }[];
 }
+
+
+export interface BulkSlideOperationsDTO {
+  slideShowId: string;
+  newSlides?: Array<{
+    id: string; // This is the resource ID (service/client/project/etc)
+    type: "service" | "client" | "project" | "testimonial" | "team";
+    isVisible: boolean;
+    customTitle?: string;
+    customDesc?: string;
+    order: number;
+  }>;
+  updateSlides?: Array<{
+    id: string; // This is the junction table ID
+    type: "service" | "client" | "project" | "testimonial" | "team";
+    isVisible?: boolean;
+    customTitle?: string;
+    customDesc?: string;
+  }>;
+  deletedSlides?: Array<{
+    id: string; // This is the junction table ID
+    type: "service" | "client" | "project" | "testimonial" | "team";
+  }>;
+  updatedOrder?: Array<{
+    id: string; // This is the junction table ID
+    type: "service" | "client" | "project" | "testimonial" | "team";
+    order: number;
+  }>;
+}
+
+
+export interface  BulkSlideOperation  {
+      slideShow: SlideShow,
+      summary: {
+        created: number,
+        updated: number,
+        deleted: number,
+        reordered: number,
+      },
+      details: BulkSlideOperationsDTO,
+  }

@@ -3,18 +3,17 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { SlideshowForm } from "@/components/admin/slideshow-form"
 import { useGetSlideShowByIdQuery, usePaginatedSlidesMutation } from "@/lib/store/api/slideShow-api"
-import { SlideShow } from "@/types/slideShows"
-import { useEffect } from "react"
 import { SlideshowFormSkeleton } from "@/components/admin/utils/slide-show-loader"
+import EditSlideShowForm from "./_comp/edit-slideshow-form"
 
 export default function EditSlideshowPage({ params }
     : { params: { id: string } }) {
 
+    const { data: slideshow, isLoading } = useGetSlideShowByIdQuery(params.id)
 
 
-    const { data: slideshow , isLoading } = useGetSlideShowByIdQuery(params.id)
+    if(!slideshow || isLoading) return <SlideshowFormSkeleton />
     return (
         <div className="p-6 space-y-6">
             <div className="flex items-center gap-4">
@@ -29,31 +28,12 @@ export default function EditSlideshowPage({ params }
                 </div>
             </div>
 
-            <RenderSlides isLoadingSlideShow={isLoading} slideshow={slideshow?.data} />
+           {slideshow.data
+           
+           && <EditSlideShowForm SlideShow={slideshow?.data} />
+           }
+
         </div>
     )
 }
 
-const RenderSlides = ({ slideshow  , isLoadingSlideShow}: { isLoadingSlideShow: boolean, slideshow: SlideShow | undefined }) => {
-
-    const [getSlides, {
-        isLoading, isError,
-        data : slides,
-        error
-
-    }] = usePaginatedSlidesMutation()
-
-    useEffect(() => {
-        if (slideshow && slideshow.id) {
-            getSlides({ id: slideshow.id, page: 1, perPage: 100, pagesPerType: {} })
-        }
-    }, [slideshow])
-    if (!slideshow) return null
-    if (isLoading || isLoadingSlideShow)  return <div> <SlideshowFormSkeleton /></div>
-    
-    return <>
-        <SlideshowForm initialData={slideshow} slidesForEdit={slides?.data} />
-
-    </>
-
-}

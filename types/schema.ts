@@ -36,6 +36,8 @@ export enum SlideshowType {
   HERO = "HERO",
   CUSTOM = "CUSTOM",
 }
+export const SLIDESHOW_TYPES_ARRAY = Object.values(SlideshowType);
+
 export enum CompositionType {
   SINGLE = "SINGLE",
   GRID = "GRID",
@@ -56,6 +58,7 @@ export enum CompositionType {
   MARQUEE = "MARQUEE",
 }
 
+export const COMPOSITION_TYPES_ARRAY = Object.values(CompositionType);
 export enum ProjectStatus {
   PLANNING = "PLANNING",
   IN_PROGRESS = "IN_PROGRESS",
@@ -680,13 +683,7 @@ export interface PaginationParams {
   take: number;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  skip: number;
-  take: number;
-  hasMore: boolean;
-}
+
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -818,3 +815,82 @@ export type slide =
   | ProjectWithRelationsSlide
   | TestimonialWithImageSlide
   | TeamMemberWithImageSlide;
+
+
+  // addtional
+
+  export type HeroVariant = "CENTERED" | "SPLIT" | "IMAGE_BACKGROUND" | "MINIMAL" | "VIDEO_BACKGROUND" | "FULL_SCREEN"
+export type ButtonVariant = "PRIMARY" | "SECONDARY" | "GHOST" | "OUTLINE" | "DANGER"
+export type TextAlign = "LEFT" | "CENTER" | "RIGHT"
+
+export interface HeroData {
+  id: string
+  name: string
+  title: string
+  subtitle?: string
+  description?: string
+  backgroundImageId?: string
+  backgroundColor?: string
+  backgroundVideo?: string
+  overlayColor?: string
+  overlayOpacity?: number
+  ctaText?: string
+  ctaUrl?: string
+  ctaVariant?: ButtonVariant
+  secondaryCtaText?: string
+  secondaryCtaUrl?: string
+  secondaryCtaVariant?: ButtonVariant
+  alignment?: TextAlign
+  variant?: HeroVariant
+  minHeight?: number
+  titleSize?: string
+  titleColor?: string
+  subtitleColor?: string
+  descriptionColor?: string
+  showScrollIndicator?: boolean
+  customCSS?: string
+  styleOverrides?: Record<string, any>
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface HeroPreviewProps {
+  hero: HeroData
+  onEdit: (hero: HeroData) => void
+  onDelete: (id: string) => void
+  onDuplicate: (hero: HeroData) => void
+}
+
+
+export interface IHero {
+  id: string;
+  name: string;
+  title: string;
+  subtitle?: string | null;
+  description?: string | null;
+  backgroundImageId?: string | null;
+  backgroundColor?: string | null;
+  backgroundVideo?: string | null;
+  overlayColor?: string | null;
+  overlayOpacity?: number | null;
+  ctaText?: string | null;
+  ctaUrl?: string | null;
+  ctaVariant?: ButtonVariant | null;
+  secondaryCtaText?: string | null;
+  secondaryCtaUrl?: string | null;
+  secondaryCtaVariant?: ButtonVariant | null;
+  alignment?: TextAlign | null;
+  variant: HeroVariant;
+  minHeight?: number | null;
+  titleSize?: string | null;
+  titleColor?: string | null;
+  subtitleColor?: string | null;
+  descriptionColor?: string | null;
+  showScrollIndicator: boolean;
+  customCSS?: string | null;
+  styleOverrides?: any;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}

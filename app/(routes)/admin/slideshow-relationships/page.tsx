@@ -1,89 +1,125 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import ContactForm from "./_comp/contact-form";
 import Footer from "./_comp/Footer";
 import Header from "./_comp/header";
-import HeroSection from "./_comp/Hero";
-
 import dynamic from "next/dynamic";
-
+import AchievementsSection from "./_comp/achivements";
+import { HeroSection } from "./_comp/Hero";
 
 const SlideShowsDemoPreview = dynamic(
   () =>
-    import(
-      "./_comp/SlideShows"
-    ).then((mod) => mod.slideShowsDemoPreview),
-  { ssr: false }
+    import("./_comp/SlideShows").then((mod) => mod.slideShowsDemoPreview),
+  {
+    ssr: false,
+    loading() {
+      return <div>Loading...</div>;
+    },
+  }
 );
 
-const Page = () => {
+// Loading Screen Component
+const LoadingScreen = () => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div>
+    <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center">
+      <div className="mb-8 animate-pulse">
+        <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center shadow-2xl">
+          <span className="text-primary-foreground font-bold text-4xl">E</span>
+        </div>
+      </div>
 
-      <Header />
-      <HeroSection />
+      <p className="text-muted-foreground mb-8">Please wait while we prepare your experience</p>
 
-      <main className=" container mx-auto px-4 py-12">
-        {/* Initial Loading State */}
-        <SlideShowsDemoPreview/>
+      <div className="w-200 h-2 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary transition-all duration-300 ease-out rounded-full"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
 
-      </main>
 
-      <ContactForm />
-      <Footer />
+      {/* <div className="flex gap-2 mt-8">
+        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+        <div className="w-3 h-3 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+      </div> */}
     </div>
+  );
+};
 
-  )
-}
+const Page = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadedComponents, setLoadedComponents] = useState({
+    header: false,
+    hero: false,
+    slideShows: false,
+  });
+
+  // Check if all components are loaded
+  useEffect(() => {
+    const allLoaded = Object.values(loadedComponents).every((loaded) => loaded);
+    
+    if (allLoaded) {
+      // Add a small delay for smooth transition
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loadedComponents]);
+
+  const handleComponentLoad = (component: keyof typeof loadedComponents) => {
+    setLoadedComponents((prev) => ({
+      ...prev,
+      [component]: true,
+    }));
+  };
+
+  return (
+    <>
+      {/* Loading Screen */}
+      {isLoading && <LoadingScreen />}
+
+      {/* Main Content */}
+      <div
+        className={`w-full transition-opacity duration-500 ${
+          isLoading ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <Header onLoad={() => handleComponentLoad("header")} />
+        <HeroSection onLoad={() => handleComponentLoad("hero")} />
+
+        <AchievementsSection/>
+
+
+
+        <main className="container mx-auto px-4 py-12">
+          <SlideShowsDemoPreview onLoad={() => handleComponentLoad("slideShows")} />
+        </main>
+
+        <ContactForm />
+        <Footer />
+      </div>
+    </>
+  );
+};
 
 export default Page;
-
-
-
-
-// {isLoading && allSlides.length === 0 ? (
-//           <div className="space-y-8">
-//             {[...Array(3)].map((_, i) => (
-//               <div
-//                 key={i}
-//                 className=" rounded-lg shadow-sm overflow-hidden"
-//               >
-//                 <div className="h-20  animate-pulse" />
-//                 <div className="p-6 space-y-4">
-//                   <div className="h-96 animate-pulse rounded" />
-//                 </div>
-//               </div>
-//             ))}
-//           </div>
-//         ) : (
-//           <>
-//             {/* Slideshows Grid */}
-
-//           </>
-// {/* Empty State */}
-// {!isLoading && allSlides.length === 0 && (
-//   <div className="text-center py-16">
-//     <p className=" text-lg">No slideshows available</p>
-//   </div>
-// )}
-
-// {/* Load More Trigger */}
-// {hasMore && (
-//   <div ref={observerTarget} className="h-10 flex items-center justify-center mt-12">
-//     {isLoadingMore && (
-//       <div className="flex items-center gap-2">
-//         <div className="w-2 h-2 bg-muted rounded-full animate-bounce" />
-//         <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
-//         <div className="w-2 h-2 bg-muted rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />
-//       </div>
-//     )}
-//   </div>
-// )}
-
-// {/* End of List */}
-// {!hasMore && allSlides.length > 0 && (
-//   <div className="text-center py-12">
-//     <p className="text-muted-foreground">You've reached the end</p>
-//   </div>
-// )}

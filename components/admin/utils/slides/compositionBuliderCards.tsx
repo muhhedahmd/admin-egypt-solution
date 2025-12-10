@@ -747,8 +747,9 @@ export const TestimonialCard = ({ data, minmal, }: { data: TestimonialWithImage,
 }
 
 
-export const TeamMemberCard = ({ data }: { data: TeamMemberWithImage }) => (
-    <motion.div
+export const TeamMemberCard = ({ data }: { data: TeamMemberWithImage }) => {
+    console.log({data})
+    return (<motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -847,3 +848,4 @@ export const TeamMemberCard = ({ data }: { data: TeamMemberWithImage }) => (
         </div>
     </motion.div>
 )
+}

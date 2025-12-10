@@ -13,6 +13,7 @@ import { useGetTeamMembersQuery } from "@/lib/store/api/team-api"
 import { useGetTestimonialsQuery } from "@/lib/store/api/testimonials-api"
 
 const SlideShowSelect = ({
+    disabledItems,
     setSelectedServices,
     selectedServices,
     selectedProjects,
@@ -24,7 +25,10 @@ const SlideShowSelect = ({
     setSelectedTeam,
     setSelectedTestimonial
 }: {
-
+    disabledItems?: {
+        id: string,
+        type: string
+    }[]
     setSelectedServices: React.Dispatch<React.SetStateAction<ServiceWithImage[]>>
     selectedServices: ServiceWithImage[]
     selectedProjects: ProjectWithRelations[]
@@ -37,7 +41,29 @@ const SlideShowSelect = ({
     selectedTestimonial: TestimonialWithImage[]
 
 }) => {
-    
+
+    const disabledItemsPerType  =  disabledItems?.reduce((acc, item) => {
+        if (item.type === "service") {
+            acc.services.push(item.id)
+        } else if (item.type === "project") {
+            acc.projects.push(item.id)
+        } else if (item.type === "client") {
+            acc.clients.push(item.id)
+        } else if (item.type === "team") {
+            acc.team.push(item.id)
+        } else if (item.type === "testimonial") {
+            acc.testimonials.push(item.id)
+        }
+        return acc
+        
+    } ,  {
+        services: [] as string[],
+        projects: [] as string[],
+        clients: [] as string[],
+        team: [] as string[],
+        testimonials: [] as string[],
+    }) 
+
 
 
     return (
@@ -54,6 +80,7 @@ const SlideShowSelect = ({
                     <TabsContent value="SERVICES">
 
                         <TabContentService
+                            disabledItems={disabledItemsPerType?.services}
                             selectedItems={selectedServices}
                             setSelectedItems={setSelectedServices}
                             tabType="service"
@@ -70,6 +97,8 @@ const SlideShowSelect = ({
                     </TabsContent>
                     <TabsContent value="PROJECTS">
                         <TabContentProject
+                            disabledItems={disabledItemsPerType?.projects}
+
                             selectedItems={selectedProjects}
                             setSelectedItems={setSelectedProjects}
                             tabType="project"
@@ -86,6 +115,7 @@ const SlideShowSelect = ({
                     </TabsContent>
                     <TabsContent value="CLIENTS">
                         <TabContentClients
+                            disabledItems={disabledItemsPerType?.clients}
                             selectedItems={selectedClients}
                             setSelectedItems={setSelectedclients}
                             tabType="client"
@@ -101,6 +131,7 @@ const SlideShowSelect = ({
                     </TabsContent>
                     <TabsContent value="TEAM">
                         <TabContentTeamMembers
+                            disabledItems={ disabledItemsPerType?.team}
                             selectedItems={selectedTeam}
                             setSelectedItems={setSelectedTeam}
                             tabType="team"
@@ -117,6 +148,7 @@ const SlideShowSelect = ({
                     <TabsContent value="TESTIMONIALS">
 
                         <TabContentTestimonial
+                            disabledItems={disabledItemsPerType?.testimonials}
                             selectedItems={selectedTestimonial}
                             setSelectedItems={setSelectedTestimonial}
                             tabType="testimonial"

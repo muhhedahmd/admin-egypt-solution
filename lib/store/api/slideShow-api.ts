@@ -1,27 +1,45 @@
 import type {
   AttachMany as AttachManyDTO,
   AttachmentTypes,
+  BulkSlideOperation,
   deattachManyDTO as DetachManyDTO,
   SlideShow,
+  SlideshowType,
 } from "@/types/slideShows";
 import { baseApi } from "./base-api";
 import { PaginatedResponse, successResponse } from "@/types/services";
 import { CreateAndAttachMany, Image } from "@/types/schema";
 
+export type minimalSlide = {
+  id: string;
+  order: number;
+  slug: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  type: SlideshowType;
+  title: string;
+};
 export interface Slide {
   id: string;
   type: "services" | "projects" | "clients" | "testimonials" | "team";
   order: number;
   isVisible: boolean;
+  customTitle ?: string
+customDescription ?: string
   data: {
+
     name?: string;
     title?: string;
     clientName?: string;
     image?: Image;
     avatar?: Image;
+    logo?: Image;
     [key: string]: any;
   };
 }
+
 
 export interface PaginationInfo {
   totalPages: number;
@@ -70,7 +88,10 @@ export const slideshowApi = baseApi.injectEndpoints({
       providesTags: ["SlideShows"],
     }),
 
-    getAllSlideShowsMinmal: builder.query<successResponse<Partial<SlideShow>[]>, void>({
+    getAllSlideShowsMinmal: builder.query<
+      successResponse<minimalSlide[]>,
+      void
+    >({
       query: () => `/slide-show/all-minimal`,
     }),
     getSlideShowById: builder.query<successResponse<SlideShow>, string>({
@@ -202,6 +223,21 @@ export const slideshowApi = baseApi.injectEndpoints({
       ],
     }),
 
+    updateAttachMany : builder.mutation<
+      successResponse<SlideShow>,
+      { id: string; body: any }
+    >({
+      query: ({ id, body }) => ({
+        url: `/slide-show/attach-many/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "SlideShows", id },
+        "SlideShows",
+      ],
+    }),
+
     deleteSlideShow: builder.mutation<
       successResponse<SlideShow>,
       {
@@ -255,6 +291,7 @@ export const slideshowApi = baseApi.injectEndpoints({
         perPage: number;
       }
     >({
+      
       query: ({ id, page, pagesPerType, perPage }) => ({
         url: `/slide-show/get-paginated-slides/${id}`,
         method: "POST",
@@ -278,6 +315,18 @@ export const slideshowApi = baseApi.injectEndpoints({
         "SlideShows",
       ],
     }),
+    bulkOperations: builder.mutation<successResponse<BulkSlideOperation>, { id :string , data : any}>({
+      query: ({ id , data}) => ({
+        url: `/slide-show/bulk-operations/${id}`,
+        method: "POST",
+        body : data,
+      
+      }),
+      // invalidatesTags: (result, error, { slideShowId }) => [
+      //   { type: "SlideShows", id: slideShowId },
+      //   "SlideShows",
+      // ],
+    }),
 
     detachMany: builder.mutation<successResponse<SlideShow>, DetachManyDTO>({
       query: (body) => ({
@@ -290,7 +339,6 @@ export const slideshowApi = baseApi.injectEndpoints({
         "SlideShows",
       ],
     }),
-
     CreateSlideShowAndAttachMany: builder.mutation<
       successResponse<{ slideShow: SlideShow; attacheds: AttachmentTypes[] }>,
       CreateAndAttachMany
@@ -324,12 +372,52 @@ export const slideshowApi = baseApi.injectEndpoints({
         }
       },
     }),
+
+    ReorderBulk: builder.mutation<
+      successResponse<{ id: string; order: number }[]>,
+      { id: string; order: number }[]
+    >({
+      query: (data) => ({
+        url: "/slide-show/reorder-bulk",
+        method: "PUT",
+        body: data,
+      }),
+      onQueryStarted: async (arg, { dispatch, queryFulfilled }) => {
+        const result = (await queryFulfilled).data;
+        const patchResult = dispatch(
+          slideshowApi.util.updateQueryData(
+            "getAllSlideShowsMinmal",
+            undefined,
+            (draft) => {
+              draft.data = draft.data.map((s) => {
+                const findInComing = result.data.find((r) => r.id === s.id);
+                if (findInComing?.order) {
+                  return {
+                    ...s,
+                    order: findInComing.order,
+                  };
+                }
+                return s;
+              });
+            }
+          )
+        );
+        try {
+          await queryFulfilled;
+        } catch (error) {
+          patchResult.undo();
+          console.error("Reorder bulk failed:", error);
+        }
+      },
+    }),
   }),
+ 
+
 });
 
 export const {
   usePaginatedSlidesMutation,
- useGetAllSlideShowsMinmalQuery,
+  useGetAllSlideShowsMinmalQuery,
   useCreateSlideShowAndAttachManyMutation,
   useGetSlideShowsQuery,
   useGetSlideShowByIdQuery,
@@ -343,4 +431,7 @@ export const {
   useDetachManyMutation,
   useLazyGetSlideShowsQuery,
   useLazyGetSlideShowsByTypeQuery,
+  useReorderBulkMutation,
+  useUpdateAttachManyMutation,
+  useBulkOperationsMutation
 } = slideshowApi;

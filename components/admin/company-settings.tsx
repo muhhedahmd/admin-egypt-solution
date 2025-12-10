@@ -17,7 +17,7 @@ import {
   Github,
   Youtube,
   Edit,
-  Image as ImageIcon,
+  
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -73,7 +73,7 @@ export default function CompanyInfoPage() {
           <h2 className="text-3xl font-bold tracking-tight">Company Information</h2>
           <p className="text-muted-foreground">View your company details and settings</p>
         </div>
-        <Button onClick={() => router.push(`admin/settings/${companyInfo.id}/edit`)}>
+        <Button onClick={() => router.push(`/admin/settings/${companyInfo.id}/edit`)}>
           <Edit className="mr-2 h-4 w-4" />
           Edit Information
         </Button>

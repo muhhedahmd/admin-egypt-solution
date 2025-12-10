@@ -13,10 +13,11 @@ interface Props {
   className: string
   alt: string
   quality: number
-  blurhash?: string
+  blurhash?: string ,
+  style ?: React.CSSProperties
 }
 
-const BlurredImage =  memo<Props>(({ imageUrl, width, height, className, alt, quality, blurhash }: Props) => {
+const BlurredImage =  memo<Props>(({ style,  imageUrl, width, height, className, alt, quality, blurhash }: Props) => {
   const [isError, setIsError] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -34,7 +35,7 @@ const BlurredImage =  memo<Props>(({ imageUrl, width, height, className, alt, qu
   }
 
   return (
-    <div className={`relative overflow-hidden  ${className}`}>
+    <div style={style} className={`relative overflow-hidden  ${className}`}>
       {isLoading && blurhash && (
         <div className="absolute inset-0 w-full h-full">
           <BlurhashCanvas hash={blurhash} className="w-full h-full" />

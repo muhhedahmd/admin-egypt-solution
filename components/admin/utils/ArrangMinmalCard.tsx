@@ -3,8 +3,71 @@ import { Badge } from '@/components/ui/badge';
 import { GripVertical } from 'lucide-react';
 import Image from 'next/image';
 
+export interface Media {
+  url: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  quality?: number;
+}
+
+export interface BaseSlide {
+  id?: string;
+  type: "service" | "client" | "project" | "testimonial" | "teamMember" | string;
+  name?: string;
+}
+
+export interface ServiceData extends BaseSlide {
+  type: "service";
+  name: string;
+  description?: string;
+  image?: Media;
+  tag?: "existing" | "new" | string;
+}
+
+export interface ClientData extends BaseSlide {
+  type: "client";
+  name: string;
+  logo?: Media;
+  industry?: string;
+}
+
+export interface ProjectData extends BaseSlide {
+  type: "project";
+  title: string;
+  clientName?: string;
+  image?: Media;
+}
+
+export interface TestimonialData extends BaseSlide {
+  type: "testimonial";
+  clientName?: string;
+  content: string;
+  rating?: number;
+  avatar?: Media;
+}
+
+export interface TeamMemberData extends BaseSlide {
+  type: "team";
+  name: string;
+  position?: string;
+  image?: Media;
+}
+
+/* Union of all possible slide payloads */
+export type slideArrangeMinmal = ServiceData | ClientData | ProjectData | TestimonialData | TeamMemberData;
+
+/* ---------------------------
+   Component Prop Types
+   --------------------------- */
+interface CardProps<T> {
+  data: T;
+  index: number;
+}
+
+
 // Minimal Square Service Card
-const ServiceSquareCard = ({ data, index }: { data: any; index: number }) => (
+const ServiceSquareCard = ({ data, index }: { data: ServiceData; index: number }) => (
   <div className=" border-1 border-muted relative aspect-square w-full bg-gradient-to-br rounded-lg border-2 border-border overflow-hidden group hover:border-primary/50 transition-all">
     <div className="absolute top-2 left-[75%] z-10 w-7 h-7 bg-primary text-primary-foreground rounded-full font-bold text-xs flex items-center justify-center shadow-md">
       {index + 1}
@@ -51,14 +114,15 @@ const ClientSquareCard = ({ data, index }: { data: any; index: number }) => (
     
     <div className="absolute inset-0 p-3 flex flex-col items-center justify-center">
       {data.logo && (
-        <div className="w-full h-16 flex items-center justify-center mb-2 bg-white/50 dark:bg-black/20 rounded-md p-2">
+        <div className="w-full h-[5rem] flex items-center justify-center mb-2 bg-white/50 dark:bg-black/20 rounded-md p-2">
           <Image
-            src={data.logo.url}
-            alt={data.logo.alt || data.name}
-            className="max-h-12 max-w-full object-contain"
-            height={data.logo.height }
-            width={data.logo.width }
-            quality={30}
+            src={data.image.url}
+            alt={data.image.alt || data.name}
+            className="max-h-full max-w-full w-[10rem] h-[10rem] object-contain"
+            height={20 }
+            width={20 }
+            sizes='sm'
+            quality={10}
           />
         </div>
       )}
@@ -76,7 +140,7 @@ const ClientSquareCard = ({ data, index }: { data: any; index: number }) => (
 );
 
 // Minimal Square Project Card
-const ProjectSquareCard = ({ data, index }: { data: any; index: number }) => (
+const ProjectSquareCard = ({ data, index }: { data: ProjectData; index: number }) => (
   <div className="relative aspect-square w-full bg-card rounded-lg border-2 border-border overflow-hidden group hover:border-primary/50 transition-all">
     <div className="absolute top-2 left-[75%] z-10 w-7 h-7 bg-primary text-primary-foreground rounded-full font-bold text-xs flex items-center justify-center shadow-md">
       {index + 1}
@@ -110,7 +174,8 @@ const ProjectSquareCard = ({ data, index }: { data: any; index: number }) => (
 );
 
 // Minimal Square Testimonial Card
-const TestimonialSquareCard = ({ data, index }: { data: any; index: number }) => (
+const TestimonialSquareCard = ({ data, index }: { data: TestimonialData; index: number }) => (
+
   <div className="relative aspect-square w-full bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900 rounded-lg border-2 border-border overflow-hidden group hover:border-primary/50 transition-all">
     <div className="absolute top-2 left-[75%] z-10 w-7 h-7 bg-primary text-primary-foreground rounded-full font-bold text-xs flex items-center justify-center shadow-md">
       {index + 1}
@@ -132,7 +197,7 @@ const TestimonialSquareCard = ({ data, index }: { data: any; index: number }) =>
           {data.avatar && (
             <Image
               src={data.avatar.url}
-              alt={data.avatar.alt || data.clientName}
+              alt={data.avatar.alt || data.clientName || ""}
               className="w-6 h-6 rounded-full object-cover border border-primary/20"
               height={data.avatar.height || 50}
               width={data.avatar.width || 50}
@@ -153,7 +218,7 @@ const TestimonialSquareCard = ({ data, index }: { data: any; index: number }) =>
 );
 
 // Minimal Square Team Member Card
-const TeamMemberSquareCard = ({ data, index }: { data: any; index: number }) => (
+const TeamMemberSquareCard = ({ data, index }: { data: TeamMemberData; index: number }) => (
   <div className="relative aspect-square w-full bg-card rounded-lg border-2 border-border overflow-hidden group hover:border-primary/50 transition-all">
     <div className="absolute top-2 left-[75%] z-10 w-7 h-7 bg-primary text-primary-foreground rounded-full font-bold text-xs flex items-center justify-center shadow-md">
       {index + 1}
@@ -184,14 +249,26 @@ const TeamMemberSquareCard = ({ data, index }: { data: any; index: number }) => 
   </div>
 );
 
-// Type Router for Square Cards
-const TypeToSquareRender = ({ slide, index }: { slide: any; index: number }) => {
-  if (slide.type === "service") return <ServiceSquareCard data={slide} index={index || 0} />;
-  if (slide.type === "client") return <ClientSquareCard data={slide} index={index || 0} />;
-  if (slide.type === "project") return <ProjectSquareCard data={slide} index={index || 0} />;
-  if (slide.type === "testimonial") return <TestimonialSquareCard data={slide} index={index || 0} />;
-  if (slide.type === "teamMember") return <TeamMemberSquareCard data={slide} index={index || 0} />;
-  return <div className="aspect-square w-full bg-muted rounded-lg" />;
+interface TypeToSquareRenderProps {
+  slide: slideArrangeMinmal;
+  index: number;
+}
+
+const TypeToSquareRender: React.FC<TypeToSquareRenderProps> = ({ slide, index }) => {
+  switch (slide.type) {
+    case "service":
+      return <ServiceSquareCard data={slide as ServiceData} index={index} />;
+    case "client":
+      return <ClientSquareCard data={slide as ClientData} index={index} />;
+    case "project":
+      return <ProjectSquareCard data={slide as ProjectData} index={index} />;
+    case "testimonial":
+      return <TestimonialSquareCard data={slide as TestimonialData} index={index} />;
+    case "team":
+      return <TeamMemberSquareCard data={slide as TeamMemberData} index={index} />;
+    default:
+      return <div className="aspect-square w-full bg-muted rounded-lg" />;
+  }
 };
 
 export default TypeToSquareRender;

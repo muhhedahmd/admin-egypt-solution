@@ -12,7 +12,7 @@ import { ServiceWithImage, ProjectWithRelations, ClientWithImages, TeamMemberWit
 import { pagination } from "@/types/services"
 import { Image as ImageDBType } from "@/types/schema"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
-import { LucideGlasses, AlertCircle, X } from "lucide-react"
+import { LucideGlasses, AlertCircle, X, Star } from "lucide-react"
 import Image from "next/image"
 import React, { type ChangeEvent, useEffect, useRef, useState } from "react"
 import { useGetClientsQuery, useLazySearchClientsQuery } from "@/lib/store/api/client-api"
@@ -22,7 +22,7 @@ import { useGetTestimonialsQuery } from "@/lib/store/api/testimonials-api"
 const TAKE = 10
 
 // Generic type for items that can be selected
-type SelectableItem = ServiceWithImage | ProjectWithRelations | ClientWithImages  | TestimonialWithImage | TeamMemberWithImage  | TestimonialWithImage
+type SelectableItem = ServiceWithImage | ProjectWithRelations | ClientWithImages | TestimonialWithImage | TeamMemberWithImage | TestimonialWithImage
 
 // Configuration interface for different item types
 interface ItemConfig<T extends SelectableItem> {
@@ -31,7 +31,8 @@ interface ItemConfig<T extends SelectableItem> {
     getDescription: (item: T) => string
     getImageUrl: (item: T) => string | undefined
     getImageAlt: (item: T) => string
-    getBlurHash: (item: T) => string
+    getBlurHash: (item: T) => string,
+    getRatting?: (item: T) => number
     getImageDimensions: (item: T) => { width: number; height: number }
     getIcon?: (item: T) => string | undefined
     getLogo?: (item: T) => ImageDBType | null
@@ -90,7 +91,7 @@ const teamMemberConfig: ItemConfig<TeamMemberWithImage> = {
     getDescription: (item) => item?.bio || "",
     getImageUrl: (item) => item?.image?.url,
     getImageAlt: (item) => item?.image?.alt || `${item.name}-alt`,
-    getPosition : (item) => item?.position,
+    getPosition: (item) => item?.position,
     getBlurHash: (item) => item.image?.blurHash || "",
     getImageDimensions: (item) => ({
         width: item.image?.width || 400,
@@ -103,8 +104,9 @@ const testimonialConfig: ItemConfig<TestimonialWithImage> = {
     getTitle: (item) => item.clientName || "name",
     getDescription: (item) => item?.content || "",
     getImageUrl: (item) => item?.avatar?.url,
+    getRatting: (item) => item?.rating,
     getImageAlt: (item) => item?.avatar?.alt || `${item.clientName}-alt`,
-    getPosition : (item) => item?.clientPosition || "",
+    getPosition: (item) => item?.clientPosition || "",
     getBlurHash: (item) => item.avatar?.blurHash || "",
     getImageDimensions: (item) => ({
         width: item.avatar?.width || 400,
@@ -114,6 +116,7 @@ const testimonialConfig: ItemConfig<TestimonialWithImage> = {
 }
 
 interface TabContentProps<T extends SelectableItem> {
+    disabledItems ?: string[] 
     selectedItems: T[]
     setSelectedItems: React.Dispatch<React.SetStateAction<T[]>>
     tabType: string
@@ -121,7 +124,7 @@ interface TabContentProps<T extends SelectableItem> {
     placeholder?: string
     extraInputs?: boolean
     config: ItemConfig<T>
-    useQuery: typeof useGetServicesQuery | typeof useGetProjectsQuery  | typeof useGetClientsQuery | typeof useGetTeamMembersQuery | typeof useGetTestimonialsQuery
+    useQuery: typeof useGetServicesQuery | typeof useGetProjectsQuery | typeof useGetClientsQuery | typeof useGetTeamMembersQuery | typeof useGetTestimonialsQuery
     useLazySearch: typeof useLazySearchServicesQuery | typeof useLazySearchProjectsQuery | typeof useLazySearchClientsQuery
     searchParamKey: string // 'q' for projects, 'search' for services
     dataExtractor: (data: any) => T[] // Extract data from API response
@@ -129,6 +132,7 @@ interface TabContentProps<T extends SelectableItem> {
 }
 
 const TabContent = <T extends SelectableItem>({
+    disabledItems, 
     selectedItems,
     setSelectedItems,
     tabType,
@@ -146,6 +150,8 @@ const TabContent = <T extends SelectableItem>({
     const { data, isLoading, isError, refetch } = useQuery({
         skip,
         take: TAKE,
+    } , {
+
     })
 
     const [fetchedItems, setFetchedItems] = useState<T[]>([])
@@ -260,7 +266,7 @@ const TabContent = <T extends SelectableItem>({
                 setSkip={setSkip}
                 refetch={refetch}
                 setSelectedItems={setSelectedItems}
-                data={displayData}
+                data={disabledItems ?  displayData?.filter((item) => !disabledItems.includes(config.getId(item))) : displayData}
                 pagination={paginationExtractor(data)}
                 isLoading={isLoadingData}
                 hasError={hasError}
@@ -354,7 +360,7 @@ const SelectContentTabSlideShow = <T extends SelectableItem>({
                 className="flex min-h-50 justify-stretch items-start gap-4 flex-col max-h-100 overflow-y-scroll"
             >
                 {data.map((item) => {
-                    
+
                     const isSelected = selectedIds.includes(config.getId(item))
                     const selectedItem = selectedItems?.find(
                         (s) => config.getId(s) === config.getId(item)
@@ -366,8 +372,8 @@ const SelectContentTabSlideShow = <T extends SelectableItem>({
                             key={config.getId(item)}
                             onClick={() => onSelect(item)}
                             className={`border p-3 shadow-sm rounded-md flex items-start w-full justify-start gap-3 cursor-pointer transition-all ${isSelected
-                                    ? "border-primary bg-primary/5"
-                                    : "border-gray-200 hover:border-primary/50"
+                                ? "border-primary bg-primary/5"
+                                : "border-gray-200 hover:border-primary/50"
                                 }`}
                         >
                             <div className="w-24 h-24 flex-shrink-0">
@@ -386,89 +392,111 @@ const SelectContentTabSlideShow = <T extends SelectableItem>({
                             <div className="flex-1">
                                 <div className="flex items-center justify-start">
                                     {config.getIcon && config.getIcon(item) && (
-                                        <Image
-                                            width={12}
-                                            height={12}
-                                            className="bg-gray-50 mr-2 shadow rounded-full w-4 h-4 overflow-hidden"
-                                            src={config.getIcon(item) || "/placeholder.svg"}
-                                            alt={config.getTitle(item)}
-                                        />
+                                        <span>{config.getIcon(item)}</span>
                                     )}
-                                    <p className="font-bold text-lg">{config.getTitle(item)} 
-                                        {config?.getPosition ? <span className="font-medium text-muted-foreground"> 
+                                    <p className="font-bold text-lg">{config.getTitle(item)}
+                                        {config?.getPosition ? <span className="font-medium text-muted-foreground">
                                             {` - ${config.getPosition(item)}`}
                                         </span> : ""}
                                     </p>
                                 </div>
-                                {extraInputs && isSelected && selectedItem ? (
-                                    <div
-                                        onClick={(e) => {
-                                            e.preventDefault()
-                                            e.stopPropagation()
-                                        }}
-                                    >
+
+
+                                <div className="flex flex-col items-start justify-start">
+
+                                    {isSelected && selectedItem ? (
+
+                                        <div
+                                            onClick={(e) => {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                            }}
+                                        >
+                                            <p className="text-sm text-muted-foreground">
+                                                {config.getDescription(item)}
+                                            </p>
+                                            <div
+                                                className=" flex justify-start items-center bg-muted-foreground/10 w-fit p-1 rounded-md shadow gap-2 mt-2"
+                                            >
+
+                                                <label className="text-xs font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                    Visible
+                                                </label>
+                                                <Switch
+                                                    className=""
+                                                    color="#f5f5"
+                                                    checked={(selectedItem as any).isVisible}
+                                                    onCheckedChange={(checked) => {
+                                                        setSelectedItems((prev) =>
+                                                            prev.map((s) =>
+                                                                config.getId(s) === config.getId(item)
+                                                                    ? ({ ...s, isVisible: checked } as T)
+                                                                    : s
+                                                            )
+                                                        )
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
                                         <p className="text-sm text-muted-foreground">
                                             {config.getDescription(item)}
                                         </p>
-                                        <Switch
-                                            className="mt-2"
-                                            checked={(selectedItem as any).isVisible}
-                                            onCheckedChange={(checked) => {
+                                    )}
+                                </div>
+
+                                {extraInputs && isSelected && selectedItem && (
+                                    <div
+                                        className="flex w-1/2 flex-col items-center justify-start"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            e.preventDefault()
+                                        }}
+                                    >
+                                        <Input
+                                            placeholder="Custom title (optional)"
+                                            value={(selectedItem as any).customTitle ?? ""}
+                                            onChange={(e) => {
                                                 setSelectedItems((prev) =>
                                                     prev.map((s) =>
                                                         config.getId(s) === config.getId(item)
-                                                            ? ({ ...s, isVisible: checked } as T)
+                                                            ? ({ ...s, customTitle: e.target.value } as T)
                                                             : s
                                                     )
                                                 )
                                             }}
+                                            className="bg-white border p-2 rounded mt-2"
+                                        />
+                                        <Textarea
+                                            placeholder="Custom Description (optional)"
+                                            value={(selectedItem as any).customDesc ?? ""}
+                                            onChange={(e) =>
+                                                setSelectedItems((prev) =>
+                                                    prev.map((s) =>
+                                                        config.getId(s) === config.getId(item)
+                                                            ? ({ ...s, customDesc: e.target.value } as T)
+                                                            : s
+                                                    )
+                                                )
+                                            }
+                                            className="bg-white border p-2 rounded mt-2"
                                         />
                                     </div>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground">
-                                        {config.getDescription(item)}
-                                    </p>
                                 )}
+
+                                {
+                                    config.getRatting && config.getRatting(item) && (
+                                        <div className="flex items-center justify-start gap-2">
+                                           { Array.from({length: config.getRatting(item)}).map((_, idx) => (
+                                               <Star key={idx} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                           ))}  <span className="text-xs text-muted-foreground">
+                                            {config.getRatting(item)}/5
+                                            </span>
+                                        </div>
+                                    )
+                                }
                             </div>
 
-                            {extraInputs && isSelected && selectedItem && (
-                                <div
-                                    className="flex w-1/2 flex-col items-center justify-start"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        e.preventDefault()
-                                    }}
-                                >
-                                    <Input
-                                        placeholder="Custom title (optional)"
-                                        value={(selectedItem as any).customTitle ?? ""}
-                                        onChange={(e) => {
-                                            setSelectedItems((prev) =>
-                                                prev.map((s) =>
-                                                    config.getId(s) === config.getId(item)
-                                                        ? ({ ...s, customTitle: e.target.value } as T)
-                                                        : s
-                                                )
-                                            )
-                                        }}
-                                        className="bg-white border p-2 rounded mt-2"
-                                    />
-                                    <Textarea
-                                        placeholder="Custom Description (optional)"
-                                        value={(selectedItem as any).customDesc ?? ""}
-                                        onChange={(e) =>
-                                            setSelectedItems((prev) =>
-                                                prev.map((s) =>
-                                                    config.getId(s) === config.getId(item)
-                                                        ? ({ ...s, customDesc: e.target.value } as T)
-                                                        : s
-                                                )
-                                            )
-                                        }
-                                        className="bg-white border p-2 rounded mt-2"
-                                    />
-                                </div>
-                            )}
                         </div>
                     )
                 })}

@@ -30,7 +30,7 @@ export const RenderSlides = ({
   }, [id, triggerGetSlides]);
 
   if (slidesLoading) {
-    return <div className="h-96 bg-gray-200 rounded-lg animate-pulse" />;
+    return <div className="h-96 rounded-lg animate-pulse" />;
   }
 
   if (!slidesData?.data.slides || slidesData.data.slides.length === 0) {

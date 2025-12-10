@@ -6,34 +6,59 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
-import { Clock,  Pause, Play, Trash2, GripVertical, ArrowUpDown } from "lucide-react"
-import { DndContext,  closestCorners } from "@dnd-kit/core"
-import { SortableContext, useSortable, rectSortingStrategy} from "@dnd-kit/sortable"
+import { Trash2, GripVertical, ArrowUpDown, CloudFog } from "lucide-react"
+import { DndContext, closestCorners } from "@dnd-kit/core"
+import { SortableContext, useSortable, rectSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from '@dnd-kit/utilities'
 import { SlideShow } from "@/types/slideShows"
 import { restrictToParentElement } from "@dnd-kit/modifiers"
 import { useState } from "react"
+import { toast } from "sonner"
+import { useReorderBulkMutation } from "@/lib/store/api/slideShow-api"
 
 
-export  const SlideshowReorderDialog = ({ allSlideshows, onDragEnd, sensors } : { 
-
-  allSlideshows:  Partial<SlideShow>[] | undefined, 
-  onDragEnd: any, 
+export const SlideshowReorderDialog = ({ allSlideshows, onDragEnd, sensors, orderChanges }: {
+  orderChanges?: { id: string, order: number }[]
+  allSlideshows: Partial<SlideShow>[] | undefined,
+  onDragEnd: any,
   sensors: any
 }) => {
-
-  
   const [dialogOpen, setDialogOpen] = useState(false)
-  
-  if(!allSlideshows) return null
+  const [Reorder, {
+    isLoading,
+    error,
+
+  }] = useReorderBulkMutation()
+
+  const handleSave = async () => {
+    try {
+      if (!orderChanges?.length) {
+        toast.error("No changes made")
+        return;
+      }
+      console.log(orderChanges)
+
+      const res = await Reorder(orderChanges).unwrap()
+      if (res.data) {
+        toast.success("Slideshows reordered successfully")
+        console.log(res.data)
+      }
+
+    } catch (error) {
+      console.log(error)
+      toast.error("Failed to reorder slideshows")
+    }
+  }
+
+  if (!allSlideshows) return null
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={dialogOpen || isLoading} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-       <Button size={"sm"} className="w-fit min-w-fit cursor-pointer" >
-        <GripVertical className="w-5 h-5" /> Arrange
-       </Button>
+        <Button size={"sm"} className="w-fit min-w-fit cursor-pointer" >
+          <GripVertical className="w-5 h-5" /> Arrange
+        </Button>
       </DialogTrigger>
-      
+
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
 
         <DialogHeader>
@@ -42,45 +67,58 @@ export  const SlideshowReorderDialog = ({ allSlideshows, onDragEnd, sensors } : 
             Reorder Slideshows
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="flex-1 overflow-y-auto pr-2">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragEnd={onDragEnd}
-            modifiers={[ restrictToParentElement ]}
 
-          >
-            <SortableContext
-              items={allSlideshows.map((s) => s.id)}
-              strategy={rectSortingStrategy}
+        <div className="flex-1 overflow-y-auto pr-2">
+          {allSlideshows.length &&
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragEnd={onDragEnd}
+              modifiers={[restrictToParentElement]}
+
             >
-              <div className="space-y-2">
-                {allSlideshows.map((item) => (
-                  <SortableItem key={item.id} slideshow={item} />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
+              <SortableContext
+                items={allSlideshows.map((s) => s.id!)}
+                strategy={rectSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {allSlideshows.map((item) => (
+                    <SortableItem key={item.id} slideshow={{ ...item, id: item.id! }} />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          }
         </div>
-        
+
         <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => setDialogOpen(false)}>
+          <Button disabled={isLoading} variant="outline" onClick={() => setDialogOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={() => setDialogOpen(false)}>
-            Save Order
+          <Button disabled={isLoading} onClick={handleSave}>
+
+            {
+              isLoading ?
+                <CloudFog className="w-5 h-5 animate-spin" /> :
+                (
+                  <div className="flex items-center gap-2"> 
+
+                    <ArrowUpDown className="w-5 h-5" />
+                    save
+                  </div>
+                )
+            }
           </Button>
         </div>
       </DialogContent>
-    
+
     </Dialog>
   )
 }
 
-const SortableItem = ({ slideshow } : { 
+const SortableItem = ({ slideshow }: {
 
-    slideshow: SlideShow
+  slideshow: any
 }) => {
   const {
     attributes,
@@ -121,12 +159,12 @@ const SortableItem = ({ slideshow } : {
               {slideshow.title}
             </h4>
           </div>
-          
+
           <div className="flex flex-wrap gap-2 mt-2">
             <Badge variant="secondary" className="text-xs">
               {slideshow.type}
             </Badge>
-          
+
           </div>
         </div>
 

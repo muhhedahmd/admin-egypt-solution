@@ -7,13 +7,10 @@ import { redirect } from "next/navigation";
 
 export const errorMiddleware: Middleware<{}, RootState> =
   (store) => (next: any) => (action: any) => {
-    // 1) محاولة تشغيل الـ action والتقاط الأخطاء المتزامنة (rare)
     try {
       const result = next(action);
 
-      // 2) تحقق من حالات الـ rejected الخاصة بـ RTK (isRejectedWithValue يغطي حالات unwrap/rejected with value)
       if (isRejectedWithValue(action)) {
-        // action.payload عادة يكون مفيد (من fetchBaseQuery)
         const payload: any = action.payload;
         const message =
           payload?.data?.message ||
@@ -45,10 +42,7 @@ export const errorMiddleware: Middleware<{}, RootState> =
           );
         }
 
-        // احتياطي: سجل
-        // console.error("[RTK Query Rejected]", action, payload);
       } else if (action.type && action.type.endsWith("/rejected")) {
-        // generic fallback for rejected actions that didn't use isRejectedWithValue
         const errMsg =
           (action as any).error?.message || "An operation was rejected";
         store.dispatch(
@@ -62,7 +56,6 @@ export const errorMiddleware: Middleware<{}, RootState> =
 
       return result;
     } catch (error) {
-      // 3) أخطاء تم رميها فعلاً أثناء الـ dispatch (synchronous)
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       console.log("[Redux Error]", errorMessage);
@@ -75,7 +68,6 @@ export const errorMiddleware: Middleware<{}, RootState> =
         })
       );
 
-      // أعد رمي الخطأ لو تريد أن يتعامل معه الـ caller
       throw error;
     }
   };
