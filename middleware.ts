@@ -49,8 +49,8 @@ async function refreshAccessToken(
     
     if (!payload || payload.type !== "refresh" || isTokenExpired(payload.exp)) {
       console.log("no payload");
-      cookieStore.delete(isProd ? "__secure-accessToken" : "accessToken");
-      cookieStore.delete(isProd ? "__secure-refreshToken" : "refreshToken");
+      cookieStore.delete(isProd ? "__Secure-accessToken" : "accessToken");
+      cookieStore.delete(isProd ? "__Secure-refreshToken" : "refreshToken");
       return null;
     }
 
@@ -80,7 +80,7 @@ async function refreshAccessToken(
     const response = NextResponse.next();
 
     response.cookies.set(
-      isProd ? "__secure-accessToken" : "accessToken",
+      isProd ? "__Secure-accessToken" : "accessToken",
       newAccessToken,
       {
         httpOnly: true,
@@ -92,7 +92,7 @@ async function refreshAccessToken(
     );
 
     response.cookies.set(
-      isProd ? "__secure-refreshToken" : "refreshToken",
+      isProd ? "__Secure-refreshToken" : "refreshToken",
       newRefreshToken,
       {
         httpOnly: true,
@@ -114,8 +114,8 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const cookieStore = await cookies();
 
-  const accessTokenName = isProd ? "__secure-accessToken" : "accessToken";
-  const refreshTokenName = isProd ? "__secure-refreshToken" : "refreshToken";
+  const accessTokenName = isProd ? "__Secure-accessToken" : "accessToken";
+  const refreshTokenName = isProd ? "__Secure-refreshToken" : "refreshToken";
 
   const accessToken = request.cookies.get(accessTokenName)?.value;
   const refreshToken = request.cookies.get(refreshTokenName)?.value;
