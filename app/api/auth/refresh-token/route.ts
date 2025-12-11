@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
       : [setCookieHeader];
 
     // Cookie names based on environment
-    const accessTokenName = isProd ? "__Secure-accessToken" : "accessToken";
-    const refreshTokenName = isProd ? "__Secure-refreshToken" : "refreshToken";
+    const accessTokenName = isProd ? "__secure-accessToken" : "accessToken";
+    const refreshTokenName = isProd ? "__secure-refreshToken" : "refreshToken";
 
     // Extract tokens from cookies
     const accessTokenCookie = cookies_array.find(
