@@ -68,16 +68,19 @@ const AchievementsSection = () => {
   return (
     <section
       ref={sectionRef}
-      className="min-h-screen container mx-auto  relative overflow-hidden py-24 px-4 bg-background"
+      className="min-h-screen  mx-auto  relative overflow-hidden py-24 px-4 bg-background"
     >
+      <div className="container mx-auto">
+
       {/* Decorative Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className=" absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-64 h-64 rounded-full blur-3xl bg-primary/10 animate-float" />
         <div className="absolute bottom-1/4 -right-32 w-80 h-80 rounded-full blur-3xl bg-accent/10 animate-float" style={{ animationDelay: "-10s" }} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full blur-3xl bg-muted/50" />
       </div>
 
       <div className=" flex justify-center w-full flex-col items-centerrelative z-10">
+
         {/* Header */}
         <header className="text-center mb-20">
           <div className="mb-6 flex justify-center w-full items-center">
@@ -97,7 +100,7 @@ const AchievementsSection = () => {
         </header>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid items-center justify-center grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {stats?.map((stat, index) => (
             <StatCard
               key={stat.label}
@@ -108,6 +111,8 @@ const AchievementsSection = () => {
           ))}
         </div>
       </div>
+      </div>
+
     </section>
   );
 };
@@ -119,6 +124,7 @@ interface StatCardProps {
 }
 
 const StatCard = ({ stat, isVisible, delay }: StatCardProps) => {
+
   const [count, setCount] = useState(0);
   const Icon = stat.icon;
 
@@ -150,7 +156,7 @@ const StatCard = ({ stat, isVisible, delay }: StatCardProps) => {
 
   return (
     <article
-      className="stat-card group"
+      className="center-card flex flex-col items-center justify-center  text-center gap-2   w-full p-8   rounded-full  group"
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? "translateY(0)" : "translateY(30px)",

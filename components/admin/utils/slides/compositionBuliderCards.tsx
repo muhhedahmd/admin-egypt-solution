@@ -2,17 +2,16 @@
 import BlurredImage from "@/app/_comp/BlurredHashImage"
 import { ClientWithRelationsSlide, ProjectWithRelationsSlide, TeamMemberWithImage, TestimonialWithImage } from "@/types/schema"
 import { motion, useScroll, useTransform } from "framer-motion"
-import { ExternalLink, Github, ImageIcon } from "lucide-react"
+import { ExternalLink, Github } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 import { useRef } from "react"
 
 
 
-export const ServiceCard = ({ data, imaged = false }: { data: any, imaged?: boolean }) => {
+export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any, imaged?: boolean, splitcarousel?: boolean }) => {
 
-    // console.log({
-    //     data
-    // })
+
 
     const DataToRender = data?.name ? data : data.data
 
@@ -35,7 +34,109 @@ export const ServiceCard = ({ data, imaged = false }: { data: any, imaged?: bool
             )}
         </>
     }
-    else return <motion.article
+    if (splitcarousel) {
+
+        return (
+            <motion.article
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{
+                    duration: .2
+                }}
+                className="group relative h-full overflow-hidden rounded-2xl flex flex-row  w-full gap-4   p-2 hover:border-primary/50 transition-all duration-300"
+            >
+                {DataToRender.image && (
+                    <div className="mb-5  w-2/3 h-130 overflow-hidden rounded-md bg-muted">
+
+                        <BlurredImage
+
+                            imageUrl={DataToRender.image.url || ""}
+                            height={DataToRender.image.height || 400}
+                            width={DataToRender.image.width || 800}
+                            alt={DataToRender.image.alt || data.name}
+                            blurhash={DataToRender.image.blurHash || ""}
+                            quality={100}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                        />
+                    </div>
+                )}
+
+                <div className="space-y-4 max-w-2/5 h-full">
+                    <div className="flex items-center gap-3 text-4xl" >
+                        {DataToRender.icon && DataToRender?.icon?.startsWith("http") ? (
+                            <div className="w-12 h-12 rounded-xl bg-primary/10 p-2.5 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
+                                <Image
+                                    src={DataToRender.icon}
+                                    width={24}
+                                    height={24}
+                                    alt={DataToRender.name + "-icon"}
+                                    className="w-full h-full object-contain"
+                                />
+                            </div>
+                        ) : (
+                            <span>
+                                {DataToRender.icon}
+                            </span>
+                        )}
+                        <motion.h3
+                            className="text-inherit font-bold font-sora text-foreground"
+                            initial={{ opacity: 0, x: -10 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.1 }}
+                        >
+                            {DataToRender.name}
+                        </motion.h3>
+                    </div>
+
+                    {DataToRender.description && (
+                        <motion.p
+                            className="text-xl text-muted-foreground leading-relaxed font-inter"
+                            initial={{ opacity: 0 }}
+                            whileInView={{ opacity: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.2 }}
+                        >
+                            {DataToRender.description}
+                        </motion.p>
+                    )}
+                    {
+                        DataToRender.richDescription && (
+                            <motion.div
+
+                                className="text-md  text-muted-foreground leading-relaxed font-inter"
+                                initial={{ opacity: 0 }}
+                                whileInView={{ opacity: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <p
+                                    dangerouslySetInnerHTML={{
+                                        __html: DataToRender.richDescription
+                                    }}
+                                ></p>
+
+                            </motion.div>
+                        )
+                    }
+                    {DataToRender.price && (
+
+                        <motion.div
+                            className="pt-4 border-t mt-auto border-border"
+                            initial={{ opacity: 0, y: 10 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: 0.3 }}
+                        >
+                            <span className="text-base font-bold text-primary font-sora">{DataToRender.price}</span>
+                        </motion.div>
+                    )}
+                </div>
+            </motion.article>
+        )
+    }
+    else return(<motion.article
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -132,7 +233,7 @@ export const ServiceCard = ({ data, imaged = false }: { data: any, imaged?: bool
                 </motion.div>
             )}
         </div>
-    </motion.article>
+    </motion.article>)
 }
 
 
@@ -269,7 +370,6 @@ export const ClientCard = ({ data }: { data: ClientWithRelationsSlide }) => {
 
 export const ProjectCard = ({ data, split, index = 0, imagePosition, story }: { story?: boolean, data: ProjectWithRelationsSlide, split?: boolean, index: number, imagePosition?: string }) => {
 
-    // console.log({ data })
 
     if (split) {
         return <ProjectCardParallax data={data} split={split} index={index} imagePosition={imagePosition} />
@@ -343,24 +443,24 @@ export const ProjectCard = ({ data, split, index = 0, imagePosition, story }: { 
                 transition={{ delay: 0.4 }}
             >
                 {data.projectUrl && (
-                    <a
+                    <Link
                         href={data.projectUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors font-inter"
                     >
                         View Project
-                    </a>
+                    </Link>
                 )}
                 {data.githubUrl && (
-                    <a
+                    <Link
                         href={data.githubUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors font-inter"
                     >
                         GitHub
-                    </a>
+                    </Link>
                 )}
             </motion.div>
         </div>
@@ -535,7 +635,7 @@ const ProjectCardStory = ({ data }: { data: ProjectWithRelationsSlide }) => {
     return (
         <article className="w-full  flex flex-col md:flex-row gap-6  mx-auto px-6 py-16">
             {/* Hero Image */}
-            <div className="aspect-3/1 h-[40vh] w-[60rem]   relative mb-3 overflow-hidden group">
+            <div className="aspect-4/4  w-[60rem]   relative mb-3 overflow-hidden group">
 
                 {data.image && (
                     <div className="h-full w-full overflow-hidden bg-gray-100">
@@ -589,7 +689,7 @@ const ProjectCardStory = ({ data }: { data: ProjectWithRelationsSlide }) => {
                     <div className="prose prose-lg max-w-3xl text-muted-foreground">
                         {data.richDescription.split('\n').map((paragraph, idx) => {
 
-                          return paragraph.trim() && <p key={idx} className="mb-4">{paragraph}</p>
+                            return paragraph.trim() && <p key={idx} className="mb-4">{paragraph}</p>
                         }
                         )}
                     </div>
@@ -645,7 +745,7 @@ export const TestimonialCard = ({ data, minmal, }: { data: TestimonialWithImage,
                             alt={data.avatar.alt || data.clientName}
                             blurhash={data.avatar.blurHash || ""}
                             quality={100}
-                       
+
                             className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
                         />
                     )}
@@ -722,7 +822,7 @@ export const TestimonialCard = ({ data, minmal, }: { data: TestimonialWithImage,
                     transition={{ delay: 0.3 }}
                 >
                     {data.avatar && (
-                 <BlurredImage
+                        <BlurredImage
 
                             imageUrl={data.avatar.url || ""}
                             height={data.avatar.height || 400}
@@ -730,7 +830,7 @@ export const TestimonialCard = ({ data, minmal, }: { data: TestimonialWithImage,
                             alt={data.avatar.alt || data.clientName}
                             blurhash={data.avatar.blurHash || ""}
                             quality={100}
-                       
+
                             className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
                         />
                     )}
@@ -748,7 +848,7 @@ export const TestimonialCard = ({ data, minmal, }: { data: TestimonialWithImage,
 
 
 export const TeamMemberCard = ({ data }: { data: TeamMemberWithImage }) => {
-    console.log({data})
+    console.log({ data })
     return (<motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -847,5 +947,5 @@ export const TeamMemberCard = ({ data }: { data: TeamMemberWithImage }) => {
             </motion.div>
         </div>
     </motion.div>
-)
+    )
 }

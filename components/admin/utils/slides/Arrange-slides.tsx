@@ -220,19 +220,20 @@ const SortableRow: React.FC<{
 };
 
 
-export const TypeToRender = memo(({ slide, imaged, minmal, split, index, story }: {
+export const TypeToRender = memo(({  splitcarousel , slide, imaged, minmal, split, index, story }: {
 
-  
   slide: slide,
+  splitcarousel?: boolean, 
   imaged?: boolean,
   minmal?: boolean,
   split?: boolean,
   index?: number,
   story?: boolean
 }) => {
+  console.log(slide)
 
   if (slide?.type === "service") {
-    return <ServiceCard data={slide as ServiceWithImage} imaged={imaged} story={story || false} />
+    return <ServiceCard splitcarousel={splitcarousel} data={slide as ServiceWithImage} imaged={imaged} story={story || false} />
   }
   if (slide?.type === "project") {
     return <ProjectCard imagePosition="left" data={slide as ProjectWithRelationsSlide} split={split} index={index || 0} story={story} />

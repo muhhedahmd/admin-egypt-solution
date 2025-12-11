@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import type { slide } from "@/types/schema"
@@ -27,12 +27,14 @@ interface CompositionPreviewProps {
   | "MARQUEE"
   slides: slide[]
   onScroll?: () => void
+  interval: number
+  autoPlay: boolean,
+  isInViewport: boolean
 }
 
-export function CompositionPreview({ composition, slides, onScroll }: CompositionPreviewProps) {
+export function CompositionPreview({ isInViewport, interval, autoPlay, composition, slides, onScroll }: CompositionPreviewProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [[page, direction], setPage] = useState([0, 0])
-  const [isAutoSlide, setIsAutoSlide] = useState(true)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [scrollPosition, setScrollPosition] = useState(0)
   const [columns, setColumns] = useState(3)
@@ -49,20 +51,67 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
-  useEffect(() => {
-    if (composition !== "STORY") return
+  // Memoize paginate to avoid recreating it on every render
+  const paginate = useCallback((newDirection: number) => {
+    if (!slides || slides.length === 0) return
 
-    const interval = setInterval(() => {
-      setAutoProgress((prev) => {
-        if (prev >= 100) {
+    const nextIndex = currentSlide + newDirection
+
+    // Check boundaries and wrap around
+    let newPage: number
+    if (nextIndex >= slides.length) {
+      newPage = 0 // Go back to first slide
+    } else if (nextIndex < 0) {
+      newPage = slides.length - 1 // Go to last slide
+    } else {
+      newPage = nextIndex
+    }
+
+    setPage([newPage, newDirection])
+    setCurrentSlide(newPage)
+
+    console.log({
+      currentSlide,
+      newPage,
+      newDirection,
+      totalSlides: slides.length
+    })
+  }, [currentSlide, slides])
+
+  // Auto-progress effect with smooth progress bar
+  useEffect(() => {
+    if (!autoPlay || !slides || slides.length === 0 || interval <= 0 || isInViewport === false) {
+      setAutoProgress(0)
+      return
+    }
+
+    const tickMs = 50 // Update progress every 50ms for smooth animation
+    const step = (100 * tickMs) / interval // Calculate increment per tick
+
+    const progressInterval = setInterval(() => {
+      setAutoProgress(prev => {
+        const next = prev + step
+        if (next >= 100) {
+          // Progress complete, advance to next slide
           paginate(1)
-          return 0
+          return 0 // Reset progress
         }
-        return prev + 1
+        return next
       })
-    }, 50)
-    return () => clearInterval(interval)
-  }, [currentSlide, composition])
+    }, tickMs)
+
+    // Cleanup function
+    return () => {
+      clearInterval(progressInterval)
+    }
+  }, [autoPlay, interval, paginate, slides, currentSlide])
+
+  // Reset progress when slide changes manually
+  useEffect(() => {
+    if (autoPlay) {
+      setAutoProgress(0)
+    }
+  }, [currentSlide, autoPlay])
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -105,12 +154,6 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
     }),
   }
 
-  const paginate = (newDirection: number) => {
-    const newPage = (currentSlide + newDirection + slides.length) % slides.length
-    setPage([newPage, newDirection])
-    setCurrentSlide(newPage)
-    setIsAutoSlide(false)
-  }
 
   if (!slides.length) {
     return (
@@ -138,7 +181,7 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
             >
               <ChevronLeft className="w-5 h-5 relative z-10" />
             </motion.button>
-        
+
             <motion.button
               initial="rest"
               whileHover="hover"
@@ -165,29 +208,29 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
                 }}
                 className=" inset-0  rounded-3xl  "
               >
-                <TypeToRender slide={slides[currentSlide]} />
+                <TypeToRender splitcarousel={true} slide={slides[currentSlide]} />
               </motion.div>
             </AnimatePresence>
           </div>
-              <div className="flex gap-4 w-full justify-center items-center">
-                
-              {slides.map((_, idx) => (
-                <motion.button
-                  key={idx}
-                  initial="inactive"
-                  animate={idx === currentSlide ? "active" : "inactive"}
-                  whileHover={{ scale: 1.3 }}
-                  onClick={() => {
-                    setPage([idx, idx > currentSlide ? 1 : -1])
-                    setCurrentSlide(idx)
-                  }}
-                  className={`h-2.5 rounded-full transition-all  ${idx === currentSlide
-                    ? "w-2 bg-primary "
-                    : "w-8 bg-muted-foreground/20 hover:bg-muted-foreground/40"
-                    }`}
-                />
-              ))}
-            </div>
+          <div className="flex gap-4 mt-16 w-full justify-center items-center">
+
+            {slides.map((_, idx) => (
+              <motion.button
+                key={idx}
+                initial="inactive"
+                animate={idx === currentSlide ? "active" : "inactive"}
+                whileHover={{ scale: 1.3 }}
+                onClick={() => {
+                  setPage([idx, idx > currentSlide ? 1 : -1])
+                  setCurrentSlide(idx)
+                }}
+                className={`h-2.5 rounded-full transition-all  ${idx === currentSlide
+                  ? "w-2 bg-primary "
+                  : "w-8 bg-muted-foreground/20 hover:bg-muted-foreground/40"
+                  }`}
+              />
+            ))}
+          </div>
 
 
 
@@ -198,7 +241,7 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
       return (
         <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" initial="hidden" animate="visible">
           {slides.map((slide, idx) => (
-            <motion.div 
+            <motion.div
               key={idx}
               custom={idx}
               variants={cardVariants}
@@ -405,7 +448,7 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
               })}
             </AnimatePresence>
           </div>
-          
+
         </div>
       )
 
@@ -635,7 +678,7 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
             {slides.map((_, idx) => (
               <motion.div key={idx} className="flex-1 h-1 bg-muted-foreground/30 rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-primary to-accent"
+                  className="h-full bg-primary"
                   initial={{ width: 0 }}
                   animate={{ width: idx === currentSlide ? `${autoProgress}%` : idx < currentSlide ? "100%" : "0%" }}
                   transition={{ ease: "linear" }}
@@ -654,7 +697,7 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
                 transition={{ duration: 0.3 }}
                 className=" inset-0   h-full "
               >
-                <TypeToRender slide={slides[2]} story={true} />
+                <TypeToRender slide={slides[currentSlide]} story={true} />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -682,10 +725,10 @@ export function CompositionPreview({ composition, slides, onScroll }: Compositio
           <div className="flex gap-3 overflow-x-auto pb-2 px-4">
             {slides.map((slide, idx) => (
               <motion.button
-              style={{
-                outline: "none",
-                border:"none",
-              }}
+                style={{
+                  outline: "none",
+                  border: "none",
+                }}
                 key={idx}
                 onClick={() => {
                   setCurrentSlide(idx)

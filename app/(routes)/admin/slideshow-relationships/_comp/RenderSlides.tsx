@@ -6,11 +6,16 @@ import { useEffect, useRef } from "react";
 
 
 export const RenderSlides = ({
-
+  isInViewport,
   id,
+  interval = 5000,
+  autoPlay,
   composition,
 }: {
+  isInViewport: boolean;
   id: string;
+  interval: number;
+  autoPlay: boolean
   composition: CompositionType;
 }) => {
   const [triggerGetSlides, { data: slidesData, isLoading: slidesLoading }] =
@@ -45,9 +50,11 @@ export const RenderSlides = ({
 
   return (
     <CompositionPreview
-
-        composition={composition}
-        slides={transformedSlides as any}
+      interval={interval}
+      autoPlay={autoPlay}
+    isInViewport={isInViewport}
+      composition={composition}
+      slides={transformedSlides as any}
 
     />
   );

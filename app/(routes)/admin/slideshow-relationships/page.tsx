@@ -37,6 +37,16 @@ const LoadingScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(()=>{
+    if(progress < 100) {
+      document.body.style.overflow = "hidden";
+    }
+    if(progress === 100){
+      document.body.style.overflow = "auto";
+    }
+
+  } , [progress])
+
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center">
       <div className="mb-8 animate-pulse">
@@ -108,8 +118,6 @@ const Page = () => {
         <HeroSection onLoad={() => handleComponentLoad("hero")} />
 
         <AchievementsSection/>
-
-
 
         <main className="container mx-auto px-4 py-12">
           <SlideShowsDemoPreview onLoad={() => handleComponentLoad("slideShows")} />

@@ -1,19 +1,16 @@
 import {
   useGetSlideShowsQuery,
 } from "@/lib/store/api/slideShow-api";
-import { CompositionType, SlideshowType } from "@/types/schema";
 import { SlideShow } from "@/types/slideShows";
-import { useMemo, useRef, useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {  useRef, useState, useEffect } from "react";
+import {  AnimatePresence } from "framer-motion";
 
-import { SlideHeader } from "@/components/admin/utils/slides/CastomHeaderSlideShow";
 
 import dynamic from "next/dynamic";
+import { SlideshowCard } from "./slideShowCard";
 
-const RenderSlides = dynamic(
-  () => import("./RenderSlides").then((mod) => mod.RenderSlides),
-  { ssr: false }
-);
+
+
 
 export function slideShowsDemoPreview({ onLoad }: { onLoad?: () => void }) {
   const [page, setPage] = useState(0);
@@ -30,7 +27,7 @@ export function slideShowsDemoPreview({ onLoad }: { onLoad?: () => void }) {
     isLoading,
     isError,
   } = useGetSlideShowsQuery({
-    skip: page * ITEMS_PER_PAGE,
+    skip: 0,
     take: ITEMS_PER_PAGE,
   });
 
@@ -73,7 +70,6 @@ export function slideShowsDemoPreview({ onLoad }: { onLoad?: () => void }) {
           setIsLoadingMore(true);
           setPage((prev) => prev + 1);
 
-          // Reset flag after a small delay to prevent duplicate requests
           setTimeout(() => {
             loadingRef.current = false;
           }, 500);
@@ -118,6 +114,8 @@ export function slideShowsDemoPreview({ onLoad }: { onLoad?: () => void }) {
         <div className="space-y-6">
           {allSlides.map((item, index) => (
             <SlideshowCard
+             autoPlay={item.autoPlay}
+             interval={item.interval}
               key={item.id}
               item={item}
               index={index}
@@ -131,51 +129,3 @@ export function slideShowsDemoPreview({ onLoad }: { onLoad?: () => void }) {
   );
 }
 
-const SlideshowCard = ({
-  item,
-  index,
-  bgColor,
-  textColor,
-}: {
-  item: SlideShow;
-  index: number;
-  bgColor?: string;
-  textColor?: string;
-}) => {
-  const compositionType = useMemo(
-    () => CompositionType[item.composition as keyof typeof CompositionType],
-    [item.composition]
-  );
-
-  return (
-    <motion.div
-      key={item.id}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      viewport={{ once: true, margin: "100px" }}
-      className="w-full"
-    >
-      <div
-        style={{
-          backgroundColor: bgColor,
-          color: textColor,
-        }}
-        className="rounded-lg   duration-200 overflow-hidden"
-      >
-        <SlideHeader
-          compositionType={
-            CompositionType[item.composition as keyof typeof CompositionType]
-          }
-          title={item.title}
-          description={item.description || ""}
-          slideShowType={SlideshowType[item.type as keyof typeof SlideshowType]}
-        />
-        <div className="p-6">
-          <RenderSlides id={item.id} composition={compositionType} />
-        </div>
-      </div>
-    </motion.div>
-  );
-};

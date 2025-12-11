@@ -114,6 +114,7 @@ function ProductionHero({ hero, backgroundImage }: ProductionHeroProps) {
     const getMinHeight = () => {
         if (hero.variant === "FULL_SCREEN") return "min-h-screen"
         if (hero.variant === "MINIMAL") return "min-h-[400px] md:min-h-[500px]"
+        if (hero.variant === "SPLIT") return "min-h-screen md:min-h-screen"
         return hero.minHeight ? `min-h-[${hero.minHeight}px]` : "min-h-[calc(100vh-64px)]"
     }
 
@@ -312,6 +313,7 @@ function ProductionHero({ hero, backgroundImage }: ProductionHeroProps) {
                 return (
                     <div className="relative z-10 w-full max-w-4xl mx-auto" style={{ padding: getContentPadding() }}>
                         <motion.div
+                      
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8 }}
@@ -342,6 +344,8 @@ function ProductionHero({ hero, backgroundImage }: ProductionHeroProps) {
             role="banner"
             aria-label={hero.name || "Hero section"}
         >
+            <div className="container">
+
             {/* Background Image with BlurredImage - Not for SPLIT variant */}
             {backgroundImageUrl && hero.variant !== "SPLIT" && (
                 <div className="absolute inset-0 w-full h-full -z-20">
@@ -389,6 +393,8 @@ function ProductionHero({ hero, backgroundImage }: ProductionHeroProps) {
 
             {/* Custom CSS */}
             {hero.customCSS && <style dangerouslySetInnerHTML={{ __html: hero.customCSS }} />}
+            </div>
+
         </section>
     )
 }

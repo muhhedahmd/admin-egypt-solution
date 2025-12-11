@@ -33,9 +33,9 @@ export enum SlideshowType {
   TESTIMONIALS = "TESTIMONIALS",
   TEAM = "TEAM",
   CLIENTS = "CLIENTS",
-  HERO = "HERO",
   CUSTOM = "CUSTOM",
 }
+// HERO = "HERO",
 export const SLIDESHOW_TYPES_ARRAY = Object.values(SlideshowType);
 
 export enum CompositionType {
