@@ -7,7 +7,9 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 const isProd = process.env.NODE_ENV === "production";
-
+console.log({
+  isProd
+})
 interface TokenPayload {
   userId: string;
   email: string;
