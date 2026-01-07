@@ -1,11 +1,16 @@
 
 import BlurredImage from "@/app/_comp/BlurredHashImage"
-import { ClientWithRelationsSlide, ProjectWithRelationsSlide, TeamMemberWithImage, TestimonialWithImage } from "@/types/schema"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
+import { ClientWithRelationsSlide, ProjectWithRelationsSlide, TeamMemberWithImage, Technology, TestimonialWithImage } from "@/types/schema"
+import { ScrollArea } from "@radix-ui/react-scroll-area"
 import { motion, useScroll, useTransform } from "framer-motion"
-import { ExternalLink, Github } from "lucide-react"
+import { Calendar, ExternalLink, Github, Globe } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
-import { useRef } from "react"
+
+import Marquee from "react-fast-marquee";
+
 
 
 
@@ -136,7 +141,7 @@ export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any
             </motion.article>
         )
     }
-    else return(<motion.article
+    else return (<motion.article
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -237,13 +242,13 @@ export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any
 }
 
 
-export const ClientCard = ({ data }: { data: ClientWithRelationsSlide }) => {
+export const ClientCard = ({ data, cube }: { cube?: boolean, data: ClientWithRelationsSlide }) => {
 
     return <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="group relative h-full overflow-hidden rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300"
+        className="group relative h-fit overflow-hidden rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300"
     >
         {/* Main Image */}
         {data.image && (
@@ -345,21 +350,7 @@ export const ClientCard = ({ data }: { data: ClientWithRelationsSlide }) => {
                 </motion.a>
             )}
 
-            {/* Status Footer */}
-            {(!data.isActive || data.type) && (
-                <motion.div
-                    className="pt-3 mt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground font-inter"
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.5 }}
-                >
-                    <span>Type: {data.type}</span>
-                    {!data.isActive && (
-                        <span className="text-destructive font-medium">Inactive</span>
-                    )}
-                </motion.div>
-            )}
+            
         </div>
     </motion.div>
 }
@@ -368,26 +359,31 @@ export const ClientCard = ({ data }: { data: ClientWithRelationsSlide }) => {
 
 
 
-export const ProjectCard = ({ data, split, index = 0, imagePosition, story }: { story?: boolean, data: ProjectWithRelationsSlide, split?: boolean, index: number, imagePosition?: string }) => {
-
+export const ProjectCard = ({ data, split, index = 0, imagePosition, story, play }: { play?: boolean, story?: boolean, data: ProjectWithRelationsSlide, split?: boolean, index: number, imagePosition?: string }) => {
+    const technologies = data?.technologies as any as {
+        technology: {
+            category: string
+            icon: string
+            name: string
+        }
+    }[] || null
+    const services = data?.services || null
 
     if (split) {
         return <ProjectCardParallax data={data} split={split} index={index} imagePosition={imagePosition} />
     }
 
     if (story) return <ProjectCardStory data={data} />
-    else return <motion.div
-
-
+    else return <motion.article
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="group relative h-full overflow-hidden rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300"
+        className="group relative h-full overflow-hidden rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300 shadow-lg hover:shadow-xl"
     >
-        <div className="relative h-48 overflow-hidden bg-muted">
-            {data.image && (
+        {/* Image Section */}
+        <div className="relative h-64 overflow-hidden bg-muted">
+            {data.image ? (
                 <BlurredImage
-
                     imageUrl={data.image.url || ""}
                     height={data.image.height || 400}
                     width={data.image.width || 800}
@@ -396,12 +392,18 @@ export const ProjectCard = ({ data, split, index = 0, imagePosition, story }: { 
                     quality={100}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
+            ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                    <div className="text-muted-foreground text-4xl">🖼️</div>
+                </div>
             )}
         </div>
 
-        <div className="p-6 space-y-3">
+        {/* Content Section */}
+        <div className="p-6 space-y-4">
+            {/* Title */}
             <motion.h3
-                className="text-lg font-bold text-foreground font-sora"
+                className="text-xl font-bold text-foreground font-sora line-clamp-2"
                 initial={{ opacity: 0, x: -10 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -410,22 +412,33 @@ export const ProjectCard = ({ data, split, index = 0, imagePosition, story }: { 
                 {data.title}
             </motion.h3>
 
-            {data.clientName && (
+            {/* Client Info */}
+            {(data.clientName || data.clientCompany) && (
                 <motion.div
-                    className="flex items-center gap-2 text-sm text-muted-foreground font-inter"
+                    className="flex flex-col gap-1"
                     initial={{ opacity: 0, x: -10 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.2 }}
                 >
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    {data.clientName}
+                    {data.clientName && (
+                        <div className="flex items-center gap-2 text-sm text-foreground font-medium font-inter">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                            {data.clientName}
+                        </div>
+                    )}
+                    {data.clientCompany && (
+                        <div className="text-xs text-muted-foreground pl-3.5 font-inter">
+                            {data.clientCompany}
+                        </div>
+                    )}
                 </motion.div>
             )}
 
+            {/* Description */}
             {data.description && (
                 <motion.p
-                    className="text-sm text-muted-foreground leading-relaxed font-inter"
+                    className="text-sm text-muted-foreground leading-relaxed font-inter line-clamp-3"
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
@@ -435,6 +448,33 @@ export const ProjectCard = ({ data, split, index = 0, imagePosition, story }: { 
                 </motion.p>
             )}
 
+            {/* Services Section */}
+            {services && services.length > 0 && (
+                <motion.div
+                    className="space-y-2"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.35 }}
+                >
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Services
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                        {services.map((service: any, idx: number) => (
+                            <div
+                                key={idx}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted/50 border border-border hover:border-primary/30 transition-colors text-xs"
+                            >
+                                {service.icon && <span>{service.icon}</span>}
+                                <span className="font-medium">{service.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
+
+            {/* Action Buttons */}
             <motion.div
                 className="flex gap-3 pt-3 border-t border-border"
                 initial={{ opacity: 0, y: 10 }}
@@ -443,29 +483,84 @@ export const ProjectCard = ({ data, split, index = 0, imagePosition, story }: { 
                 transition={{ delay: 0.4 }}
             >
                 {data.projectUrl && (
-                    <Link
-                        href={data.projectUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors font-inter"
+                    <Button
+                        variant="outline"
+                        className="flex-1 justify-start gap-2 h-10"
+                        onClick={() => window.open(data.projectUrl!, "_blank")}
                     >
-                        View Project
-                    </Link>
+                        <Globe className="h-4 w-4" />
+                        <span className="text-sm">Visit</span>
+                        <ExternalLink className="h-3 w-3 ml-auto" />
+                    </Button>
                 )}
+
                 {data.githubUrl && (
-                    <Link
-                        href={data.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors font-inter"
+                    <Button
+                        variant="outline"
+                        className="flex-1 justify-start gap-2 h-10"
+                        onClick={() => window.open(data.githubUrl!, "_blank")}
                     >
-                        GitHub
-                    </Link>
+                        <Github className="h-4 w-4" />
+                        <span className="text-sm">Code</span>
+                        <ExternalLink className="h-3 w-3 ml-auto" />
+                    </Button>
+                )}
+
+                {!data.projectUrl && !data.githubUrl && (
+                    <p className="w-full text-xs text-muted-foreground text-center py-2 italic">
+                        No external links available
+                    </p>
                 )}
             </motion.div>
+
+            {/* Technologies Section */}
+            {technologies && technologies.length > 0 && (
+                <motion.div
+                    className="pt-3 border-t border-border"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.45 }}
+                >
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                        Technologies
+                    </h4>
+                    <ScrollArea className="w-full">
+                        <div className="flex gap-3 pb-2">
+                            {technologies.map((tech, index: number) => (
+                                <div
+                                    key={index}
+                                    className="flex-shrink-0 p-3 rounded-xl border-2 border-border hover:border-primary/50 transition-all hover:shadow-lg group cursor-pointer bg-card/50 backdrop-blur-sm min-w-[140px]"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        {tech.technology.icon && (
+                                            <div className="text-2xl group-hover:scale-110 transition-transform">
+                                                {tech.technology.icon}
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-sm truncate">
+                                                {tech.technology.name}
+                                            </p>
+                                            {tech.technology.category && (
+                                                <p className="text-xs text-muted-foreground truncate">
+                                                    {tech.technology.category}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </motion.div>
+            )}
+
+
         </div>
-    </motion.div>
+    </motion.article>
 }
+
 
 export const ProjectCardParallax = ({
     data,
@@ -848,7 +943,6 @@ export const TestimonialCard = ({ data, minmal, }: { data: TestimonialWithImage,
 
 
 export const TeamMemberCard = ({ data }: { data: TeamMemberWithImage }) => {
-    console.log({ data })
     return (<motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -857,11 +951,16 @@ export const TeamMemberCard = ({ data }: { data: TeamMemberWithImage }) => {
     >
         <div className="relative h-56 overflow-hidden bg-muted">
             {data.image && (
-                <img
-                    src={data.image.url}
+                 <BlurredImage
+                    imageUrl={data.image.url}
+                    height={data.image.height || 400}
+                    width={data.image.width || 400}
                     alt={data.image.alt || data.name}
+                    blurhash={data.image.blurHash || ""}
+                    quality={100}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
+
             )}
         </div>
 

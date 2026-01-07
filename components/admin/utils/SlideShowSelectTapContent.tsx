@@ -32,9 +32,11 @@ const TabContentService = ({
     tabType,
     title,
     placeholder = "Search...",
-
     ExtraInputs = false
 }: TabContentServiceProps) => {
+
+    console.log({selectedServices})
+
     const [skip, setSkip] = useState(0)
     const { data, isLoading, isError, refetch } = useGetServicesQuery({
         skip,
@@ -48,16 +50,13 @@ const TabContentService = ({
 
             allFetchedServices(prev => {
                 const existing = prev.map((s: any) => s.id)
-                const newServices = data.data.data.filter((s: any) => !existing.includes(s.id))
+                const newServices = data.data.filter((s: any) => !existing.includes(s.id))
                 return [...prev, ...newServices]
             })
         }
-        // console.log({
-        //     services: FetchedServices,
-        //     data: data?.data.data
-        // })
+   
 
-    }, [data?.data.data])
+    }, [data?.data])
 
     const [searchTrigger, { data: searchRes, isLoading: searchLoading, isError: searchError }] =
         useLazySearchServicesQuery()
@@ -70,7 +69,6 @@ const TabContentService = ({
     }
 
     const handleSelectService = (service: ServiceWithImage) => {
-
         // console.log({ service })
         setSelectedServices((prev: any) => {
             const isSelected = prev.some((s: any) => s.id === service.id)
@@ -116,7 +114,7 @@ const TabContentService = ({
 
     useEffect(() => {
         if (debouncedSearchInp.trim() !== "") {
-            searchTrigger({ search: debouncedSearchInp })
+            searchTrigger({ q: debouncedSearchInp })
         }
     }, [debouncedSearchInp, searchTrigger])
 
@@ -126,10 +124,8 @@ const TabContentService = ({
     const hasError = searchInp ? searchError : isError
 
     const currentTabSelected = selectedServices.filter((s) => s.type === tabType)
-    // console.log({
-    //     currentTabSelected,
-    //     selectedServices
-    // })
+
+
     return (
         <Card className="shadow-none">
             <CardHeader>
@@ -167,7 +163,7 @@ const TabContentService = ({
                 refetch={refetch}
                 setSelectedServices={setSelectedServices}
                 data={displayData as any}
-                pagination={data?.data?.pagination}
+                pagination={data?.pagination}
                 isLoading={isLoadingData}
                 hasError={hasError}
                 selectedIds={currentTabSelected.map((s) => s.id)}
@@ -272,8 +268,6 @@ export const SelectContentTabSlideShow = ({
                 ref={rootRef}
                 className="flex min-h-50 justify-stretch items-start gap-4 flex-col max-h-100 overflow-y-scroll">
                 {data.map((service, idx, self) => {
-
-
                     const isSelected = selectedIds.find((id) => id === service.id)
 
                     const SelectedService = selectedItems && selectedItems?.find((s) => s.id === service.id)
@@ -284,7 +278,7 @@ export const SelectContentTabSlideShow = ({
                         className={`border p-3 shadow-sm rounded-md flex items-start w-full justify-start gap-3 cursor-pointer transition-all ${isSelected ? "border-primary bg-primary/5" : "border-gray-200 hover:border-primary/50"
                             }`}
                     >
-                        <div className="w-24 h-24 flex-shrink-0">
+                        <div className="w-24 h-24 shrink-0">
                             <BlurredImage
                                 imageUrl={service?.image?.url || "/placeholder.svg"}
                                 alt={service?.image?.alt || service.name + "-alt"}
@@ -298,15 +292,15 @@ export const SelectContentTabSlideShow = ({
 
                         <div className="flex-1">
                             <div className="flex items-center justify-start">
-                                {service.icon && (
+                                {service.icon?.startsWith("http") ? (
                                     <Image
                                         width={12}
                                         height={12}
-                                        className=" bg-gray-50  mr-2 shadow rounded-full w-4 h-4 overflow-hidden"
+                                        className="  mr-2 shadow rounded-full w-4 h-4 overflow-hidden"
                                         src={service.icon || "/placeholder.svg"}
                                         alt={service.name}
                                     />
-                                )}
+                                ) :  <span>{service.icon}</span>}
                                 <p className="font-bold text-lg">{service.name}</p>
                             </div>
                             {

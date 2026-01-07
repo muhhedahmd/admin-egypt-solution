@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import {
     ArrowLeft,
-    ExternalLink,
     Star,
     FileImage,
     Pencil,
@@ -25,22 +24,18 @@ import {
     Users,
     ClipboardIcon,
     Briefcase,
-    MapPin
 } from "lucide-react"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
-import { useGetTeamMemberByIdQuery } from "@/lib/store/api/team-api"
+import { useDeleteTeamMemberMutation, useGetTeamMemberByIdQuery } from "@/lib/store/api/team-api"
 import { toast } from "sonner"
 import Image from "next/image"
 
 export default function TeamMemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter()
     const p = React.use(params)
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
     const { data: memberData, isLoading, isError } = useGetTeamMemberByIdQuery(p.id)
-console.log({
-    memberData
-})
+
     const formatDate = (date?: string) => {
         if (!date) return null
         return new Date(date).toLocaleDateString('en-US', {
@@ -57,11 +52,25 @@ console.log({
         return (bytes / 1048576).toFixed(1) + ' MB'
     }
 
-    const handleDelete = () => {
-        console.log("Deleting team member:", memberData?.data.teamMember.id)
-        setDeleteDialogOpen(false)
-        router.push('/admin/team')
+    const [deleteId, setDeleteId] = useState<string | null>(null)
+    const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteTeamMemberMutation()
+
+    const handleDelete = async (id: string) => {
+        try {
+            console.log(id)
+            await del(id
+            ).then(res => {
+                if (res.data) {
+                    toast.success("Service deleted successfully!")
+                    setDeleteId(null)
+                    router.push("/admin/team")
+                }
+            })
+        } catch (error) {
+            toast.error("Failed to delete service. Please try again.")
+        }
     }
+
 
     if (isLoading) {
         return <LoadingSkeleton />
@@ -86,9 +95,9 @@ console.log({
     }
 
     const {
-        Image : memberImage,
+        Image: memberImage,
         teamMember
-    } = memberData.data
+    } = memberData
 
     return (
         <>
@@ -129,7 +138,7 @@ console.log({
                                 <Button
                                     variant="destructive"
                                     size="icon"
-                                    onClick={() => setDeleteDialogOpen(true)}
+                                    onClick={() => setDeleteId(teamMember.id)}
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -448,7 +457,7 @@ console.log({
                                     </div>
                                     <div>
                                         <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
-                                        <p className="text-sm font-medium">{formatDate(teamMember.updatedAt as unknown as string )}</p>
+                                        <p className="text-sm font-medium">{formatDate(teamMember.updatedAt as unknown as string)}</p>
                                     </div>
                                     {teamMember.imageId && (
                                         <>
@@ -479,7 +488,7 @@ console.log({
                                     <Button
                                         variant="outline"
                                         className="w-full justify-start gap-2 text-red-600 hover:text-red-600 dark:text-red-400 dark:hover:text-red-400"
-                                        onClick={() => setDeleteDialogOpen(true)}
+                                        onClick={() => setDeleteId(teamMember.id)}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                         Delete Member
@@ -492,13 +501,13 @@ console.log({
             </div>
 
             <DeleteDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-                onConfirm={handleDelete}
-                isLoading={isLoading}
-                isError={isError}
-                title="Delete Team Member"
-                description={`Are you sure you want to delete ${teamMember.name}? This action cannot be undone.`}
+                isLoading={isLoadingDelete}
+                isError={isErrorDelete}
+                open={deleteId !== null}
+                onOpenChange={(open) => !open && setDeleteId(null)}
+                onConfirm={async () => await handleDelete(deleteId!)}
+                title="Delete Member"
+                description="Are you sure you want to delete this Member? This action cannot be undone."
             />
         </>
     )

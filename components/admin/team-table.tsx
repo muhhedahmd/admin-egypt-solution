@@ -9,16 +9,12 @@ import { useRouter } from "next/navigation"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
 import Blurredimage from "@/app/_comp/BlurredHashImage"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
-import { useGetTeamMembersQuery } from "@/lib/store/api/team-api"
+import { useDeleteTeamMemberMutation, useGetTeamMembersQuery } from "@/lib/store/api/team-api"
 import { TeamMemberWithImage } from "@/types/schema"
+import { toast } from "sonner"
 
 
 export function TeamTable() {
-
-
-
-
-
   const router = useRouter()
   const [page, setPage] = useState(0)
   const [ref, entry] = useIntersectionObserver({
@@ -39,7 +35,7 @@ export function TeamTable() {
 
   const [allTeam, setAllTeam] = useState<TeamMemberWithImage[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
-
+  const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteTeamMemberMutation()
   useEffect(() => {
     if (teamData?.data) {
       setAllTeam((prev) => {
@@ -57,12 +53,22 @@ export function TeamTable() {
     }
   }, [entry, isFetching, teamData, allTeam.length])
 
-  const handleDelete = (id: string) => {
-    console.log("Deleting team member:", id)
-    setAllTeam(prev => prev.filter(member => member.id !== id))
-    setDeleteId(null)
-  }
 
+  const handleDelete = async (id: string) => {
+    try {
+      console.log(id)
+      await del(id
+      ).then(res => {
+        if (res.data) {
+          toast.success("Service deleted successfully!")
+          setAllTeam(prev => prev.filter(s => s.id !== id))
+          setDeleteId(null)
+        }
+      })
+    } catch (error) {
+      toast.error("Failed to delete service. Please try again.")
+    }
+  }
   if (isLoading && page === 0) {
     return <LoadingSkeleton />
   }
@@ -114,7 +120,7 @@ export function TeamTable() {
                   Featured
                 </Badge>
               )}
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -162,7 +168,7 @@ export function TeamTable() {
                   <Users className="h-20 w-20 text-slate-300 dark:text-slate-700" />
                 </div>
               )}
-              
+
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
@@ -184,7 +190,7 @@ export function TeamTable() {
                 <code className="text-xs bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">
                   /{member.slug}
                 </code>
-                <Badge 
+                <Badge
                   variant={member.isActive ? "default" : "secondary"}
                   className="text-xs"
                 >
@@ -273,23 +279,21 @@ export function TeamTable() {
             <span>Loading more team members...</span>
           </div>
         )}
-        {teamData?.data && 
+        {teamData?.data &&
           allTeam.length >= (teamData.pagination.totalItems || 0) && (
             <p className="text-sm text-slate-500 dark:text-slate-400">
               All {teamData.pagination.totalItems} team members loaded
             </p>
           )}
       </div>
-
       <DeleteDialog
-        skip={page * 10}
-        take={10}
-        id={deleteId}
+        isLoading={isLoadingDelete}
+        isError={isErrorDelete}
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        onConfirm={() => deleteId && handleDelete(deleteId)}
-        title="Delete Team Member"
-        description="Are you sure you want to delete this team member? This action cannot be undone."
+        onConfirm={async () => await handleDelete(deleteId!)}
+        title="Delete Member"
+        description="Are you sure you want to delete this Member? This action cannot be undone."
       />
     </>
   )

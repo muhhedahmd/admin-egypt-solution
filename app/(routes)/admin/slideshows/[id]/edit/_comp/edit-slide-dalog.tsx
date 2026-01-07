@@ -40,19 +40,20 @@ export const EditSlideDialog = memo(({
     useEffect(() => {
         if (slide) {
             console.log(slide)
-        
-                // For NEW slides: custom fields are EMPTY (not from service table)
-              setFormData({
-                    customTitle: slide?.customTitle || "", 
-                    customDescription: slide?.customDescption|| "",
-                    isVisible: slide?.isVisible === false ? false : true,
-                    type: slide.type,
-                    // Keep original data for reference
-                    originalName: slide?.title || slide?.name || slide?.clientName,
-                    originalDescription:  slide?.content || slide?.description
-                });
+
+            // For NEW slides: custom fields are EMPTY (not from service table)
+            setFormData({
+                id: slide._id,
+                customTitle: slide?.customTitle || "",
+                customDescription: slide?.customDescption || "",
+                isVisible: slide?.isVisible === false ? false : true,
+                type: slide.type,
+                // Keep original data for reference
+                originalName: slide?.title || slide?.name || slide?.clientName,
+                originalDescription: slide?.content || slide?.description
+            });
         }
-    
+
     }, [slide, tag]);
 
     const handleSave = () => {
@@ -66,8 +67,8 @@ export const EditSlideDialog = memo(({
     if (!slide) return null;
 
     // Get slide data based on tag
-    const image =  slide?.image || slide?.avatar || slide?.logo;
-    const icon =  slide?.data?.icon || slide.icon;
+    const image = slide?.image || slide?.avatar || slide?.logo;
+    const icon = slide?.data?.icon || slide.icon;
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl overflow-hidden border-border bg-card p-0">
@@ -130,7 +131,7 @@ export const EditSlideDialog = memo(({
                                     </Label>
                                     <Input
                                         id="customDescription"
-                                        value={formData.customDescription }
+                                        value={formData.customDescription}
                                         onChange={(e) =>
                                             setFormData({ ...formData, customDescription: e.target.value })
                                         }

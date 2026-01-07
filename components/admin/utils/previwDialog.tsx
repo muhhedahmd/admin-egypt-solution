@@ -1,17 +1,20 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { slide } from "@/types/schema"
-import { CompositionType } from "@/types/slideShows"
+import { CompositionType, slide } from "@/types/schema"
 import { Eye } from "lucide-react"
 import { CompositionPreview } from "./slides/compositionPreviw"
 
 export const PreviwDialog = ({
     allSlides,
     selectedComposition,
-    minmalBtb
+    minmalBtb,
+    autoPlay,
+    interval
 }: {
     minmalBtb?: boolean
     selectedComposition: CompositionType
-    allSlides: slide[]
+    allSlides: slide[],
+    autoPlay: boolean
+    interval: number
 }) => {
 
 
@@ -25,10 +28,10 @@ export const PreviwDialog = ({
                     {minmalBtb ?
 
                         <button className="w-fit p-1 cursor-pointer border-2 hover:text-secondary  text-center flex items-center justify-center shadow-md flex items-center justify-center duration-300 group  rounded-md hover:bg-primary">
-                            
+
                             <Eye className=" group-hover:text-primary-foreground text-muted-foreground h-4 w-4 mr-2" />
-                                preview
-                            
+                            preview
+
 
                         </button>
 
@@ -67,14 +70,13 @@ export const PreviwDialog = ({
 
 
                             <CompositionPreview
+                                autoPlay={ autoPlay}
+                                interval={ interval}
+                                isInViewport={true}
+
 
                                 composition={
-                                    selectedComposition as
-                                    | "CAROUSEL"
-                                    | "GRID"
-                                    | "STACKED"
-                                    | "FADE"
-                                    | "SINGLE"
+                                    selectedComposition
                                 }
                                 slides={allSlides}
                             />

@@ -50,6 +50,7 @@ export const RenderSlides = ({
 
   return (
     <CompositionPreview
+    
       interval={interval}
       autoPlay={autoPlay}
     isInViewport={isInViewport}

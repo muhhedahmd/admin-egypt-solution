@@ -6,18 +6,6 @@ import { ArrowLeft, Edit2, Trash2 } from "lucide-react"
 import Link from "next/link"
 
 export default function SectionDetailPage({ params }: { params: { id: string } }) {
-  const section = {
-    id: params.id,
-    title: "Hero Section",
-    slug: "hero",
-    type: "HERO",
-    description: "Main hero section with featured slideshow",
-    isActive: true,
-    order: 1,
-    slideshows: [{ id: "1", title: "Hero Slideshow", type: "HERO", slides: 5 }],
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-20"),
-  }
 
   return (
     <div className="space-y-6">

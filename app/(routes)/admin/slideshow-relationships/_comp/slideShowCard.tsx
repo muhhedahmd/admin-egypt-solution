@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { SlideShow } from "@/types/slideShows";
 import { SlideHeader } from "@/components/admin/utils/slides/CastomHeaderSlideShow";
 import dynamic from "next/dynamic";
+import { cn } from "@/lib/utils";
 
 const RenderSlides = dynamic(() => import("./RenderSlides").then((mod) => mod.RenderSlides), { ssr: false })
 
@@ -69,7 +70,8 @@ export const SlideshowCard = memo(({ interval, autoPlay, item, index, bgColor, t
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, delay: index * 0.05 }}
             viewport={{ once: true, margin: "100px" }}
-            className="w-full"
+            className={cn("w-full container mx-auto") }
+
         >
             <div
                 style={{

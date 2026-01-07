@@ -356,6 +356,7 @@ export const EditAndRemoveExisitSlides = ({
             const getSlide = AllSlidesExisitORNew.find((s) => s.id === slideId);
             setExistingSlideChanges((prev) => {
                 const updated = new Map(prev);
+                console.log(data, getSlide?._id)
                 updated.set(data.id, {
                     mainSlideId: getSlide?.id,
                     customTitle: data?.customTitle || '',
@@ -462,9 +463,13 @@ export const EditAndRemoveExisitSlides = ({
                 newSlides,
                 updateSlides,
                 deletedSlides: deletedSlidesFormat,
-                updatedOrder
+                updatedOrder , 
+                existingSlideChanges,
+                existingSlides
             };
-
+            console.log({
+                dataToSave
+            })
             const res = await Operate({
                 id: slideshowId,
                 data: dataToSave,

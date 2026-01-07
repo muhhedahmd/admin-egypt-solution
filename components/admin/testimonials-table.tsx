@@ -9,9 +9,10 @@ import { useRouter } from "next/navigation"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
 import Blurredimage from "@/app/_comp/BlurredHashImage"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
-import { useGetTestimonialsQuery } from "@/lib/store/api/testimonials-api"
+import { useDeleteTestimonialMutation, useGetTestimonialsQuery } from "@/lib/store/api/testimonials-api"
 import { TestimonialWithImage } from "@/types/schema"
 import { BlurhashCanvas } from "react-blurhash"
+import { toast } from "sonner"
 
 
 export function TestimonialsTable() {
@@ -42,6 +43,8 @@ export function TestimonialsTable() {
   })
   const [allTestimonial, setAllTtestimonial] = useState<TestimonialWithImage[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteTestimonialMutation()
+
 
   useEffect(() => {
     if (teamData?.data) {
@@ -60,10 +63,19 @@ export function TestimonialsTable() {
     }
   }, [entry, isFetching, teamData, allTestimonial.length])
 
-  const handleDelete = (id: string) => {
-    console.log("Deleting testimonial member:", id)
-    setAllTtestimonial(prev => prev.filter(member => member.id !== id))
-    setDeleteId(null)
+  const handleDelete = async (id: string) => {
+    try {
+      await del(id
+      ).then(res => {
+        if (res.data) {
+          toast.success("Service deleted successfully!")
+          setDeleteId(null)
+          setAllTtestimonial(prev => prev.filter(s => s.id !== id))
+        }
+      })
+    } catch (error) {
+      toast.error("Failed to delete service. Please try again.")
+    }
   }
 
   if (isLoading && page === 0) {
@@ -129,10 +141,14 @@ export function TestimonialsTable() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                 
-                  <DropdownMenuItem onClick={() => router.push(`/admin/testimonial/${testimonial.id}/edit`)}>
+
+                  <DropdownMenuItem onClick={() => router.push(`/admin/testimonials/${testimonial.id}/edit`)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit testimonial
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push(`/admin/testimonials/${testimonial.id}`)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    view testimonial
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
@@ -236,17 +252,13 @@ export function TestimonialsTable() {
       </div>
 
       <DeleteDialog
-        isError={isError}
-        isLoading={isLoading}
-
-        // skip={page }
-        // take={10}
-        // id={deleteId}
+        isLoading={isLoadingDelete}
+        isError={isErrorDelete}
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        onConfirm={() => deleteId && handleDelete(deleteId)}
-        title="Delete testimonial Member"
-        description="Are you sure you want to delete this testimonial member? This action cannot be undone."
+        onConfirm={async () => await handleDelete(deleteId!)}
+        title="Delete testimonial"
+        description="Are you sure you want to delete this testimonial? This action cannot be undone."
       />
     </>
   )

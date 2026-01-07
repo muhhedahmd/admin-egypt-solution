@@ -104,7 +104,7 @@ export const COMPOSITIONS: {
       description: "Card flip animation transitions",
     },
     {
-      value: CompositionType.CUBE_ROTATION,
+      value: CompositionType.CUBE,
       label: "Cube",
       icon: Cube,
       description: "3D cube rotation between slides",
@@ -183,7 +183,7 @@ export function CompositionBuilder({ isDialogOpen, setIsDialogOpen, setSlides, s
           <ArrangeSlidesDialog
             isOpen={isDialogOpen}
             onClose={() => setIsDialogOpen(false)}
-            slides={slides}
+            slides={slides as any}
             setSlides={setSlides}
           />        
           </div>

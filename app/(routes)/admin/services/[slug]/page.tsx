@@ -24,15 +24,15 @@ import {
   ShoppingCart
 } from "lucide-react"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
-import { useGetServiceBySlugQuery } from "@/lib/store/api/services-api"
+import { useDeleteServiceMutation, useGetServiceBySlugQuery } from "@/lib/store/api/services-api"
 import { toast } from "sonner"
 import Image from "next/image"
 
 export default function Page({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter()
   const p = React.use(params)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [del, { isLoading: isLoadingDelete, isError: isErrorDelete, isSuccess }] = useDeleteServiceMutation()
   const { data: serviceData, isLoading, isError } = useGetServiceBySlugQuery(p.slug)
 
   const formatDate = (date: string) => {
@@ -50,10 +50,24 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
     return (bytes / 1048576).toFixed(1) + ' MB'
   }
 
-  const handleDelete = () => {
-    console.log("Deleting service:", serviceData?.data.service.id)
-    setDeleteDialogOpen(false)
-    router.push('/admin/services')
+  const handleDelete = async (id: string) => {
+    try {
+
+      console.log("Deleting service:", id)
+      // setAllServices(prev => prev.filter(s => s.id !== id))
+      await del({
+        id
+      }).then(res => {
+        if (res.data) {
+          setDeleteId(null)
+          toast.success("Service deleted successfully!")
+        }
+      })
+
+
+    } catch (error) {
+      toast.error("Failed to delete service. Please try again.")
+    }
   }
 
   if (isLoading) {
@@ -103,7 +117,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <span className="text-foreground font-medium">{service.slug}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {service.icon && (
+                    {service.icon && service.icon.startsWith("http") ? (
                       <Image
                         src={service.icon}
                         alt={service.name + "-icon"}
@@ -111,7 +125,9 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                         height={28}
                         className="rounded-md"
                       />
-                    )}
+                    ) : <span>
+                      {service.icon}
+                    </span>}
                     <h1 className="text-2xl font-bold tracking-tight">{service.name}</h1>
                   </div>
                 </div>
@@ -128,7 +144,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                 <Button
                   variant="destructive"
                   size="icon"
-                  onClick={() => setDeleteDialogOpen(true)}
+                  onClick={() => setDeleteId(service.id)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -160,33 +176,35 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     )}
                     <Badge
                       variant={service.isActive ? "default" : "secondary"}
-                      className="shadow-2xl text-base py-2 px-4 backdrop-blur-sm bg-background/80"
+                      className="shadow-2xl text-base py-2 px-4 backdrop-blur-sm "
                     >
                       <CheckCircle2 className="h-4 w-4 mr-2" />
                       {service.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
 
-                  <div className="absolute top-6 right-6">
+                  {/* <div className="absolute top-6 right-6">
                     <Badge variant="secondary" className="shadow-2xl text-base py-2 px-4 backdrop-blur-sm bg-background/80">
                       <TrendingUp className="h-4 w-4 mr-2" />
                       Order #{service.order}
                     </Badge>
-                  </div>
+                  </div> */}
 
                   <div className="absolute bottom-0 left-0 right-0 p-8">
                     <div className="flex items-end justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          {service.icon && (
+                          {service.icon && service.icon.startsWith("http") ? (
                             <Image
                               src={service.icon}
                               alt={service.name + "-icon"}
-                              width={48}
-                              height={48}
-                              className="rounded-lg bg-white/10 backdrop-blur-md p-2"
+                              width={28}
+                              height={28}
+                              className="rounded-md"
                             />
-                          )}
+                          ) : <span>
+                            {service.icon}
+                          </span>}
                           <h2 className="text-4xl font-bold text-white drop-shadow-lg">
                             {service.name}
                           </h2>
@@ -198,7 +216,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       <div className="text-right">
                         <p className="text-sm text-white/80 mb-1">Price</p>
                         <p className="text-3xl font-bold text-white drop-shadow-lg">
-                          ${service.price}
+                          {service.price}
                         </p>
                       </div>
                     </div>
@@ -251,7 +269,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {projects.map((projectData, index) => (
+                    {projects?.map((projectData: any, index: number) => (
                       <Card
                         key={index}
                         className="overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl group"
@@ -274,7 +292,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                             <Badge
                               variant={
                                 projectData.project.status === "COMPLETED" ? "default" :
-                                projectData.project.status === "IN_PROGRESS" ? "secondary" : "outline"
+                                  projectData.project.status === "IN_PROGRESS" ? "secondary" : "outline"
                               }
                               className="shadow-lg backdrop-blur-sm bg-background/80"
                             >
@@ -411,7 +429,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                   <div>
                     <p className="text-xs text-muted-foreground">PRICING</p>
                     <h3 className="text-3xl font-bold text-primary">
-                      ${service.price}
+                      {service.price}
                     </h3>
                   </div>
                 </div>
@@ -440,7 +458,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">Status</p>
+                      <p className="text-xs  text-muted-foreground">Status</p>
                       <p className="font-semibold">{service.isActive ? "Active" : "Inactive"}</p>
                     </div>
                   </div>
@@ -510,9 +528,11 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
       </div>
 
       <DeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDelete}
+        isLoading={isLoadingDelete}
+        isError={isErrorDelete}
+        open={deleteId !== null}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={async () => await handleDelete(deleteId!)}
         title="Delete Service"
         description="Are you sure you want to delete this service? This action cannot be undone."
       />

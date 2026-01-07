@@ -87,7 +87,6 @@ const SlideShowSelect = ({
                             title="Select Services"
                             placeholder="Search services..."
                             extraInputs={true}
-
                             useQuery={useGetServicesQuery} // Now using lazy query
                             useLazySearch={useLazySearchServicesQuery}
                             searchParamKey="search"
@@ -98,7 +97,6 @@ const SlideShowSelect = ({
                     <TabsContent value="PROJECTS">
                         <TabContentProject
                             disabledItems={disabledItemsPerType?.projects}
-
                             selectedItems={selectedProjects}
                             setSelectedItems={setSelectedProjects}
                             tabType="project"

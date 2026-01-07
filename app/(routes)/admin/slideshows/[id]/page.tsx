@@ -35,6 +35,8 @@ import { SlidesEmptyState, SlidesErrorState } from "@/components/admin/utils/sli
 import { CompositionPreview } from "@/components/admin/utils/slides/compositionPreviw"
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  console.log({containerRef} , "containerRef")
   const router = useRouter()
   const p = React.use(params)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -51,11 +53,10 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { data: slideshowData, isLoading, isError } = useGetSlideShowByIdQuery(p.id)
   const [triggerGetSlides, { data: slidesData, isLoading: slidesLoading, error: slidesError }] =
     usePaginatedSlidesMutation()
-    
-  const [allSlides, setAllSlides] = useState<any[]>([])
 
+  const [allSlides, setAllSlides] = useState<any[]>([])
   useEffect(() => {
-    const data =slidesData?.data.slides ?  [... allSlides, ...slidesData?.data.slides ]: [...allSlides]
+    const data = slidesData?.data.slides ? [...allSlides, ...slidesData?.data.slides] : [...allSlides]
     setAllSlides(() => (data))
   }, [slidesData?.data.slides])
 
@@ -71,7 +72,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     }
   }, [p.id])
 
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | Date) => {
     if (!date) return null
     return new Date(date).toLocaleDateString('en-US', {
       month: 'long',
@@ -100,6 +101,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     // }
 
   }
+
 
   const formatInterval = (ms: number) => {
     const seconds = ms / 1000
@@ -172,10 +174,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   }
 
   const slideshow = slideshowData.data
-  console.log({
-    slideshow , 
-    allSlides
-  })
+
   // const slides = slidesData?.data?.slides || []
 
   const slidesByType = allSlides?.reduce((acc: any, slide: any) => {
@@ -196,7 +195,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="max-h-[calc(100vh-5rem)] overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
         {/* Sticky Header */}
         <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container mx-auto px-4 py-4">
@@ -248,7 +247,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-8">
+        <div className="container overflow-hidden mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-8">
@@ -310,8 +309,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
               {/* Compact Preview */}
               {allSlides?.length > 0 && (
-                <Card className="p-8 border-0 shadow-xl bg-gradient-to-br from-card to-card/50">
+                <Card  className="p-8 border-0 shadow-xl   ">
                   <div className="flex items-center justify-between mb-6">
+
                     <div className="flex items-center gap-3">
                       <div className="h-12 w-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
                         <Eye className="h-6 w-6 text-purple-500" />
@@ -333,19 +333,22 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     </Button>
                   </div>
 
-                  <div className="aspect-video bg-muted/30 rounded-xl overflow-hidden">
-                    <CompositionPreview
-
+                  <div className="aspect-video  rounded-xl  overflow-hidden">
+                    {/* <CompositionPreview
+                    containerRef={containerRef}
+                      autoPlay={slideshow.autoPlay}
+                      interval={slideshow.interval}
+                      isInViewport={false}
                       // onScroll={onScroll}
                       composition={slideshow.composition as any}
-                      slides={allSlides.map((s)=>{
+                      slides={allSlides.map((s) => {
                         return {
                           ...s.data,
-                          order : s.order ,
+                          order: s.order,
                           type: s.type
                         }
                       })}
-                    />
+                    /> */}
                   </div>
                 </Card>
               )}
@@ -518,13 +521,16 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       </div>
 
       {/* Fullscreen Preview Modal */}
+                  
+
       <AnimatePresence>
+
         {fullscreenPreview && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl"
+            className="fixed inset-0 z-100   backdrop-blur-xl"
           >
             <div className="h-full flex flex-col">
               <div className="flex items-center justify-between p-6 border-b border-white/10">
@@ -541,20 +547,22 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   <X className="h-6 w-6" />
                 </Button>
               </div>
-              <div className="flex-1 p-8 overflow-auto">
-                <div className="max-w-7xl mx-auto">
+
+   
                   <CompositionPreview
-                  onScroll={onScroll}
+                    autoPlay={slideshow.autoPlay}
+                    interval={slideshow.interval}
+                    isInViewport={false}
+                    containerRef={containerRef}
                     composition={slideshow.composition as any}
                     slides={allSlides.map((slide: any) => ({
                       ...slide.data,
-                      order : slide.order,
-                      type: slide.type 
+                      order: slide.order,
+                      type: slide.type
                     }))}
                   />
-                </div>
-              </div>
-            </div>
+                    </div>
+             
           </motion.div>
         )}
       </AnimatePresence>

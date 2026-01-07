@@ -17,35 +17,17 @@ interface HeroCarouselProps {
 export const HeroCarousel = React.memo(({   heroes,  }: HeroCarouselProps) => {
   const containerRef = React.useRef<HTMLDivElement>(null)
 
-  // const scroll = (direction: "left" | "right") => {
-  //   if (!containerRef.current) return
-
-  //   const scrollAmount = 400
-  //   const newPosition = direction === "left" ? scrollPosition - scrollAmount : scrollPosition + scrollAmount
-
-  //   containerRef.current.scrollTo({
-  //     left: newPosition,
-  //     behavior: "smooth",
-  //   })
-  //   setScrollPosition(newPosition)
-  // }
-
-  // const canScrollLeft = scrollPosition > 0
-  // const canScrollRight = containerRef.current
-  //   ? scrollPosition < containerRef.current.scrollWidth - containerRef.current.clientWidth
-  //   : false
-
     console.log({heroes})
   return (
     <div className="relative">
       <div
         ref={containerRef}
-        className=" gap-4  grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4   scrollbar-hide px-4"
+        className=" gap-4  grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2  w-full  xl:grid-cols-4  scrollbar-hide px-4"
         
 
       >
         {heroes.map((hero) => (
-          <div key={hero.hero.id} className=" w-full sm:w-96">
+          <div key={hero.hero.id} className=" w-full  ">
 
             <HeroCard hero={{ 
               hero : hero.hero,

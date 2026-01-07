@@ -1,66 +1,97 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+"use client";
 
-const activities = [
-  {
-    id: 1,
-    user: "John Doe",
-    action: "created a new project",
-    target: "E-commerce Platform",
-    time: "2 hours ago",
-    initials: "JD",
-  },
-  {
-    id: 2,
-    user: "Sarah Smith",
-    action: "published a blog post",
-    target: "AI in Modern Development",
-    time: "4 hours ago",
-    initials: "SS",
-  },
-  {
-    id: 3,
-    user: "Mike Johnson",
-    action: "updated service",
-    target: "Web Development",
-    time: "6 hours ago",
-    initials: "MJ",
-  },
-  {
-    id: 4,
-    user: "Emily Brown",
-    action: "added team member",
-    target: "Alex Wilson",
-    time: "1 day ago",
-    initials: "EB",
-  },
-  {
-    id: 5,
-    user: "David Lee",
-    action: "responded to contact",
-    target: "New inquiry from Acme Corp",
-    time: "2 days ago",
-    initials: "DL",
-  },
-]
+import { Bar, BarChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 
-export function RecentActivity() {
+interface TrafficData {
+  source?: string;
+  medium?: string;
+  visitors: number;
+}
+
+interface TrafficSourcesChartProps {
+  data: TrafficData[];
+  type: "source" | "medium";
+}
+
+const COLORS = [
+  "hsl(var(--chart-1))",
+  "hsl(var(--chart-2))",
+  "hsl(var(--chart-3))",
+  "hsl(var(--chart-4))",
+  "hsl(var(--chart-5))",
+];
+
+export function TrafficSourcesChart({ data, type }: TrafficSourcesChartProps) {
+  const chartData = data.map((item) => ({
+    name: type === "source" ? item.source : item.medium,
+    value: item.visitors,
+  }));
+
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <div className="space-y-4">
-      {activities.map((activity) => (
-        <div key={activity.id} className="flex items-start gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs">{activity.initials}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 space-y-1">
-            <p className="text-sm">
-              <span className="font-medium">{activity.user}</span>{" "}
-              <span className="text-muted-foreground">{activity.action}</span>{" "}
-              <span className="font-medium">{activity.target}</span>
-            </p>
-            <p className="text-xs text-muted-foreground">{activity.time}</p>
-          </div>
-        </div>
-      ))}
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={chartData} layout="horizontal">
+          <XAxis type="number" hide />
+          <YAxis
+            type="category"
+            dataKey="name"
+            tickLine={false}
+            axisLine={false}
+            width={100}
+            className="text-xs capitalize"
+          />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const data = payload[0];
+              return (
+                <div className="rounded-lg border bg-background p-3 shadow-lg">
+                  <p className="text-sm font-medium capitalize mb-1">{data.payload.name}</p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Visitors:</span>
+                    <span className="font-medium">{data.value}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                    <span>
+                      {((Number(data.value) / total) * 100).toFixed(1)}% of total
+                    </span>
+                  </div>
+                </div>
+              );
+            }}
+          />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+
+      <div className="space-y-2">
+        {chartData.map((item, index) => {
+          const percentage = ((item.value / total) * 100).toFixed(1);
+          return (
+            <div key={index} className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <span className="capitalize font-medium">{item.name}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-muted-foreground">{item.value.toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground w-12 text-right">
+                  {percentage}%
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
-  )
+  );
 }

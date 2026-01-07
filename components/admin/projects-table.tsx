@@ -1,17 +1,18 @@
 "use client"
 
-import { useState, useEffect, } from "react"
+import { useState, useEffect, use, } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MoreHorizontal, Pencil, Trash2, Eye, ExternalLink, Github, Calendar, Star, Layers, FileImage } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
-import { DeleteDialog } from "@/components/admin/delete-dialog"
-import { useGetProjectsQuery } from "@/lib/store/api/projects-api"
+import { useDeleteProjectMutation, useGetProjectsQuery } from "@/lib/store/api/projects-api"
 import { Project, Technology } from "@/types/schema"
 import { Image } from "@/types/services"
 import BlurredImage from "@/app/_comp/BlurredHashImage"
 import { useIntersectionObserver } from "@uidotdev/usehooks";
+import { toast } from "sonner"
+import { DeleteDialog } from "./delete-dialog"
 
 
 export function ProjectsTable() {
@@ -66,10 +67,25 @@ export function ProjectsTable() {
   ])
 
 
-  const handleDelete = (id: string) => {
-    console.log("Deleting project:", id)
-    setAllProjects(prev => prev.filter(p => p.project.id !== id))
-    setDeleteId(null)
+  const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteProjectMutation()
+
+
+  const handleDelete = async (id: string) => {
+    try {
+      console.log(id)
+      // setAllServices(prev => prev.filter(s => s.id !== id))
+      await del(  id
+      ).then(res => {
+        if (res.data) {
+          toast.success("Service deleted successfully!")
+          setDeleteId(null)
+        }
+      })
+
+
+    } catch (error) {
+      toast.error("Failed to delete service. Please try again.")
+    }
   }
 
   const formatDate = (date: string | Date) => {
@@ -357,10 +373,12 @@ export function ProjectsTable() {
           )}
       </div>
 
-      <DeleteDialog
+     <DeleteDialog
+        isLoading={isLoadingDelete}
+        isError={isErrorDelete}
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        onConfirm={() => deleteId && handleDelete(deleteId)}
+        onConfirm={async () => await handleDelete(deleteId!)}
         title="Delete Project"
         description="Are you sure you want to delete this project? This action cannot be undone."
       />

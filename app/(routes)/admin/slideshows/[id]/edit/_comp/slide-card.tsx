@@ -15,7 +15,6 @@ interface SlideCardProps {
 
 export const SlideCard = ({ slide , index, onEdit, onDelete }: SlideCardProps) => {
 
-    console.log(slide?.customDescription , slide)
 
     return (
         <div

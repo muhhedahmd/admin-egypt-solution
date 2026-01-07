@@ -4,9 +4,6 @@ import {
 import { SlideShow } from "@/types/slideShows";
 import {  useRef, useState, useEffect } from "react";
 import {  AnimatePresence } from "framer-motion";
-
-
-import dynamic from "next/dynamic";
 import { SlideshowCard } from "./slideShowCard";
 
 
@@ -27,7 +24,7 @@ export function slideShowsDemoPreview({ onLoad }: { onLoad?: () => void }) {
     isLoading,
     isError,
   } = useGetSlideShowsQuery({
-    skip: 0,
+    skip: page,
     take: ITEMS_PER_PAGE,
   });
 
@@ -54,6 +51,7 @@ export function slideShowsDemoPreview({ onLoad }: { onLoad?: () => void }) {
       const { currentPage, totalPages } = slideshowsData.pagination;
       setHasMore(currentPage < totalPages);
     }
+    
   }, [slideshowsData]);
 
   // Intersection Observer for infinite scroll

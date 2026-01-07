@@ -7,11 +7,12 @@ import { MoreHorizontal, Pencil, Trash2, Eye, Star, DollarSign, Package, FileIma
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
-import { useGetServicesQuery } from "@/lib/store/api/services-api"
+import { useDeleteServiceMutation, useGetServicesQuery } from "@/lib/store/api/services-api"
 import Blurredimage from "@/app/_comp/BlurredHashImage"
 import Image from "next/image"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
 import { ServiceWithImage } from "@/types/schema"
+import { toast } from "sonner"
 
 export function ServicesTable() {
   const router = useRouter()
@@ -28,13 +29,13 @@ export function ServicesTable() {
     isFetching,
     refetch
   } = useGetServicesQuery({
-    skip: page ,
+    skip: page,
     take: 10
   })
 
   const [allServices, setAllServices] = useState<ServiceWithImage[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
-
+  const [del, { isLoading: isLoadingDelete, isError: isErrorDelete, isSuccess }] = useDeleteServiceMutation()
   useEffect(() => {
     if (servicesData?.data) {
       setAllServices((prev) => {
@@ -47,8 +48,8 @@ export function ServicesTable() {
 
   useEffect(() => {
     if (entry?.isIntersecting && !isFetching && servicesData?.data) {
-      console.log( 
-        allServices.length ,
+      console.log(
+        allServices.length,
         servicesData.pagination.totalItems
       )
       const hasMore = allServices.length < (servicesData.pagination.totalItems || 0)
@@ -56,10 +57,25 @@ export function ServicesTable() {
     }
   }, [entry, isFetching, servicesData, allServices.length])
 
-  const handleDelete = (id: string) => {
-    console.log("Deleting service:", id)
-    setAllServices(prev => prev.filter(s => s.id !== id))
-    setDeleteId(null)
+  const handleDelete = async (id: string) => {
+    try {
+
+      console.log("Deleting service:", id)
+      // setAllServices(prev => prev.filter(s => s.id !== id))
+      await del({
+        id
+      }).then(res => {
+        if (res.data) {
+          setAllServices(prev => prev.filter(s => s.id !== id))
+          setDeleteId(null)
+          toast.success("Service deleted successfully!")
+        }
+      })
+
+
+    } catch (error) {
+      toast.error("Failed to delete service. Please try again.")
+    }
   }
 
   const formatFileSize = (bytes: number) => {
@@ -133,7 +149,7 @@ export function ServicesTable() {
 
               <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                 {service.isFeatured && (
-                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 border-0 shadow-lg">
+                  <Badge className=" from-amber-500 to-orange-500 border-0 shadow-lg">
                     <Star className="h-3 w-3 mr-1 fill-current" />
                     Featured
                   </Badge>
@@ -158,7 +174,7 @@ export function ServicesTable() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={() => router.push(`/admin/services/${service.id}`)}>
+                    <DropdownMenuItem onClick={() => router.push(`/admin/services/${service.slug}`)}>
                       <Eye className="mr-2 h-4 w-4" />
                       View Details
                     </DropdownMenuItem>
@@ -178,11 +194,11 @@ export function ServicesTable() {
               </div>
 
               {/* Order badge */}
-              <div className="absolute bottom-4 right-4">
+              {/* <div className="absolute bottom-4 right-4">
                 <Badge variant="secondary" className="shadow-lg backdrop-blur-sm bg-background/80">
                   Order #{service.order}
                 </Badge>
-              </div>
+              </div> */}
             </div>
 
             {/* Content */}
@@ -190,16 +206,18 @@ export function ServicesTable() {
               {/* Title with Icon and Slug */}
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  {service.icon && (
+                  {service?.icon && service.icon?.startsWith("http") ? (
                     <Image
                       src={service.icon}
                       alt={service.name + "-icon"}
-                      width={24}
-                      height={24}
-                      className="rounded-md bg-muted w-6 h-6 object-cover"
+                      width={28}
+                      height={28}
+                      className="rounded-md"
                     />
-                  )}
-                  <h3 className="text-xl font-bold tracking-tight line-clamp-1 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  ) : <span>
+                    {service.icon}
+                  </span>}
+                  <h3 className="text-xl font-bold tracking-tight line-clamp-1  from-foreground to-foreground/70 bg-clip-text">
                     {service.name}
                   </h3>
                 </div>
@@ -231,7 +249,7 @@ export function ServicesTable() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground mb-0.5">Price</p>
                   <p className="font-bold text-lg text-primary">
-                    ${service.price}
+                    {service.price}
                   </p>
                 </div>
               </div>
@@ -267,7 +285,7 @@ export function ServicesTable() {
             <span>Loading more services...</span>
           </div>
         )}
-        {servicesData?.data && 
+        {servicesData?.data &&
           allServices.length >= (servicesData.pagination.totalItems || 0) && (
             <p className="text-sm text-muted-foreground">
               All {servicesData.pagination.totalItems} services loaded
@@ -276,14 +294,13 @@ export function ServicesTable() {
       </div>
 
       <DeleteDialog
-        skip={page * 10}
-        take={10}
-        id={deleteId}
+        isLoading={isLoadingDelete}
+        isError={isErrorDelete}
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        onConfirm={() => deleteId && handleDelete(deleteId)}
+        onConfirm={async () => await handleDelete(deleteId!)}
         title="Delete Service"
-        description="Are you sure you want to delete this service? This action cannot be undone."
+        description="Are you sure you want to delete this service? This action cannot be undone. "
       />
     </>
   )
@@ -299,29 +316,29 @@ function LoadingSkeleton() {
         >
           {/* Image skeleton */}
           <div className="h-56 bg-muted relative overflow-hidden">
-            <div className="absolute inset-0 animate-wave bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <div className="absolute inset-0 animate-wave  from-transparent via-white/10 to-transparent" />
           </div>
 
           {/* Content skeleton */}
           <div className="p-6 space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-md animate-wave bg-gradient-to-r from-muted via-muted-foreground/10 to-muted" />
-                <div className="h-6 w-2/3 rounded animate-wave bg-gradient-to-r from-muted via-muted-foreground/10 to-muted" />
+                <div className="h-6 w-6 rounded-md animate-wave  from-muted via-muted-foreground/10 to-muted" />
+                <div className="h-6 w-2/3 rounded animate-wave  from-muted via-muted-foreground/10 to-muted" />
               </div>
-              <div className="h-5 w-32 rounded animate-wave bg-gradient-to-r from-muted via-muted-foreground/10 to-muted" />
+              <div className="h-5 w-32 rounded animate-wave  from-muted via-muted-foreground/10 to-muted" />
             </div>
 
             <div className="space-y-2">
-              <div className="h-4 w-full rounded animate-wave bg-gradient-to-r from-muted via-muted-foreground/10 to-muted" />
-              <div className="h-4 w-5/6 rounded animate-wave bg-gradient-to-r from-muted via-muted-foreground/10 to-muted" />
+              <div className="h-4 w-full rounded animate-wave  from-muted via-muted-foreground/10 to-muted" />
+              <div className="h-4 w-5/6 rounded animate-wave  from-muted via-muted-foreground/10 to-muted" />
             </div>
 
-            <div className="h-20 rounded-lg animate-wave bg-gradient-to-r from-muted via-muted-foreground/10 to-muted" />
+            <div className="h-20 rounded-lg animate-wave  from-muted via-muted-foreground/10 to-muted" />
 
-            <div className="h-16 rounded-lg animate-wave bg-gradient-to-r from-muted via-muted-foreground/10 to-muted" />
+            <div className="h-16 rounded-lg animate-wave  from-muted via-muted-foreground/10 to-muted" />
 
-            <div className="h-8 w-full rounded animate-wave bg-gradient-to-r from-muted via-muted-foreground/10 to-muted" />
+            <div className="h-8 w-full rounded animate-wave  from-muted via-muted-foreground/10 to-muted" />
           </div>
         </div>
       ))}

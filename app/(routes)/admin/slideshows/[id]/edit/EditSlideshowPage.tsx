@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useGetSlideShowByIdQuery, usePaginatedSlidesMutation } from "@/lib/store/api/slideShow-api"
 import { SlideshowFormSkeleton } from "@/components/admin/utils/slide-show-loader"
 import EditSlideShowForm from "./_comp/edit-slideshow-form"
+import { Badge } from "@/components/ui/badge"
 
 export default function EditSlideshowPage({ params }
     : { params: { id: string } }) {
@@ -25,6 +26,7 @@ export default function EditSlideshowPage({ params }
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Edit Slideshow</h1>
                     <p className="text-muted-foreground">Update slideshow settings and slides</p>
+                  
                 </div>
             </div>
 

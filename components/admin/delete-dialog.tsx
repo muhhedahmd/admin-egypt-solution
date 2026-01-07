@@ -10,10 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useDeleteProjectMutation } from "@/lib/store/api/projects-api"
-import { useDeleteServiceMutation } from "@/lib/store/api/services-api"
 import { Loader2 } from "lucide-react"
-import { MouseEvent, useEffect } from "react"
+import { Button } from "../ui/button"
 
 interface DeleteDialogProps {
   open: boolean
@@ -21,7 +19,7 @@ interface DeleteDialogProps {
   title: string
   description: string,
 
-  onConfirm: () => void,
+  onConfirm?: () => Promise<void> ,
   isLoading: boolean,
   isError: boolean
 
@@ -31,7 +29,10 @@ export function DeleteDialog({
 
   onConfirm,
   isError,
-  isLoading,  open, onOpenChange, title, description }: DeleteDialogProps) {
+  isLoading,
+  open, onOpenChange,
+  title,
+  description }: DeleteDialogProps) {
 
 
 
@@ -55,7 +56,7 @@ export function DeleteDialog({
               </AlertDialogCancel>
               <AlertDialogAction
                 disabled={isLoading}
-                onClick={() => onConfirm()}
+                onClick={() => onConfirm?.() || onOpenChange(false)}
                 className="cursor-pointer bg-red-500 hover:bg-red-400 text-white"
               >
                 {isLoading ? (
@@ -75,7 +76,17 @@ export function DeleteDialog({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel className="cursor-pointer ">Cancel</AlertDialogCancel>
-              <AlertDialogAction
+              <Button
+                disabled={isLoading}
+                onClick={() => onConfirm?.()}
+                variant={"destructive"}
+                className="cursor-pointer "
+              >
+                {
+                  isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Delete"
+                }
+              </Button>
+              {/* <AlertDialogAction
                 disabled={isLoading}
                 onClick={onConfirm}
                 className=" cursor-pointer bg-red-500 hover:bg-red-400 text-white"
@@ -84,7 +95,7 @@ export function DeleteDialog({
                   isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Delete"
 
                 }
-              </AlertDialogAction>
+              </AlertDialogAction> */}
             </AlertDialogFooter>
           </AlertDialogContent>
       }

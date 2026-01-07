@@ -43,7 +43,7 @@ export const HeroCard = React.memo(({ hero }: HeroCardProps) => {
 
   }
   return (
-    <Card className="p-3 group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105">
+    <Card className="p-3 group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105 w-full">
 
       <div
 

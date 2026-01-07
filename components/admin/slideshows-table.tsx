@@ -1,19 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { MoreHorizontal, Pencil, Trash2, Eye, Play, Pause, Clock, Layers, ChevronDown, ChevronUp } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { useGetSlideShowsQuery, usePaginatedSlidesMutation } from "@/lib/store/api/slideShow-api"
-import { SlidesEmptyState, SlidesErrorState, SlidesLoader } from "./utils/slides-loader"
-import { InfiniteScrollSlides } from "./utils/slide-show-infinty-scroller"
+import { useDeleteSlideShowMutation, useGetSlideShowsQuery, } from "@/lib/store/api/slideShow-api"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
-import { SlideshowReorderDialog } from "@/app/(routes)/admin/slideshows/_composnents/ReorderSlideShowDialog"
-import { PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { DeleteDialog } from "./delete-dialog"
+import { toast } from "sonner"
 
 export function SlideshowsTable() {
 
@@ -30,29 +27,12 @@ export function SlideshowsTable() {
     isFetching,
     refetch
   } = useGetSlideShowsQuery({
-    skip: page * 10,
+    skip: page,
     take: 10
   })
 
   const [allSlideshows, setAllSlideshows] = useState<any[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  )
-  const [expandedSlideshow, setExpandedSlideshow] = useState<string | null>(null)
-  const [pagesPerType, setPagesPerType] = useState<Record<string, number>>({
-    services: 1,
-    projects: 1,
-    clients: 1,
-    testimonials: 1,
-    team: 1,
-  })
-
-  const [triggerGetSlides] = usePaginatedSlidesMutation()
 
   useEffect(() => {
     if (slideshowsData?.data) {
@@ -71,29 +51,48 @@ export function SlideshowsTable() {
     }
   }, [entry, isFetching, slideshowsData])
 
-  const handleDelete = (id: string) => {
-    console.log("Deleting slideshow:", id)
-    setAllSlideshows(prev => prev.filter(s => s.id !== id))
-    setDeleteId(null)
-  }
 
-  const toggleExpanded = async (slideshowId: string) => {
-    if (expandedSlideshow === slideshowId) {
-      setExpandedSlideshow(null)
-    } else {
-      setExpandedSlideshow(slideshowId)
-      try {
-        await triggerGetSlides({
-          id: slideshowId,
-          page: 1,
-          perPage: 10,
-          pagesPerType: pagesPerType as any,
-        })
-      } catch (err) {
-        console.error("Failed to fetch slides:", err)
-      }
+
+  const [del, { isLoading: isLoadingDelete, isError: isErrorDelete, isSuccess }] = useDeleteSlideShowMutation()
+
+  const handleDelete = async (id: string) => {
+    try {
+
+      console.log("Deleting service:", id)
+      // setAllServices(prev => prev.filter(s => s.id !== id))
+      await del({ id, skip: page, take: 10 }).then(res => {
+        if (res.data) {
+          console.log("Deleting slideshow:", id)
+          setAllSlideshows(prev => prev.filter(s => s.id !== id))
+          setDeleteId(null)
+          toast.success("slideshow deleted successfully!")
+        }
+      })
+
+
+    } catch (error) {
+      toast.error("Failed to delete service. Please try again.")
     }
   }
+
+
+  // const toggleExpanded = async (slideshowId: string) => {
+  //   if (expandedSlideshow === slideshowId) {
+  //     setExpandedSlideshow(null)
+  //   } else {
+  //     setExpandedSlideshow(slideshowId)
+  //     try {
+  //       await triggerGetSlides({
+  //         id: slideshowId,
+  //         page: 1,
+  //         perPage: 10,
+  //         pagesPerType: pagesPerType as any,
+  //       })
+  //     } catch (err) {
+  //       console.error("Failed to fetch slides:", err)
+  //     }
+  //   }
+  // }
 
   if (isLoading && page === 0) {
     return <LoadingSkeleton />
@@ -171,6 +170,12 @@ export function SlideshowsTable() {
                       {slideshow.isActive ? "Active" : "Inactive"}
                     </Badge>
                     <Badge
+                      // variant={slideshow.isActive ? "default" : "secondary"}
+                      className="shadow-sm"
+                    >
+                      {slideshow?.composition}
+                    </Badge>
+                    <Badge
                       variant={slideshow.autoPlay ? "default" : "outline"}
                       className="shadow-sm"
                     >
@@ -195,25 +200,6 @@ export function SlideshowsTable() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleExpanded(slideshow.id)}
-                    className="gap-2"
-                  >
-                    {expandedSlideshow === slideshow.id ? (
-                      <>
-                        <ChevronUp className="h-4 w-4" />
-                        Hide Slides
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-4 w-4" />
-                        View Slides
-                      </>
-                    )}
-                  </Button>
-
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon">
@@ -222,9 +208,9 @@ export function SlideshowsTable() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/slideshows/${slideshow.id}/edit`}>
+                        <Link href={`/admin/slideshows/${slideshow.id}`}>
                           <Eye className="h-4 w-4 mr-2" />
-                          View & Edit
+                          View
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
@@ -247,16 +233,7 @@ export function SlideshowsTable() {
             </div>
 
             {/* Slides Section (Expandable) */}
-            {expandedSlideshow === slideshow.id && (
-              <div className="border-t bg-muted/30">
-                <div className="p-6">
-                  <SlidesDisplay
-                    slideshowId={slideshow.id}
-                    isOpen={expandedSlideshow === slideshow.id}
-                  />
-                </div>
-              </div>
-            )}
+
           </Card>
         ))}
       </div>
@@ -278,139 +255,21 @@ export function SlideshowsTable() {
       </div>
 
       {/* Delete Dialog */}
-      {deleteId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="p-6 max-w-sm w-full">
-            <h2 className="text-lg font-semibold mb-2">Delete Slideshow?</h2>
-            <p className="text-muted-foreground mb-6">This action cannot be undone.</p>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setDeleteId(null)} className="flex-1">
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={() => handleDelete(deleteId)} className="flex-1">
-                Delete
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      <DeleteDialog
+        isLoading={isLoadingDelete}
+        isError={isErrorDelete}
+        open={deleteId !== null}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={async () => await handleDelete(deleteId!)}
+        title={`Delete Slideshow ( ${slideshowsData?.data.find(s => s.id === deleteId)?.title} )`}
+        description="Are you sure you want to delete this Slideshow? This action cannot be undone. "
+      />
     </>
   )
 }
 
-interface SlidesDisplayProps {
-  slideshowId: string
-  isOpen: boolean
-}
 
-function SlidesDisplay({ slideshowId, isOpen }: SlidesDisplayProps) {
-  const [triggerGetSlides, { data: slidesData, isLoading, error }] = usePaginatedSlidesMutation()
-  const [pagesPerType, setPagesPerType] = useState({
-    services: 1,
-    projects: 1,
-    clients: 1,
-    testimonials: 1,
-    team: 1,
-  })
 
-  useEffect(() => {
-    if (isOpen) {
-      triggerGetSlides({
-        id: slideshowId,
-        page: 1,
-        perPage: 10,
-        pagesPerType: pagesPerType as any,
-      })
-    }
-  }, [isOpen])
-
-  const handleLoadMore = async (type: string) => {
-    const newPage = (pagesPerType[type as keyof typeof pagesPerType] || 1) + 1
-    setPagesPerType((prev) => ({
-      ...prev,
-      [type]: newPage,
-    }))
-
-    try {
-      await triggerGetSlides({
-        id: slideshowId,
-        page: newPage,
-        perPage: 10,
-        pagesPerType: {
-          ...pagesPerType,
-          [type]: newPage,
-        } as any,
-      })
-    } catch (err) {
-      console.error("Failed to load more slides:", err)
-    }
-  }
-
-  if (isLoading && !slidesData) {
-    return <SlidesLoader />
-  }
-
-  if (error) {
-    return <SlidesErrorState />
-  }
-
-  const slides = slidesData?.data?.slides || []
-
-  if (slides.length === 0) {
-    return <SlidesEmptyState />
-  }
-
-  // Group slides by type
-  const slidesByType = slides.reduce(
-    (acc: any, slide: any) => {
-      if (!acc[slide.type]) acc[slide.type] = []
-      acc[slide.type].push(slide)
-      return acc
-    },
-    {} as Record<string, any[]>,
-  )
-
-  const totalSlides = (slidesData?.data?.slidesCount?.clients || 0)
-    + (slidesData?.data?.slidesCount?.projects || 0)
-    + (slidesData?.data?.slidesCount?.services || 0)
-    + (slidesData?.data?.slidesCount?.testimonials || 0)
-    + (slidesData?.data?.slidesCount?.team || 0)
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="font-semibold text-lg">Slides</h4>
-        <Badge variant="outline" className="text-sm">
-          <Layers className="h-3 w-3 mr-1" />
-          Total: {totalSlides}
-        </Badge>
-      </div>
-
-      {Object.entries(slidesByType).map(([type, typeSlides]) => (
-        <div key={type} className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h5 className="font-semibold capitalize text-base text-primary">{type}</h5>
-            {slidesData?.data?.pages?.[type as keyof typeof slidesData.data.pages] && (
-              <div className="text-xs text-muted-foreground">
-                Page {pagesPerType[type as keyof typeof pagesPerType] || 1} of{" "}
-                {slidesData.data.pages[type as keyof typeof slidesData.data.pages]?.totalPages}
-              </div>
-            )}
-          </div>
-
-          <InfiniteScrollSlides
-            slides={typeSlides}
-            type={type}
-            isLoading={isLoading}
-            onLoadMore={() => handleLoadMore(type)}
-            hasMore={slidesData?.data?.pages?.[type as keyof typeof slidesData.data.pages]?.hasMore || false}
-            direction="horizontal"
-          />
-        </div>
-      ))}
-    </div>
-  )
-}
 
 function LoadingSkeleton() {
   return (

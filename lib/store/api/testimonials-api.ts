@@ -124,6 +124,9 @@ export const testimonialsApi = baseApi.injectEndpoints({
           // Handle error
         }
       },
+      invalidatesTags: [
+        "Testimonials",
+      ],
     }),
   }),
 });

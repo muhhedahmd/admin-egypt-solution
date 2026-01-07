@@ -19,7 +19,7 @@ interface Service {
 export const servicesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getServices: builder.query<
-       PaginatedResponse<ServiceWithImage> ,
+      PaginatedResponse<ServiceWithImage>,
       {
         skip: number;
         take: number;
@@ -36,9 +36,11 @@ export const servicesApi = baseApi.injectEndpoints({
       },
       serializeQueryArgs: ({ queryArgs, endpointName }) => {
         // Return a unique key for the query based on its arguments
-        return `${endpointName}-${queryArgs?.skip || 0}-${queryArgs?.take || 10}`;
+        return `${endpointName}-${queryArgs?.skip || 0}-${
+          queryArgs?.take || 10
+        }`;
       },
-      
+
       // merge(currentCacheData, responseData, otherArgs)  {
       //   console.log({
       //     currentCacheData,
@@ -46,25 +48,25 @@ export const servicesApi = baseApi.injectEndpoints({
       //   })
       //   const mergedData ={
       //     data : {
-      //       pagination : responseData.data.pagination, 
+      //       pagination : responseData.data.pagination,
       //       message : responseData.data.message,
       //       data : [...currentCacheData.data.data, ...responseData.data.data]
       //     }
-      //   } 
+      //   }
       //   console.log({
       //     mergedData
       //   })
-      //   return mergedData  
+      //   return mergedData
       // },
 
       providesTags: ["Services"],
     }),
 
-    SearchServices: builder.query< { data: PaginatedResponse<ServiceWithImage> }, { q: string }>(      {
-
+    SearchServices: builder.query<
+      { data: PaginatedResponse<ServiceWithImage> },
+      { q: string }
+    >({
       query: ({ q }) => `/services/search?q=${q}`,
-      
-
     }),
     CheckOrder: builder.query<
       successResponse<{
@@ -75,42 +77,40 @@ export const servicesApi = baseApi.injectEndpoints({
     >({
       query: ({ order }) => "/services/check-order?order=" + order,
     }),
-    getServiceById: builder.query<successResponse< {
-      service: Service 
-      Image : Image
-    }>, string>({
-
+    getServiceById: builder.query<
+      successResponse<{
+        service: Service;
+        Image: Image;
+      }>,
+      string
+    >({
       query: (id) => `/services/${id}`,
       providesTags: (result, error, id) => [{ type: "Services", id }],
     }),
     getServiceBySlug: builder.query<Service, string>({
       query: (slug) => `/services/slug/${slug}`,
-
     }),
     createService: builder.mutation<
       successResponse<ServiceWithImage>,
       FormData
-
     >({
       query: (body) => ({
-
         url: "/services",
         method: "POST",
         body,
       }),
 
       onQueryStarted: async (arg, { dispatch, queryFulfilled }) => {
-
         const data = (await queryFulfilled).data;
         const patchResult = dispatch(
           servicesApi.util.updateQueryData(
             "getServices",
-            { 
-              skip :0 ,
-              take :10 ,
+            {
+              skip: 0,
+              take: 10,
             },
             (draft) => {
-              draft.data.data.unshift(data.data);
+              draft.data?.data.unshift(data.data);
             }
           )
         );
@@ -122,7 +122,6 @@ export const servicesApi = baseApi.injectEndpoints({
           console.error("Delete failed, rollback:", err);
         }
       },
-   
     }),
     updateService: builder.mutation<
       Service,
@@ -145,40 +144,16 @@ export const servicesApi = baseApi.injectEndpoints({
       },
       {
         id: string;
-        skip: number;
-        take: number;
       }
     >({
-      query: ({ id, skip, take }) => ({
+      query: ({ id }) => ({
         url: `/services/${id}`,
         method: "DELETE",
       }),
-
-      async onQueryStarted(queryArgument, { dispatch, queryFulfilled, extra }) {
-        const { skip, take, id } = queryArgument;
-        const result = (await queryFulfilled).data;
-        const patchResult = dispatch(
-          servicesApi.util.updateQueryData(
-            "getServices",
-            {
-              skip,
-              take,
-            },
-            (draft) => {
-              draft.data.data = draft.data.data.filter(
-                (s) => s.id !== result.data.id
-              );
-            }
-          )
-        );
-
-        try {
-          await queryFulfilled;
-        } catch (err) {
-          patchResult.undo();
-          console.error("Delete failed, rollback:", err);
-        }
-      },
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Services", id },
+        "Services",
+      ],
     }),
   }),
 });
@@ -192,7 +167,5 @@ export const {
   useCheckOrderQuery,
   useGetServiceBySlugQuery,
   useLazyCheckOrderQuery,
-  useLazySearchServicesQuery
-  
+  useLazySearchServicesQuery,
 } = servicesApi;
- 

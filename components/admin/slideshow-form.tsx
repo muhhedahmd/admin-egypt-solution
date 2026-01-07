@@ -17,9 +17,9 @@ import { Eye, Settings, Loader2, Expand } from "lucide-react";
 
 import { CompositionBuilder } from "./utils/slides/CompositionBuilder";
 import SlideShowSelect from "./utils/slideShowSelect";
-import { CompositionPreview } from "./utils/slides/compositionPreviw";
 import {
   ClientWithImages,
+  COMPOSITION_TYPES_ARRAY,
   CompositionType,
   CreateAndAttachMany,
   ProjectWithRelations,
@@ -34,7 +34,6 @@ import {
   useCreateSlideShowAndAttachManyMutation,
 } from "@/lib/store/api/slideShow-api";
 import { SlideShow } from "@/types/slideShows";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { toast } from "sonner";
 import { PreviwDialog } from "./utils/previwDialog";
 
@@ -48,13 +47,7 @@ const SLIDESHOW_TYPES = [
   { value: "CUSTOM", label: "Custom" },
 ];
 
-const COMPOSITION_TYPES = [
-  { value: "CAROUSEL", label: "Carousel" },
-  { value: "GRID", label: "Grid" },
-  { value: "STACKED", label: "Stacked" },
-  { value: "FADE", label: "Fade" },
-  { value: "SINGLE", label: "Single" },
-];
+
 
 interface EnhancedSlideshowFormProps {
   initialData?: SlideShow;
@@ -75,6 +68,7 @@ export function SlideshowForm({
 
   const [composition, setComposition] = useState<CompositionType>(
     CompositionType.CAROUSEL
+    
   );
   const [status, setStatus] = useState(
     !initialData?.isActive ? "INACTIVE" : "ACTIVE"
@@ -98,14 +92,12 @@ export function SlideshowForm({
 
   const [Save, { isLoading, isSuccess, isError, error }] =
     useCreateSlideShowAndAttachManyMutation();
-
-
   useEffect(() => {
     const allSelected = [
 
       { items: selectedServices, type: 'service' },
-      { items: selectedProjects.map(p => ({ ...p.project, image: p.image })), type: 'project' },
-      { items: selectedClients.map(c => ({ ...c.client, logo: c.logo, image: c.image })), type: 'client' },
+      { items: selectedProjects.map(p => ({ ...p.project, image: p.image  , isVisible:p.isVisible})), type: 'project' },
+      { items: selectedClients.map(c => ({ ...c.client, logo: c.logo, image: c.image , isVisible:c.isVisible })), type: 'client' },
       { items: selectedTeam, type: 'team' },
       { items: selectedTestimonial.map(t => ({ ...t, avatar: t.avatar })), type: 'testimonial' },
     ];
@@ -133,7 +125,7 @@ export function SlideshowForm({
         (item, index, self) =>
           index === self.findIndex((s) => s.id === item.id)
       );
-
+      console.log(uniqueSlides)
       return uniqueSlides;
     });
   }, [
@@ -187,7 +179,6 @@ export function SlideshowForm({
     if (!validateForm()) return;
 
     try {
-
       const data: CreateAndAttachMany = {
         title,
         type: SlideshowType[type],
@@ -208,6 +199,7 @@ export function SlideshowForm({
       };
 
       console.log(data);
+
       const res = await Save(data).unwrap();
       SetAllSlides([])
       setSelectedServices([])
@@ -432,8 +424,8 @@ export function SlideshowForm({
                 <p className="text-muted-foreground">Composition</p>
                 <p className="font-medium">
                   {
-                    COMPOSITION_TYPES.find((c) => c.value === composition)
-                      ?.label
+                    COMPOSITION_TYPES_ARRAY.find((c) => c === composition)
+    
                   }
                 </p>
               </div>
@@ -476,7 +468,7 @@ export function SlideshowForm({
                   Arrange
                 </span>
               </button>
-              <PreviwDialog allSlides={allSlides} selectedComposition={selectedComposition} />
+              <PreviwDialog autoPlay={autoplay} interval={autoplayInterval} allSlides={allSlides} selectedComposition={selectedComposition} />
 
             </div>
           </div>

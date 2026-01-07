@@ -189,14 +189,18 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
         if (imageChanged) {
             if (newImage) {
                 // New image uploaded
-                updateData.hasNewImage = true
+                updateData.hasNewImage = true ,
+                updateData.imageState = "UPDATE"
+                
             } else {
                 // Image removed
                 updateData.backgroundImageId = null
-                updateData.removeImage = true
+                updateData.removeImage = true ,
+                updateData.imageState = "REMOVE"
             }
         } else if (existingImage) {
             // Keep existing image
+            updateData.imageState = "KEEP"
             updateData.backgroundImageId = existingImage.id
         }
 

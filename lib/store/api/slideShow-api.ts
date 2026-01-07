@@ -29,7 +29,6 @@ export interface Slide {
   customTitle ?: string
 customDescription ?: string
   data: {
-
     name?: string;
     title?: string;
     clientName?: string;
@@ -65,12 +64,14 @@ export const slideshowApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getSlideShows: builder.query<
       PaginatedResponse<SlideShow>,
+
       {
         skip: number;
         take: number;
       }
     >({
       query: ({ skip, take } = { skip: 0, take: 10 }) => {
+
         return {
           url: "/slide-show",
           params: {
@@ -94,6 +95,7 @@ export const slideshowApi = baseApi.injectEndpoints({
     >({
       query: () => `/slide-show/all-minimal`,
     }),
+    
     getSlideShowById: builder.query<successResponse<SlideShow>, string>({
       query: (id) => `/slide-show/${id}`,
       providesTags: (result, error, id) => [{ type: "SlideShows", id }],
@@ -279,6 +281,7 @@ export const slideshowApi = baseApi.injectEndpoints({
 
     PaginatedSlides: builder.mutation<
       successResponse<PaginatedSlidesResponse>,
+
       {
         id: string;
         page: number;
@@ -293,6 +296,7 @@ export const slideshowApi = baseApi.injectEndpoints({
     >({
       
       query: ({ id, page, pagesPerType, perPage }) => ({
+
         url: `/slide-show/get-paginated-slides/${id}`,
         method: "POST",
         body: {

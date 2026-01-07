@@ -11,7 +11,6 @@ import {
   Technology,
 } from "@/types/schema";
 
-
 export type getProjects = {
   project: Project;
   image: Image | null;
@@ -20,14 +19,25 @@ export type getProjects = {
 export const projectApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Project Queries
-    getProjects: builder.query<PaginatedResponse<getProjects>, PaginationParams>({
+    getProjects: builder.query<
+      PaginatedResponse<getProjects>,
+      PaginationParams
+    >({
       query: ({ skip = 0, take = 10 }) => `/projects?skip=${skip}&take=${take}`,
       serializeQueryArgs: ({ queryArgs }) => {
         return `projects-${queryArgs?.skip || 0}-${queryArgs?.take || 10}`;
       },
     }),
 
-    getProjectBySlug: builder.query({
+    getProjectBySlug: builder.query<
+      successResponse<{
+        project: Project;
+        image: Image | null;
+        technologies: any | null;
+        servicesData?: any | null;
+      }>,
+      string
+    >({
       query: (slug) => `/projects/${slug}`,
     }),
 
@@ -49,7 +59,10 @@ export const projectApi = baseApi.injectEndpoints({
       },
     }),
 
-    searchProjects: builder.query< PaginatedResponse<getProjects> , { q: string; skip: number; take: number }>({
+    searchProjects: builder.query<
+      PaginatedResponse<getProjects>,
+      { q: string; skip: number; take: number }
+    >({
       query: ({ q, skip = 0, take = 10 }) =>
         `/projects/search/query?q=${q}&skip=${skip}&take=${take}`,
       serializeQueryArgs: ({ queryArgs }) => {
@@ -145,19 +158,35 @@ export const projectApi = baseApi.injectEndpoints({
         }
       },
     }),
-
-    deleteProject: builder.mutation({
-      query: (id) => ({
-        url: `/projects/${id}`,
-        method: "DELETE",
+    updateProjectBulk: builder.mutation<
+      void,
+      {
+        id: string;
+        data: FormData;
+      }
+    >({
+      query: ({ id, data }) => ({
+        url: `/projects/update-project-bulk/${id}`,
+        method: "PUT",
+        body: data,
       }),
-      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+      async onQueryStarted({ id }, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled;
           dispatch(projectApi.util.invalidateTags(["Project"]));
         } catch {
           // Handle error
         }
+      },
+    }),
+
+    deleteProject: builder.mutation({
+      query: (id) => ({
+        url: `/projects/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags(result, error, arg, meta) {
+        return [{ type: "Project", id: arg }];
       },
     }),
 
@@ -274,6 +303,7 @@ export const {
   useGetProjectTechnologiesQuery,
   useCreateProjectMutation,
   useUpdateProjectMutation,
+  useUpdateProjectBulkMutation,
   useDeleteProjectMutation,
   useAssignProjectsToTechnologyMutation,
   useRemoveProjectsFromTechnologyMutation,

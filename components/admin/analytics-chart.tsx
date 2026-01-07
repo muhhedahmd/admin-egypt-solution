@@ -1,53 +1,96 @@
-"use client"
+"use client";
 
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
-const chartData = [
-  { month: "Jan", views: 2400, contacts: 12 },
-  { month: "Feb", views: 3200, contacts: 18 },
-  { month: "Mar", views: 2800, contacts: 15 },
-  { month: "Apr", views: 4100, contacts: 22 },
-  { month: "May", views: 3800, contacts: 19 },
-  { month: "Jun", views: 4500, contacts: 28 },
-]
+interface ChartDataPoint {
+  date: string;
+  visitors: number;
+  pageViews: number;
+  blogViews: number;
+}
 
-const chartConfig = {
-  views: {
-    label: "Page Views",
-    color: "hsl(var(--chart-1))",
-  },
-  contacts: {
-    label: "Contacts",
-    color: "hsl(var(--chart-2))",
-  },
-} satisfies ChartConfig
+interface AnalyticsChartProps {
+  data: ChartDataPoint[];
+}
 
-export function AnalyticsChart() {
+export function  AnalyticsChart({ data }: AnalyticsChartProps) {
+  const formattedData = data.map((item) => ({
+    ...item,
+    date: new Date(item.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+  }));
+
   return (
-    <ChartContainer config={chartConfig} className="h-[300px] w-full">
-      <AreaChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-        <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-        <ChartTooltip content={<ChartTooltipContent />} />
+    <ResponsiveContainer width="100%" height={290}>
+      <AreaChart data={formattedData}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
+        <XAxis
+          dataKey="date"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          className="text-xs"
+        />
+        <YAxis tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
+        <Tooltip
+          content={({ active, payload }) => {
+            if (!active || !payload?.length) return null;
+            return (
+              <div className="rounded-lg border bg-background p-3 shadow-lg">
+                <p className="text-sm font-medium mb-2">{payload[0].payload.date}</p>
+                {payload.map((entry, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className="text-muted-foreground">{entry.name}:</span>
+                    <span className="font-medium">{entry.value}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          }}
+        />
         <Area
           type="monotone"
-          dataKey="views"
-          stroke="var(--color-views)"
-          fill="var(--color-views)"
+          dataKey="pageViews"
+          name="Page Views"
+          style={{
+
+            stroke :"hsl(var(--chart-1))",
+            // fill :"hsl(var(--chart-1))"
+          }}
           fillOpacity={0.2}
           strokeWidth={2}
         />
         <Area
           type="monotone"
-          dataKey="contacts"
-          stroke="var(--color-contacts)"
-          fill="var(--color-contacts)"
+          dataKey="visitors"
+          name="Visitors"
+          style={{
+            stroke :"hsl(var(--chart-2))",
+            // fill : "hsl(var(--chart-2))"
+
+          }}
+          fillOpacity={10}
+          strokeWidth={2}
+        />
+        <Area
+          type="monotone"
+          dataKey="blogViews"
+          name="Blog Views"
+          style={{
+
+            stroke : "hsl(var(--chart-3))",
+            // fill :"hsl(var(--chart-3))"
+          }}
           fillOpacity={0.2}
           strokeWidth={2}
         />
       </AreaChart>
-    </ChartContainer>
-  )
+    </ResponsiveContainer>
+  );
 }

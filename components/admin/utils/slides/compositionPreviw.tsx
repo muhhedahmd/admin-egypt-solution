@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { RefObject, useCallback, useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, X } from "lucide-react"
 import type { slide } from "@/types/schema"
 import { TypeToRender } from "./Arrange-slides"
+import CubeComposition from "./_comp/CubeComposition"
 
 interface CompositionPreviewProps {
   composition:
@@ -26,13 +27,13 @@ interface CompositionPreviewProps {
   | "LIGHTBOX"
   | "MARQUEE"
   slides: slide[]
-  onScroll?: () => void
   interval: number
   autoPlay: boolean,
-  isInViewport: boolean
+  isInViewport: boolean,
+  // containerRef : RefObject<HTMLDivElement | null>
 }
 
-export function CompositionPreview({ isInViewport, interval, autoPlay, composition, slides, onScroll }: CompositionPreviewProps) {
+export function CompositionPreview({ isInViewport, interval, autoPlay, composition, slides }: CompositionPreviewProps) {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [[page, direction], setPage] = useState([0, 0])
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -70,12 +71,6 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
     setPage([newPage, newDirection])
     setCurrentSlide(newPage)
 
-    console.log({
-      currentSlide,
-      newPage,
-      newDirection,
-      totalSlides: slides.length
-    })
   }, [currentSlide, slides])
 
   // Auto-progress effect with smooth progress bar
@@ -208,7 +203,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                 }}
                 className=" inset-0  rounded-3xl  "
               >
-                <TypeToRender splitcarousel={true} slide={slides[currentSlide]} />
+                <TypeToRender play={isInViewport} splitcarousel={true} slide={slides[currentSlide]} />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -249,7 +244,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
               className=" rounded-3xl   overflow-hidden cursor-pointer group"
             >
               <div className=" inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <TypeToRender slide={slide} />
+              <TypeToRender play={isInViewport} slide={slide} />
             </motion.div>
           ))}
         </motion.div>
@@ -267,7 +262,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
               className=" rounded-3xl   overflow-hidden group"
             >
               <div className=" inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <TypeToRender slide={slide} />
+              <TypeToRender play={isInViewport} slide={slide} />
             </motion.div>
           ))}
         </motion.div>
@@ -287,7 +282,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                 transition={{ duration: 0.8 }}
                 className=" inset-0   "
               >
-                <TypeToRender slide={slides[currentSlide]} />
+                <TypeToRender play={isInViewport} slide={slides[currentSlide]} />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -328,7 +323,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                 transition={{ duration: 0.5 }}
                 className="h-full  rounded-3xl  "
               >
-                <TypeToRender slide={slides[currentSlide]} />
+                <TypeToRender play={isInViewport} slide={slides[currentSlide]} />
               </motion.div>
             </AnimatePresence>
           </motion.div>
@@ -385,7 +380,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                 transition={{ duration: 0.6, ease: "easeInOut" }}
                 className=" inset-0   "
               >
-                <TypeToRender slide={slides[currentSlide]} />
+                <TypeToRender play={isInViewport} slide={slides[currentSlide]} />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -441,7 +436,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                     transition={{ duration: 0.4 }}
                     className=" inset-0    min-h-screen space-y-12"
                   >
-                    <TypeToRender slide={slide} split={true} index={idx} />
+                    <TypeToRender play={isInViewport} slide={slide} split={true} index={idx} />
                   </motion.div>
 
                 )
@@ -477,7 +472,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                     className=" h-96 w-80  rounded-2xl  "
                     style={{ transformStyle: "preserve-3d" }}
                   >
-                    <TypeToRender slide={slide} />
+                    <TypeToRender play={isInViewport} slide={slide} />
                   </motion.div>
                 )
               })}
@@ -523,7 +518,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                 transition={{ duration: 4, ease: "easeInOut" }}
                 className=" inset-0   "
               >
-                <TypeToRender slide={slides[currentSlide]} />
+                <TypeToRender play={isInViewport} slide={slides[currentSlide]} />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -570,7 +565,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                 className="w-full h-full  rounded-3xl  "
                 style={{ transformStyle: "preserve-3d" }}
               >
-                <TypeToRender slide={slides[currentSlide]} />
+                <TypeToRender play={isInViewport} slide={slides[currentSlide]} />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -602,50 +597,54 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
       )
 
     case "CUBE":
-      return (
-        <div className="space-y-8">
-          <div className="relative h-[500px] perspective-[1200px] flex items-center justify-center rounded-3xl overflow-hidden">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentSlide}
-                initial={{ rotateY: 90, opacity: 0 }}
-                animate={{ rotateY: 0, opacity: 1 }}
-                exit={{ rotateY: -90, opacity: 0 }}
-                transition={{ duration: 0.7, ease: "easeInOut" }}
-                className=" inset-0   "
-                style={{ transformStyle: "preserve-3d" }}
-              >
-                <TypeToRender slide={slides[currentSlide]} />
-              </motion.div>
-            </AnimatePresence>
-          </div>
 
-          <div className="flex gap-4 justify-center">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              onClick={() => paginate(-1)}
-              className="px-8 py-2 rounded-lg bg-primary/90 text-primary-foreground font-semibold "
+      // expemental
+      // return     <CubeComposition  slides={slides} isInViewport={isInViewport} />
+
+      return (<div className="space-y-8">
+        <div className="relative h-[500px] perspective-[1200px] flex items-center justify-center rounded-3xl overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              initial={{ rotateY: 90, opacity: 0 }}
+              animate={{ rotateY: 0, opacity: 1 }}
+              exit={{ rotateY: -90, opacity: 0 }}
+              transition={{ duration: 0.7, ease: "easeInOut" }}
+              className=" inset-0   "
+              style={{ transformStyle: "preserve-3d" }}
             >
-              <ChevronLeft className="w-5 h-5" />
-            </motion.button>
-            <div className="flex gap-2">
-              {slides.map((_, idx) => (
-                <motion.button
-                  key={idx}
-                  onClick={() => setCurrentSlide(idx)}
-                  className={`h-2 rounded-full transition-all ${idx === currentSlide ? "w-10 bg-primary" : "w-2 bg-muted-foreground/30"}`}
-                />
-              ))}
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              onClick={() => paginate(1)}
-              className="px-8 py-2 rounded-lg bg-primary/90 text-primary-foreground font-semibold "
-            >
-              <ChevronRight className="w-5 h-5" />
-            </motion.button>
-          </div>
+              <TypeToRender slide={slides[currentSlide]} />
+            </motion.div>
+          </AnimatePresence>
         </div>
+
+        <div className="flex gap-4 justify-center">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            onClick={() => paginate(-1)}
+            className="px-8 py-2 rounded-lg bg-primary/90 text-primary-foreground font-semibold "
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </motion.button>
+          <div className="flex gap-2">
+            {slides.map((_, idx) => (
+              <motion.button
+                key={idx}
+                onClick={() => setCurrentSlide(idx)}
+                className={`h-2 rounded-full transition-all ${idx === currentSlide ? "w-10 bg-primary" : "w-2 bg-muted-foreground/30"}`}
+              />
+            ))}
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            onClick={() => paginate(1)}
+            className="px-8 py-2 rounded-lg bg-primary/90 text-primary-foreground font-semibold "
+          >
+            <ChevronRight className="w-5 h-5" />
+          </motion.button>
+        </div>
+      </div>
+
       )
 
     case "AUTO_GRID":
@@ -665,7 +664,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
               className="h-64  rounded-2xl   overflow-hidden cursor-pointer group"
             >
               <div className=" inset-0 bg-gradient-to-br from-primary/10 to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <TypeToRender slide={slide} />
+              <TypeToRender play={isInViewport} slide={slide} />
             </motion.div>
           ))}
         </motion.div>
@@ -697,7 +696,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                 transition={{ duration: 0.3 }}
                 className=" inset-0   h-full "
               >
-                <TypeToRender slide={slides[currentSlide]} story={true} />
+                <TypeToRender play={isInViewport} slide={slides[currentSlide]} story={true} />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -717,7 +716,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                 transition={{ duration: 0.4 }}
                 className=" inset-0   "
               >
-                <TypeToRender slide={slides[currentSlide]} />
+                <TypeToRender play={isInViewport} slide={slides[currentSlide]} />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -741,7 +740,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                   }`}
               >
                 <div className="h-full ">
-                  <TypeToRender slide={slide} imaged={true} minmal={true} />
+                  <TypeToRender play={isInViewport} slide={slide} imaged={true} minmal={true} />
                 </div>
                 {/* <div className=" inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
                   <motion.div initial={{ scale: 0 }} whileHover={{ scale: 1 }} className="text-white text-2xl">
@@ -771,7 +770,7 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                 className="h-32 rounded-lg overflow-hidden cursor-pointer group relative"
               >
                 <div className="h-full  ">
-                  <TypeToRender slide={slide} />
+                  <TypeToRender play={isInViewport} slide={slide} />
                 </div>
                 <div className=" inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center">
                   <motion.div initial={{ scale: 0 }} whileHover={{ scale: 1 }} className="text-white text-2xl">
@@ -799,13 +798,13 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
                   className="relative w-full max-w-2xl h-full flex items-center justify-center rounded-3xl overflow-hidden"
                 >
                   <div className=" inset-0  ">
-                    <TypeToRender slide={slides[currentSlide]} />
+                    <TypeToRender play={isInViewport} slide={slides[currentSlide]} />
                   </div>
 
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     onClick={() => setLightboxOpen(false)}
-                    className=" top-4 right-4 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 z-10"
+                    className=" top-4 right-4 p-2 absolute bg-black/50 rounded-full text-white hover:bg-black/70 z-10"
                   >
                     <X className="w-6 h-6" />
                   </motion.button>
@@ -818,37 +817,46 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
         </div>
       )
 
+
     case "MARQUEE":
       return (
-        <div className="space-y-8 ">
+
+        <div className="space-y-8">
           <div className="relative h-32 overflow-hidden rounded-3xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
             <motion.div
-              className="flex gap-4 h-full"
+              className="flex gap-4 h-full absolute"
               animate={{
-                x: [0, -100 * slides.length],
-                transition: {
-                  x: {
-                    duration: 10,
-                    repeat: Infinity,
-                    repeatType: "loop",
-                    ease: "linear",
-                  }
+                x: [0, -100 * slides.length - (slides.length * 16)],
+              }}
+              transition={{
+                x: {
+                  duration: slides.length * 3,
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  ease: "linear",
                 }
               }}
-
+              style={{ willChange: "transform" }}
             >
-              {[...slides, ...slides].map((slide, idx) => (
+              {slides.map((slide, idx) => (
                 <motion.div
-                  key={idx}
-                  className="min-w-fit h-full aspect-video  rounded-2xl   flex-shrink-0"
+                  key={`original-${idx}`}
+                  className="min-w-fit h-full aspect-video rounded-2xl flex-shrink-0"
                 >
-                  <TypeToRender slide={slide} imaged={true} minmal={true} />
+                  <TypeToRender play={isInViewport} slide={slide} imaged={true} minmal={true} />
+                </motion.div>
+              ))}
+
+              {slides.map((slide, idx) => (
+                <motion.div
+                  key={`clone-${idx}`}
+                  className="min-w-fit h-full aspect-video rounded-2xl flex-shrink-0"
+                >
+                  <TypeToRender play={isInViewport} slide={slide} imaged={true} minmal={true} />
                 </motion.div>
               ))}
             </motion.div>
           </div>
-
-
         </div>
       )
 
@@ -865,3 +873,34 @@ export function CompositionPreview({ isInViewport, interval, autoPlay, compositi
       )
   }
 }
+
+// <div className="space-y-8 ">
+//   <div className="relative h-32 overflow-hidden rounded-3xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10">
+//     <motion.div
+//       className="flex gap-4 h-full"
+//       animate={{
+//         x: [0, -100 * slides.length],
+//         transition: {
+//           x: {
+//             duration: 10,
+//             repeat: Infinity,
+//             repeatType: "loop",
+//             ease: "linear",
+//           }
+//         }
+//       }}
+
+//     >
+//       {[...slides, ...slides].map((slide, idx) => (
+//         <motion.div
+//           key={idx}
+//           className="min-w-fit h-full aspect-video  rounded-2xl   flex-shrink-0"
+//         >
+//           <TypeToRender play={isInViewport} slide={slide} imaged={true} minmal={true} />
+//         </motion.div>
+//       ))}
+//     </motion.div>
+//   </div>
+
+
+// </div>

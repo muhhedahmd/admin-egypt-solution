@@ -3,24 +3,6 @@ import { baseApi } from "./base-api";
 import { Image, TeamMember, TeamMemberWithImage } from "@/types/schema";
 import { createEntityAdapter } from "@reduxjs/toolkit";
 
-
-
-
-
-
-
-
-// const teamAdapter = createEntityAdapter<TeamMemberWithImage>({
-//   selectId: (teamMember : TeamMemberWithImage) => teamMember.id,
-//   sortComparer: (a, b) => a.id.localeCompare(b.id),
-// });
-
-// const getEmptyNormalized = () => ({
-//   ...teamAdapter.getInitialState(), 
-//   pages: [] as string[][],
-//   pagination: { totalItems: 0 },
-// });
-
 export const teamApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getTeamMembers: builder.query<
@@ -30,14 +12,23 @@ export const teamApi = baseApi.injectEndpoints({
         take?: number;
       }
     >({
-      query: () => "/team",
+      query: ({ skip = 0, take = 10 }) => {
+        return {
+          url: "/team",
+          params: {
+            skip,
+            take,
+          },
+        };
+      },
+
       providesTags: ["Team"],
     }),
     getTeamMemberById: builder.query<
       {
         Image: Image | null;
         teamMember: TeamMember;
-        message :string
+        message: string;
       },
       string
     >({
@@ -86,12 +77,12 @@ export const teamApi = baseApi.injectEndpoints({
     }),
     updateTeamMember: builder.mutation<
       TeamMember,
-      { id: string; body: FormData}
+      { id: string; body: FormData }
     >({
       query: ({ id, body }) => ({
         url: `/team/${id}`,
         method: "PUT",
-        body : body,
+        body: body,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Team", id },
@@ -103,38 +94,37 @@ export const teamApi = baseApi.injectEndpoints({
         url: `/team/${id}`,
         method: "DELETE",
       }),
-      async onQueryStarted(queryArgument, { dispatch, queryFulfilled, extra  , getCacheEntry ,getState ,requestId}) {
+      // async onQueryStarted(queryArgument, { dispatch, queryFulfilled, extra  , getCacheEntry ,getState ,requestId}) {
 
-        
-        const cacheEntry = getState() 
+      //   const cacheEntry = getState()
+      //   const teamMembers = cacheEntry.api.queries['getTeamMembers']?.data
 
-        const teamMembers = cacheEntry.api.queries['getTeamMembers']?.data
+      //   if(teamMembers){
 
-        if(teamMembers){
+      //   }
 
-        }
-
-        const patchResult = dispatch(
-          teamApi.util.updateQueryData(
-            "getTeamMembers",
-            {
-              skip: 0,
-              take: 10,
-            },
-            (draft) => {
-              draft.data = draft.data.filter(
-                (teamMember) => teamMember.id !== queryArgument
-              );
-              draft.pagination.totalItems -= 1;
-            }
-          )
-        );
-        try {
-          await queryFulfilled;
-        } catch (error) {
-          // Handle error
-        }
-      },
+      //   const patchResult = dispatch(
+      //     teamApi.util.updateQueryData(
+      //       "getTeamMembers",
+      //       {
+      //         skip: 0,
+      //         take: 10,
+      //       },
+      //       (draft) => {
+      //         draft.data = draft.data.filter(
+      //           (teamMember) => teamMember.id !== queryArgument
+      //         );
+      //         draft.pagination.totalItems -= 1;
+      //       }
+      //     )
+      //   );
+      //   try {
+      //     await queryFulfilled;
+      //   } catch (error) {
+      //     // Handle error
+      //   }
+      // },
+      invalidatesTags: (result, error, id) => [{ type: "Team" }, "Team"],
     }),
   }),
 });

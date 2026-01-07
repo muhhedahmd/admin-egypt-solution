@@ -10,7 +10,8 @@ import { DeleteDialog } from "@/components/admin/delete-dialog"
 import Blurredimage from "@/app/_comp/BlurredHashImage"
 import Image from "next/image"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
-import { clientRespons, useGetClientsQuery } from "@/lib/store/api/client-api"
+import { clientRespons, useDeleteClientMutation, useGetClientsQuery } from "@/lib/store/api/client-api"
+import { toast } from "sonner"
 
 export function ClientsTable() {
   const router = useRouter()
@@ -28,12 +29,11 @@ export function ClientsTable() {
     refetch,
     error
   } = useGetClientsQuery({
-    skip: page ,
+    skip: page,
     take: 10
   })
-  console.log({error ,clientData , isLoading , isError , isFetching , refetch})
+  console.log({ error, clientData, isLoading, isError, isFetching, refetch })
   const [allClients, setAllClients] = useState<clientRespons[]>([])
-  const [deleteId, setDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     if (clientData?.data) {
@@ -47,8 +47,8 @@ export function ClientsTable() {
 
   useEffect(() => {
     if (entry?.isIntersecting && !isFetching && clientData?.data) {
-      console.log( 
-        allClients.length ,
+      console.log(
+        allClients.length,
         clientData.pagination.totalItems
       )
       const hasMore = allClients.length < (clientData.pagination.totalItems || 0)
@@ -56,10 +56,23 @@ export function ClientsTable() {
     }
   }, [entry, isFetching, clientData, allClients.length])
 
-  const handleDelete = (id: string) => {
-    console.log("Deleting client:", id)
-    setAllClients(prev => prev.filter(s => s.client.id !== id))
-    setDeleteId(null)
+
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteClientMutation()
+
+  const handleDelete = async (id: string) => {
+    try {
+      await del(id
+      ).then(res => {
+        if (res.data) {
+          toast.success("Service deleted successfully!")
+          setDeleteId(null)
+          setAllClients(prev => prev.filter(s => s.client.id !== id))
+        }
+      })
+    } catch (error) {
+      toast.error("Failed to delete service. Please try again.")
+    }
   }
 
   const formatFileSize = (bytes: number) => {
@@ -209,17 +222,17 @@ export function ClientsTable() {
                 <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
                   /{client.client.slug}
                 </code>
-                {client.client.website && 
-                
-                <code className=" block  mt-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                  website: {client.client.website}
-                </code>
+                {client.client.website &&
+
+                  <code className=" block  mt-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    website: {client.client.website}
+                  </code>
                 }
                 {
                   client.client.industry &&
-                <code className=" block  mt-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                  Indestury: {client.client.industry}
-                </code>
+                  <code className=" block  mt-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                    Indestury: {client.client.industry}
+                  </code>
                 }
               </div>
 
@@ -238,7 +251,7 @@ export function ClientsTable() {
                 </div>
               )}
 
-      
+
 
               {/* Image Metadata */}
               {client.image && (
@@ -271,7 +284,7 @@ export function ClientsTable() {
             <span>Loading more clients...</span>
           </div>
         )}
-        {clientData?.data && 
+        {clientData?.data &&
           allClients.length >= (clientData.pagination.totalItems || 0) && (
             <p className="text-sm text-muted-foreground">
               All {clientData.pagination.totalItems} clients loaded
@@ -280,15 +293,13 @@ export function ClientsTable() {
       </div>
 
       <DeleteDialog
-        skip={page * 10}
-
-        take={10}
-        id={deleteId}
+        isLoading={isLoadingDelete}
+        isError={isErrorDelete}
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        onConfirm={() => handleDelete("deleteId") as any}
-        title="Delete client"
-        description="Are you sure you want to delete this client? This action cannot be undone."
+        onConfirm={async () => await handleDelete(deleteId!)}
+        title="Delete Project"
+        description="Are you sure you want to delete this project? This action cannot be undone."
       />
     </>
   )

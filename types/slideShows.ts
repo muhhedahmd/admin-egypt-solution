@@ -68,21 +68,6 @@ export type AttachmentTypes =
   | ProjectSlideShow
   | TestimonialSlideShow
   | TeamSlideShow;
-export type SlideShow = {
-  id: string;
-  order: number;
-  slug: string;
-  description: string | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  type: SlideshowType;
-  title: string;
-  composition: CompositionType;
-  background: string | null;
-  autoPlay: boolean;
-  interval: number;
-};
 
 export type SlideShowWithRelationsAndSlides = SlideShow & {
 

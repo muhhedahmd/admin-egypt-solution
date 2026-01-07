@@ -1,8 +1,8 @@
 
 import { Grid3x3, GripVertical, } from "lucide-react"
-import { ClientWithRelationsSlide,  ProjectWithRelationsSlide, ServiceWithImage, slide, TeamMemberWithImage, TestimonialWithImage, } from "@/types/schema"
+import { ClientWithRelationsSlide, ProjectWithRelationsSlide, ServiceWithImage, slide, TeamMemberWithImage, TestimonialWithImage, } from "@/types/schema"
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, UniqueIdentifier, useSensor, useSensors } from '@dnd-kit/core';
-import { arrayMove, rectSortingStrategy, SortableContext,  } from '@dnd-kit/sortable';
+import { arrayMove, rectSortingStrategy, SortableContext, } from '@dnd-kit/sortable';
 import { restrictToParentElement } from "@dnd-kit/modifiers";
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -66,7 +66,7 @@ export const ArrangeSlidesDialog = ({
   if (!isOpen) return null;
 
   return (
-    
+
     <Dialog open={isOpen} onOpenChange={onClose}>
 
       <DialogContent className="w-[95vw] min-w-[95vw] h-[90vh] flex flex-col p-0">
@@ -220,26 +220,27 @@ const SortableRow: React.FC<{
 };
 
 
-export const TypeToRender = memo(({  splitcarousel , slide, imaged, minmal, split, index, story }: {
 
+export const TypeToRender = memo(({ cube, play, splitcarousel, slide, imaged, minmal, split, index, story }: {
+  play?: boolean
   slide: slide,
-  splitcarousel?: boolean, 
+  splitcarousel?: boolean,
   imaged?: boolean,
   minmal?: boolean,
   split?: boolean,
+  cube?: boolean
   index?: number,
   story?: boolean
 }) => {
-  console.log(slide)
 
   if (slide?.type === "service") {
     return <ServiceCard splitcarousel={splitcarousel} data={slide as ServiceWithImage} imaged={imaged} story={story || false} />
   }
   if (slide?.type === "project") {
-    return <ProjectCard imagePosition="left" data={slide as ProjectWithRelationsSlide} split={split} index={index || 0} story={story} />
+    return <ProjectCard play={play} imagePosition="left" data={slide as ProjectWithRelationsSlide} split={split} index={index || 0} story={story} />
   }
   if (slide.type === "client") {
-    return <ClientCard data={slide as ClientWithRelationsSlide} />
+    return <ClientCard cube={cube} data={slide as ClientWithRelationsSlide} />
   }
   if (slide.type === "testimonial") {
     return <TestimonialCard data={slide as TestimonialWithImage} minmal={minmal} />

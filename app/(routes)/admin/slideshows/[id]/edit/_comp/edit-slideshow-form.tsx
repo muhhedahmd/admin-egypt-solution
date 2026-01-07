@@ -12,6 +12,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { useUpdateSlideShowMutation } from '@/lib/store/api/slideShow-api'
+import { toast } from 'sonner'
+import { Badge } from '@/components/ui/badge'
 
 
 
@@ -35,6 +38,8 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 export default function EditSlideShowForm({ SlideShow }: { SlideShow: SlideShow }) {
+  const [update, { isLoading, error }] = useUpdateSlideShowMutation()
+
   const defaultValues: Partial<FormValues> = {
     id: SlideShow?.id,
     order: SlideShow?.order ?? 0,
@@ -60,14 +65,36 @@ export default function EditSlideShowForm({ SlideShow }: { SlideShow: SlideShow 
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: defaultValues as FormValues,
+
   })
   const router = useRouter()
-
   const autoPlay = watch('autoPlay')
 
-  const onSubmit: SubmitHandler<FormValues> = (data) => {
-    // Replace with your save/update logic
-    console.log('submit payload', data)
+  const onSubmit: SubmitHandler<FormValues> =  async (data) => {
+    try {
+
+      // Replace with your save/update logic
+      console.log('submit payload', data)
+
+      const formData = new FormData()
+      const keys = Object.keys(data) as (keyof typeof data)[]
+      keys.forEach((key, index) => {
+        formData.append(key, data[key] as string)
+      })
+
+      const res = await update({
+        id: SlideShow.id!,
+        body: formData
+      }).unwrap()
+
+      if (res.data) {
+        toast.success("Slideshow updated successfully")
+
+      }
+    } catch (error) {
+      toast.error("Failed to update slideshow. Please try again.")
+
+    }
   }
 
   return (
@@ -135,6 +162,7 @@ export default function EditSlideShowForm({ SlideShow }: { SlideShow: SlideShow 
           </div>
 
           <div className="space-y-4 border-t pt-6">
+
             <h2 className="text-lg font-semibold flex items-center gap-2">Autoplay Settings</h2>
 
             <div className="flex items-center gap-4">
@@ -163,25 +191,32 @@ export default function EditSlideShowForm({ SlideShow }: { SlideShow: SlideShow 
                 <p className="text-xs text-muted-foreground">{(Number(watch('interval')) / 1000).toFixed(1)} seconds between slides</p>
               </div>
             )}
+              <div className="space-y-2 shadow-xs p-4  flex  items-center justify-center gap-3 rounded-md w-fit">
+                <p >display order  </p>
+                <Badge className="text-xs ">{SlideShow.order}</Badge>
+              </div>
           </div>
 
-          <div className="flex gap-3 border-t pt-6">
-            <Button type="submit" className="flex-1" disabled={isSubmitting}>
+          <div className=" w-full flex gap-3 border-t pt-6">
+            <div className='w-full flex items-end justify-end gap-3 '>
+
+            <Button type="submit" className="" disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save Slideshow'}
             </Button>
 
-            <Button type="button" variant="outline" className="flex-1" disabled={isSubmitting}>
-            delete slideshow
+            <Button  type="button" variant="destructive" className="" disabled={isSubmitting}>
+              delete slideshow
             </Button>
-            <Button type="button" variant="outline" className="flex-1" onClick={()=>{ router.push("edit/slides")}} disabled={isSubmitting}>
-               Edit Slide
+            <Button type="button" variant="outline" className="" onClick={() => { router.push("edit/slides") }} disabled={isSubmitting}>
+              Edit Slide
             </Button>
+            </div>
           </div>
         </Card>
       </div>
 
       {/* Configuration Panel */}
-     
+
     </form>
   )
 }

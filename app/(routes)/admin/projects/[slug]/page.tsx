@@ -29,17 +29,21 @@ import {
   ClipboardIcon
 } from "lucide-react"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
-import { useGetProjectBySlugQuery } from "@/lib/store/api/projects-api"
+import { useDeleteProjectMutation, useGetProjectBySlugQuery } from "@/lib/store/api/projects-api"
 import { toast } from "sonner"
+import { Service, Technology } from "@/types/schema"
+import BlurredImage from "@/app/_comp/BlurredHashImage"
+import { Image } from "@/types/services"
 
 export default function Page({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter()
   const p = React.use(params)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const { data: projectData, isLoading, isError } = useGetProjectBySlugQuery(p.slug)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteProjectMutation()
 
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | Date) => {
     if (!date) return null
     return new Date(date).toLocaleDateString('en-US', {
       month: 'long',
@@ -54,12 +58,23 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
     return (bytes / 1048576).toFixed(1) + ' MB'
   }
 
-  const handleDelete = () => {
-    console.log("Deleting project:", params.id)
-    setDeleteDialogOpen(false)
-    router.push('/admin/projects')
-  }
+  const handleDelete = async (id: string) => {
+    try {
+      // setAllServices(prev => prev.filter(s => s.id !== id))
+      await del(id
+      ).then(res => {
+        if (res.data) {
+          toast.success("Service deleted successfully!")
+          setDeleteId(null)
+          router.push('/admin/projects')
+        }
+      })
 
+
+    } catch (error) {
+      toast.error("Failed to delete service. Please try again.")
+    }
+  }
   if (isLoading) {
     return <LoadingSkeleton />
   }
@@ -141,7 +156,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                 <Button
                   variant="destructive"
                   size="icon"
-                  onClick={() => setDeleteDialogOpen(true)}
+                  onClick={() => setDeleteId(project.id!)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -157,9 +172,23 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
               {/* Hero Image */}
               <Card className="overflow-hidden border-0 shadow-2xl">
                 <div className="relative h-[500px] group">
+                  {
+                    image && <BlurredImage
+                      alt={image?.alt || `${project.title}-alt`}
+                      imageUrl={image?.url}
+                      height={image.height || 400}
+                      width={image.width || 800}
+                      quality={70}
+                      blurhash={image?.blurHash
+                      }
+                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+
+
+                    />
+                  }
                   <img
-                    src={image.url}
-                    alt={image.alt}
+                    src={image?.url}
+                    alt={image?.alt}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -250,7 +279,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {technologies.map((tech, index) => (
+                    {technologies?.map((tech: Technology, index: number) => (
                       <Card
                         key={index}
                         className="p-4 border-2 hover:border-primary/50 transition-all hover:shadow-lg group cursor-pointer"
@@ -278,7 +307,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
 
               {/* Image Details */}
               {/* Services */}
-              {projectData.data.servicesData && projectData.data.servicesData.length > 0 && (
+              {projectData?.data?.servicesData && projectData?.data?.servicesData.length > 0 && (
                 <Card className="p-8 border-0 shadow-xl bg-gradient-to-br from-card to-card/50">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="h-12 w-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
@@ -287,23 +316,34 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <div>
                       <h3 className="text-2xl font-bold">Related Services</h3>
                       <p className="text-sm text-muted-foreground">
-                        {projectData.data.servicesData.length} {projectData.data.servicesData.length === 1 ? 'service' : 'services'} associated
+                        {projectData?.data?.servicesData.length} {projectData.data.servicesData.length === 1 ? 'service' : 'services'} associated
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {projectData.data.servicesData.map((serviceData, index) => (
+                    {projectData.data.servicesData.map((serviceData: { service: Service, image: Image }, index: number) => (
                       <Card
                         key={index}
                         className="overflow-hidden border-2 hover:border-primary/50 transition-all hover:shadow-xl group py-0"
                       >
                         <div className="relative h-48 overflow-hidden">
-                          <img
-                            src={serviceData.image.url}
-                            alt={serviceData.image.alt}
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
+
+                          {
+                            serviceData.image &&
+                            <BlurredImage
+                              imageUrl={serviceData.image.url || ""}
+                              alt={serviceData.image.alt || serviceData?.service.name || "Service Image"}
+                              width={serviceData.image.width || 400}
+                              height={serviceData.image.height || 400}
+                              blurhash={serviceData.image.blurHash ||
+                                ""
+                              }
+                              quality={100}
+
+                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            />
+                          }
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                           <div className="absolute top-3 left-3 flex gap-2">
@@ -338,16 +378,22 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
 
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              {serviceData.service.icon && (
+                              {serviceData.service.icon?.startsWith && serviceData.service.icon.startsWith("http") ? (
                                 <img
                                   src={serviceData.service.icon}
                                   alt={`${serviceData.service.name} icon`}
                                   className="h-6 w-6 rounded"
                                 />
-                              )}
-                              <span className="text-lg font-bold text-primary">
-                                ${serviceData.service.price}
-                              </span>
+                              ) :
+                                (
+                                  <span>
+                                    {serviceData.service.icon}
+                                  </span>
+                                )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold truncate">{serviceData.service.name}</p>
+
+                              </div>
                             </div>
 
                             <Button
@@ -556,55 +602,58 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-xs text-muted-foreground mb-1">Dimensions</p>
-                    <p className="font-semibold">{image.width} × {image.height}</p>
+                    <p className="font-semibold">{image?.width} × {image?.height}</p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-xs text-muted-foreground mb-1">File Size</p>
-                    <p className="font-semibold">{formatFileSize(image.size)}</p>
+                    <p className="font-semibold">{formatFileSize(image?.size || 0)}</p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-xs text-muted-foreground mb-1">Format</p>
-                    <p className="font-semibold uppercase">{image.type.split('/')[1]}</p>
+                    <p className="font-semibold uppercase">{image?.type.split('/')[1]}</p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-xs text-muted-foreground mb-1">Type</p>
-                    <p className="font-semibold">{image.imageType}</p>
+                    <p className="font-semibold">{image?.imageType || "Unknown"}</p>
                   </div>
                 </div>
+                {
+                  image &&
+                  <div className="flex flex-col">
+                    <div>
 
-                <div className="flex flex-col">
-                  <div>
+                      <p className="text-xs text-muted-foreground mb-2">Filename</p>
+                      <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
+                        {image.filename}
+                        <ClipboardCopyButton value={image.filename} />
+                      </code>
+                    </div>
+                    <div>
 
-                    <p className="text-xs text-muted-foreground mb-2">Filename</p>
-                    <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
-                      {image.filename}
-                      <ClipboardCopyButton value={image.filename} />
-                    </code>
-                  </div>
-                  <div>
+                      <p className="text-xs text-muted-foreground mb-2">File Hash</p>
+                      <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
+                        {image.fileHash}
+                        <ClipboardCopyButton value={image.fileHash} />
+                      </code>
+                    </div>
+                    <div>
 
-                    <p className="text-xs text-muted-foreground mb-2">File Hash</p>
-                    <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
-                      {image.fileHash}
-                      <ClipboardCopyButton value={image.fileHash} />
-                    </code>
+                      <p className="text-xs text-muted-foreground mb-2">Blur Hash</p>
+                      <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
+                        {image.blurHash}
+                        <ClipboardCopyButton value={image.blurHash || ""} />
+                      </code>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Storage Key</p>
+                      <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
+                        {image.key}
+                        <ClipboardCopyButton value={image.key} />
+                      </code>
+                    </div>
                   </div>
-                  <div>
+                }
 
-                    <p className="text-xs text-muted-foreground mb-2">Blur Hash</p>
-                    <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
-                      {image.blurHash}
-                      <ClipboardCopyButton value={image.blurHash} />
-                    </code>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Storage Key</p>
-                    <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
-                      {image.key}
-                      <ClipboardCopyButton value={image.key} />
-                    </code>
-                  </div>
-                </div>
               </Card>
 
             </div>
@@ -613,9 +662,11 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
       </div>
 
       <DeleteDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDelete}
+        isLoading={isLoadingDelete}
+        isError={isErrorDelete}
+        open={deleteId !== null}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={async () => await handleDelete(deleteId!)}
         title="Delete Project"
         description="Are you sure you want to delete this project? This action cannot be undone."
       />

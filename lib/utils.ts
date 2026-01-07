@@ -18,3 +18,7 @@ export const debounce = <T extends (...args: any[]) => void>(
     console.log("trigger3")
   };
 };
+
+export const ClipboardCopyButton = ()=>{
+  
+}

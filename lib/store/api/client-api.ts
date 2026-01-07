@@ -101,9 +101,10 @@ export const clientApi = baseApi.injectEndpoints({
 
     deleteClient: builder.mutation({
       query: (id) => ({
-        url: `/api/clients/${id}`,
+        url: `/clients/${id}`,
         method: "DELETE",
       }),
+      invalidatesTags: ["Clients"],
       async onQueryStarted(id, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled;
