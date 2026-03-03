@@ -18,10 +18,6 @@ export default function AdminLayout({
 }) {
   return (
     <SidebarProvider>
-      {/* Demo Banner */}
-      <div className="fixed top-0 left-0 w-full bg-red-500/90 text-white text-center py-1.5 text-sm font-medium z-100 flex items-center justify-center gap-2 shadow-md">
-        <span>⚠️ This is the Demo Version - Read-only mode with admin/admin access.</span>
-      </div>
       <AdminSidebar />
       <div className="flex flex-col min-h-screen w-full relative pt-8">
         <AdminHeader />

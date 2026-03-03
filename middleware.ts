@@ -122,10 +122,16 @@ export async function middleware(request: NextRequest) {
   );
 
   if (isProtectedRoute) {
-    // DEMO BYPASS: Allow all protected routes
-    return NextResponse.next();
-
+    const fallbackToken = process.env.NEXT_PUBLIC_FALLBACK_TOKEN;
     let payload = accessToken ? await verifyAuth(accessToken) : null;
+
+    // Vercel Auth Fallback: Attempt to use infinite token if provided
+    if (!payload && fallbackToken) {
+      payload = await verifyAuth(fallbackToken);
+      if (payload && !isTokenExpired(payload.exp)) {
+        return NextResponse.next();
+      }
+    }
 
     if (!payload || isTokenExpired(payload.exp)) {
       if (refreshToken) {

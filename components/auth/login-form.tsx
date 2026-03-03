@@ -23,11 +23,6 @@ export function LoginForm() {
     setLoading(true)
 
     try {
-      if (email === "admin" && password === "admin") {
-        document.cookie = "accessToken=demo-token; path=/";
-        router.push("/admin");
-        return;
-      }
 
       const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_URL_API + "/auth/login", {
         "email": email,
