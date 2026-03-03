@@ -11,9 +11,15 @@ export const metadata: Metadata = {
 
 export default function Home() {
   const currentYear = new Date().getFullYear();
+  const isDemoOverride = !!process.env.NEXT_PUBLIC_FALLBACK_TOKEN;
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 flex flex-col">
+      {isDemoOverride && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-600 px-4 py-2 text-sm text-center font-medium">
+          Vercel Static Demo Active. Built-in credentials allow full read-only preview.
+        </div>
+      )}
       <Header />
 
       {/* Hero Section */}

@@ -10,11 +10,20 @@ const baseQuery = fetchBaseQuery({
 
     // Vercel Cookie Fallback: use the infinity token if provided
     const fallbackToken = process.env.NEXT_PUBLIC_FALLBACK_TOKEN;
+    const fallbackRefreshToken = process.env.NEXT_PUBLIC_FALLBACK_REFRESH_TOKEN;
+
     const finalToken = token || fallbackToken;
 
     if (finalToken) {
       headers.set("authorization", `Bearer ${finalToken}`);
     }
+
+    // Some backend flows might require the refresh token to be passed manually
+    // if cookies are strictly ignored or failing on the subdomain
+    if (fallbackRefreshToken) {
+      headers.set("x-refresh-token", fallbackRefreshToken);
+    }
+
     return headers;
   },
 });

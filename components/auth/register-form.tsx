@@ -47,16 +47,16 @@ export function RegisterForm() {
 
     try {
 
-        await axios.post(process.env.NEXT_PUBLIC_BACKEND_URL_API + "/auth/register", {
-          email: formData.email,
-          password: formData.password,
-          name: formData.name,
-          gender: formData.gender,
-          role: formData.role,
+      await axios.post(process.env.NEXT_PUBLIC_BACKEND_URL_API + "/auth/register", {
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        gender: formData.gender,
+        role: formData.role,
       }, {
         withCredentials: true
       })
-   
+
 
 
       router.push(`/admin`)
@@ -68,8 +68,19 @@ export function RegisterForm() {
     }
   }
 
+  const isDemoOverride = !!process.env.NEXT_PUBLIC_FALLBACK_TOKEN
+
   return (
     <Card className="p-6 space-y-4">
+      {isDemoOverride && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded text-sm flex gap-2 items-start">
+          <span className="text-amber-500">ℹ️</span>
+          <div>
+            <strong>Vercel Demo Mode Active</strong>
+            <p className="mt-1 text-xs opacity-90">Registration is simulated. Cookie transmission is disabled on this subdomain. Authenticaton is bypassed via an environmental static token.</p>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 

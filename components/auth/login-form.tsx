@@ -11,8 +11,8 @@ import { Card } from "@/components/ui/card"
 import axios from "axios"
 export function LoginForm() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState("admin@admin.com")
+  const [password, setPassword] = useState("12345678")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -68,8 +68,19 @@ export function LoginForm() {
   //   }
   // }
 
+  const isDemoOverride = !!process.env.NEXT_PUBLIC_FALLBACK_TOKEN
+
   return (
     <Card className="p-6 space-y-4">
+      {isDemoOverride && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded text-sm flex gap-2 items-start">
+          <span className="text-amber-500">ℹ️</span>
+          <div>
+            <strong>Vercel Demo Mode Active</strong>
+            <p className="mt-1 text-xs opacity-90">Cookie transmission is disabled on this subdomain. Authenticaton is bypassed via an environmental static token.</p>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 

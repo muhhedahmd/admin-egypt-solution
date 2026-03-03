@@ -92,7 +92,7 @@ const menuItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
-  const  router = useRouter()
+  const router = useRouter()
 
   const { currentLang, isLoading,
     isRTL
@@ -104,28 +104,34 @@ export function AdminSidebar() {
   }, [isLoading])
 
   if (isLoading) {
-   return <div className='flex items-center justify-center h-screen w-screen z-10000 fixed top-0 left-0 bg-background' >
+    return <div className='flex items-center justify-center h-screen w-screen z-10000 fixed top-0 left-0 bg-background' >
       <Spinner className='w-6 h-6' />
     </div>
   }
   const t = sidebarTranslations[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
   const tgroup = tGroupTitle[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
 
-  const handleLogOut = async  () => {
+  const handleLogOut = async () => {
+    // Vercel Demo Bypass: Just redirect since real API logout needs cookies mapping
+    if (process.env.NEXT_PUBLIC_FALLBACK_TOKEN) {
+      router.push('/auth/login')
+      return;
+    }
+
     try {
-      const res = await axios.post( process.env.NEXT_PUBLIC_BACKEND_URL_API! +  "/auth/logout" ,  {} , { 
+      const res = await axios.post(process.env.NEXT_PUBLIC_BACKEND_URL_API! + "/auth/logout", {}, {
         withCredentials: true
       })
 
-      if(res.status === 200) {
-           router.push('/')
+      if (res.status === 200) {
+        router.push('/')
       }
 
-      
+
     } catch (error) {
       console.log(error)
 
-      
+
     }
 
   }
@@ -175,9 +181,9 @@ export function AdminSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t p-4 flex ">
 
-        <Button 
-        onClick={handleLogOut}
-        variant="outline" size="sm" className="w-full bg-transparent">
+        <Button
+          onClick={handleLogOut}
+          variant="outline" size="sm" className="w-full bg-transparent">
           Sign Out
         </Button>
         <div className="border-border w-full p-4 border-2 rounded-md flex  justify-between items-center">
