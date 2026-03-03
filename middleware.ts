@@ -128,7 +128,8 @@ export async function middleware(request: NextRequest) {
     // Vercel Auth Fallback: Attempt to use infinite token if provided
     if (!payload && fallbackToken) {
       payload = await verifyAuth(fallbackToken);
-      if (payload && !isTokenExpired(payload.exp)) {
+      // For the demo showcase, if the fallback token is valid JWT, bypass expiration rules entirely.
+      if (payload) {
         return NextResponse.next();
       }
     }
