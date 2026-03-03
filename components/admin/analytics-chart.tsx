@@ -1,5 +1,7 @@
 "use client";
 
+import { adminDashboardTranslations } from "@/i18n/admin-dashboard";
+import { useLanguage } from "@/providers/lang";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
 interface ChartDataPoint {
@@ -21,10 +23,18 @@ export function  AnalyticsChart({ data }: AnalyticsChartProps) {
       day: "numeric",
     }),
   }));
+  const { 
+      currentLang , 
+  
+  
+    } = useLanguage()
+      const t = adminDashboardTranslations[currentLang as keyof typeof adminDashboardTranslations] || adminDashboardTranslations["en"];
+      
+    
 
   return (
-    <ResponsiveContainer width="100%" height={290}>
-      <AreaChart data={formattedData}>
+    <ResponsiveContainer  width="100%" height={290}>
+      <AreaChart  data={formattedData}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" />
         <XAxis
           dataKey="date"
@@ -57,10 +67,10 @@ export function  AnalyticsChart({ data }: AnalyticsChartProps) {
         <Area
           type="monotone"
           dataKey="pageViews"
-          name="Page Views"
+          name={t.chart.pageViews}
           style={{
 
-            stroke :"hsl(var(--chart-1))",
+            stroke :"hsl(var(--chart-3))",
             // fill :"hsl(var(--chart-1))"
           }}
           fillOpacity={0.2}
@@ -69,27 +79,16 @@ export function  AnalyticsChart({ data }: AnalyticsChartProps) {
         <Area
           type="monotone"
           dataKey="visitors"
-          name="Visitors"
+          name={t.chart.visitors}
           style={{
             stroke :"hsl(var(--chart-2))",
-            // fill : "hsl(var(--chart-2))"
+            fill : "hsl(var(--chart-2))"
 
-          }}
-          fillOpacity={10}
-          strokeWidth={2}
-        />
-        <Area
-          type="monotone"
-          dataKey="blogViews"
-          name="Blog Views"
-          style={{
-
-            stroke : "hsl(var(--chart-3))",
-            // fill :"hsl(var(--chart-3))"
           }}
           fillOpacity={0.2}
           strokeWidth={2}
         />
+     
       </AreaChart>
     </ResponsiveContainer>
   );

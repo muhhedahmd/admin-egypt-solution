@@ -11,9 +11,13 @@ import { useDeleteSlideShowMutation, useGetSlideShowsQuery, } from "@/lib/store/
 import { useIntersectionObserver } from "@uidotdev/usehooks"
 import { DeleteDialog } from "./delete-dialog"
 import { toast } from "sonner"
+import { useLanguage } from "@/providers/lang"
+import { slideshowsTableI18n } from "@/i18n/slideShow"
 
 export function SlideshowsTable() {
 
+  const { currentLang } = useLanguage()
+  const t = slideshowsTableI18n[(currentLang?.toLowerCase() as "en" | "ar") || 'en']
   const [page, setPage] = useState(0)
   const [ref, entry] = useIntersectionObserver({
     rootMargin: "0px",
@@ -76,23 +80,7 @@ export function SlideshowsTable() {
   }
 
 
-  // const toggleExpanded = async (slideshowId: string) => {
-  //   if (expandedSlideshow === slideshowId) {
-  //     setExpandedSlideshow(null)
-  //   } else {
-  //     setExpandedSlideshow(slideshowId)
-  //     try {
-  //       await triggerGetSlides({
-  //         id: slideshowId,
-  //         page: 1,
-  //         perPage: 10,
-  //         pagesPerType: pagesPerType as any,
-  //       })
-  //     } catch (err) {
-  //       console.error("Failed to fetch slides:", err)
-  //     }
-  //   }
-  // }
+
 
   if (isLoading && page === 0) {
     return <LoadingSkeleton />
@@ -104,12 +92,13 @@ export function SlideshowsTable() {
         <div className="rounded-full bg-destructive/10 p-6 mb-4">
           <Trash2 className="h-10 w-10 text-destructive" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Failed to load slideshows</h3>
+        <h3 className="text-xl font-semibold mb-2">{t.states.errorTitle}</h3>
         <p className="text-muted-foreground text-center max-w-md mb-4">
-          There was an error loading your slideshows. Please try again.
+          {t.states.errorDescription}
         </p>
         <Button onClick={() => refetch()} variant="outline">
-          Retry
+          {t.states.retry}
+          
         </Button>
       </div>
     )
@@ -121,9 +110,9 @@ export function SlideshowsTable() {
         <div className="rounded-full bg-muted p-6 mb-4">
           <Layers className="h-10 w-10 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">No slideshows found</h3>
+        <h3 className="text-xl font-semibold mb-2">{t.states.emptyTitle}</h3>
         <p className="text-muted-foreground text-center max-w-md">
-          Get started by creating your first slideshow.
+          {t.states.errorDescription}
         </p>
       </div>
     )
@@ -167,7 +156,7 @@ export function SlideshowsTable() {
                       variant={slideshow.isActive ? "default" : "secondary"}
                       className="shadow-sm"
                     >
-                      {slideshow.isActive ? "Active" : "Inactive"}
+                      {slideshow.isActive ? t.badges.active : t.badges.inactive}
                     </Badge>
                     <Badge
                       // variant={slideshow.isActive ? "default" : "secondary"}
@@ -182,12 +171,12 @@ export function SlideshowsTable() {
                       {slideshow.autoPlay ? (
                         <>
                           <Play className="h-3 w-3 mr-1 fill-current" />
-                          Autoplay
+                          {t.badges.autoplay}
                         </>
                       ) : (
                         <>
                           <Pause className="h-3 w-3 mr-1" />
-                          Manual
+                          {t.badges.manual}
                         </>
                       )}
                     </Badge>
@@ -210,13 +199,13 @@ export function SlideshowsTable() {
                       <DropdownMenuItem asChild>
                         <Link href={`/admin/slideshows/${slideshow.id}`}>
                           <Eye className="h-4 w-4 mr-2" />
-                          View
+                          {t.actions.view}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link href={`/admin/slideshows/${slideshow.id}/edit`}>
                           <Pencil className="h-4 w-4 mr-2" />
-                          Edit
+                          {t.actions.edit}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -224,7 +213,7 @@ export function SlideshowsTable() {
                         onClick={() => setDeleteId(slideshow.id)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
+                        {t.actions.delete}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -243,13 +232,13 @@ export function SlideshowsTable() {
         {isFetching && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span>Loading more slideshows...</span>
+            <span>{t.states.loadingMore}</span>
           </div>
         )}
         {slideshowsData?.pagination &&
           slideshowsData.pagination.currentPage >= slideshowsData.pagination.totalPages && (
             <p className="text-sm text-muted-foreground">
-              All {slideshowsData.pagination.totalItems} slideshows loaded
+              {t.states.allLoaded(slideshowsData.pagination.totalItems)}
             </p>
           )}
       </div>
@@ -261,8 +250,9 @@ export function SlideshowsTable() {
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
         onConfirm={async () => await handleDelete(deleteId!)}
-        title={`Delete Slideshow ( ${slideshowsData?.data.find(s => s.id === deleteId)?.title} )`}
-        description="Are you sure you want to delete this Slideshow? This action cannot be undone. "
+        title= { t.deleteDialog.title(slideshowsData?.data.find(s => s.id === deleteId)?.title) }
+        // title={`Delete Slideshow ( ${} )`}
+        description={t.deleteDialog.description}
       />
     </>
   )

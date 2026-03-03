@@ -26,7 +26,8 @@ import {
   TrendingUp,
   Globe,
   Link2,
-  ClipboardIcon
+  ClipboardIcon,
+  ArrowRight
 } from "lucide-react"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
 import { useDeleteProjectMutation, useGetProjectBySlugQuery } from "@/lib/store/api/projects-api"
@@ -34,14 +35,20 @@ import { toast } from "sonner"
 import { Service, Technology } from "@/types/schema"
 import BlurredImage from "@/app/_comp/BlurredHashImage"
 import { Image } from "@/types/services"
+import { useLanguage } from "@/providers/lang"
+import { projectDetailsI18n } from "@/i18n/project"
+import NextImage from "next/image"
 
 export default function Page({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter()
   const p = React.use(params)
+  const { currentLang , isRTL } = useLanguage()
 
-  const { data: projectData, isLoading, isError } = useGetProjectBySlugQuery(p.slug)
+  const { data: projectData, isLoading, isError } = useGetProjectBySlugQuery({projectSlug: p.slug  })
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteProjectMutation()
+
+  const t = projectDetailsI18n[currentLang ?.toLowerCase() as 'en' | 'ar' || "en"]
 
   const formatDate = (date: string | Date) => {
     if (!date) return null
@@ -60,7 +67,6 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
 
   const handleDelete = async (id: string) => {
     try {
-      // setAllServices(prev => prev.filter(s => s.id !== id))
       await del(id
       ).then(res => {
         if (res.data) {
@@ -86,24 +92,28 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
           <div className="rounded-full bg-destructive/10 p-6 mb-4 inline-block">
             <Trash2 className="h-12 w-12 text-destructive" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">Project Not Found</h2>
-          <p className="text-muted-foreground mb-6">The project you're looking for doesn't exist.</p>
+          <h2 className="text-2xl font-bold mb-2">{t.states.notFound.title}</h2>
+          <p className="text-muted-foreground mb-6">{t.states.notFound.description}</p>
           <Button onClick={() => router.push('/admin/projects')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Projects
+            {
+              isRTL ? 
+              <ArrowRight className="mr-2 h-4 w-4" />
+              :<ArrowLeft className="mr-2 h-4 w-4" />
+            }
+            {t.actions.back}
           </Button>
         </div>
       </div>
     )
   }
 
-  const { project, image, technologies } = projectData.data
-
+  const { project, image, technologies  , translation} = projectData.data
+  const currentTranslation = translation.find((t) => t?.lang === currentLang)
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className=" border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -113,15 +123,21 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                   onClick={() => router.push('/admin/projects')}
                   className="rounded-full"
                 >
-                  <ArrowLeft className="h-5 w-5" />
+                  {
+                    isRTL ? 
+                    <ArrowRight className="h-5 w-5" />
+                    :<ArrowLeft className="h-5 w-5" />
+                  }
+                  
                 </Button>
                 <div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <span>Projects</span>
+                    <span>{t.breadcrumb.projects}</span>
                     <span>/</span>
                     <span className="text-foreground font-medium">{project.slug}</span>
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight">{project.title}</h1>
+
+                  <h1 className="text-2xl font-bold tracking-tight">{currentTranslation?.title}</h1>
                 </div>
               </div>
 
@@ -133,25 +149,25 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     className="gap-2"
                   >
                     <Globe className="h-4 w-4" />
-                    Visit Site
+                    {t.actions.visitSite}
                   </Button>
                 )}
                 {project.githubUrl && (
                   <Button
-                    variant="outline"
+                  variant="outline"
                     onClick={() => window.open(project.githubUrl!, "_blank")}
                     className="gap-2"
                   >
                     <Github className="h-4 w-4" />
-                    Repository
+                    {t.actions.repository}
                   </Button>
                 )}
                 <Button
-                  onClick={() => router.push(`/admin/projects/${project.id}/edit`)}
+                  onClick={() => router.push(`/admin/projects/${project.slug}/edit`)}
                   className="gap-2"
                 >
                   <Pencil className="h-4 w-4" />
-                  Edit
+                  {t.actions.edit}
                 </Button>
                 <Button
                   variant="destructive"
@@ -174,7 +190,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                 <div className="relative h-[500px] group">
                   {
                     image && <BlurredImage
-                      alt={image?.alt || `${project.title}-alt`}
+                      alt={image?.alt || `${currentTranslation?.title}-alt`}
                       imageUrl={image?.url}
                       height={image.height || 400}
                       width={image.width || 800}
@@ -186,9 +202,12 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
 
                     />
                   }
-                  <img
-                    src={image?.url}
-                    alt={image?.alt}
+                  <NextImage
+                    src={image?.url || ""}
+                    alt={image?.alt || ""}
+                    width={image?.width || 800}
+                    height={image?.height || 400}
+                    quality={70}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -197,7 +216,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     {project.isFeatured && (
                       <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 border-0 shadow-2xl text-base py-2 px-4">
                         <Star className="h-4 w-4 mr-2 fill-current" />
-                        Featured
+                        {t.badges.featured}
                       </Badge>
                     )}
                     <Badge
@@ -208,22 +227,17 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       className="shadow-2xl text-base py-2 px-4 backdrop-blur-sm bg-background/80"
                     >
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {project.status}
+                      { t.status[project.status]}
                     </Badge>
                   </div>
 
-                  <div className="absolute top-6 right-6">
-                    <Badge variant="secondary" className="shadow-2xl text-base py-2 px-4 backdrop-blur-sm bg-background/80">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Order #{project.order}
-                    </Badge>
-                  </div>
+                
 
                   <div className="absolute bottom-0 left-0 right-0 p-8">
                     <div className="flex items-end justify-between">
                       <div>
                         <h2 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
-                          {project.title}
+                          {currentTranslation?.title}
                         </h2>
                         <code className="text-sm text-white/90 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20">
                           /{project.slug}
@@ -241,22 +255,22 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <Sparkles className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold">About This Project</h3>
-                    <p className="text-sm text-muted-foreground">Overview and details</p>
+                    <h3 className="text-2xl font-bold">{t.sections.about.title}</h3>
+                    <p className="text-sm text-muted-foreground">{t.sections.about.subtitle}</p>
                   </div>
                 </div>
 
                 <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                  {project.description}
+                  {currentTranslation?.description}
                 </p>
 
-                {project.richDescription && (
+                {currentTranslation?.richDescription && (
                   <>
                     <Separator className="my-6" />
                     <div className="prose prose-sm max-w-none">
                       <div
                         className="text-muted-foreground leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: project.richDescription }}
+                        dangerouslySetInnerHTML={{ __html: currentTranslation?.richDescription }}
                       />
                     </div>
                   </>
@@ -271,9 +285,9 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       <Code2 className="h-6 w-6 text-blue-500" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold">Technology Stack</h3>
+                      <h3 className="text-2xl font-bold">{t.sections.technologies.title}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {technologies.length} {technologies.length === 1 ? 'technology' : 'technologies'} used
+                        {technologies.length} {technologies.length === 1 ? t.sections.technologies.used(technologies.length): t.sections.technologies.used(technologies.length)} 
                       </p>
                     </div>
                   </div>
@@ -314,9 +328,9 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       <Layers className="h-6 w-6 text-emerald-500" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold">Related Services</h3>
+                      <h3 className="text-2xl font-bold">{t.sections.services.title}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {projectData?.data?.servicesData.length} {projectData.data.servicesData.length === 1 ? 'service' : 'services'} associated
+                        {projectData?.data?.servicesData.length} {t.sections.services.associated(projectData.data.servicesData.length) }
                       </p>
                     </div>
                   </div>
@@ -350,13 +364,14 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                             {serviceData.service.isFeatured && (
                               <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 border-0 shadow-lg">
                                 <Star className="h-3 w-3 mr-1 fill-current" />
-                                Featured
+                                {t.badges.featured}
                               </Badge>
                             )}
                             {serviceData.service.isActive && (
                               <Badge variant="secondary" className="shadow-lg backdrop-blur-sm bg-background/80">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Active
+                                {t.badges.active}
+                                
                               </Badge>
                             )}
                           </div>
@@ -402,18 +417,12 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                               onClick={() => router.push(`/admin/services/${serviceData.service.slug}`)}
                               className="gap-2"
                             >
-                              View Details
+                              {t.actions.viewDetails}
                               <ExternalLink className="h-3 w-3" />
                             </Button>
                           </div>
 
-                          {serviceData.service.order !== 0 && (
-                            <div className="mt-3 pt-3 border-t">
-                              <p className="text-xs text-muted-foreground">
-                                Display Order: <span className="font-semibold">#{serviceData.service.order}</span>
-                              </p>
-                            </div>
-                          )}
+                       
                         </div>
                       </Card>
                     ))}
@@ -434,7 +443,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       <Building2 className="h-8 w-8 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground">CLIENT</p>
+                      <p className="text-xs text-muted-foreground"> { t.sections.client}</p>
                       <h3 className="text-xl font-bold">
                         {project.clientName || project.clientCompany}
                       </h3>
@@ -445,7 +454,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <div className="flex items-start gap-3 p-3 bg-background/50 rounded-lg mb-3">
                       <User className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Contact Person</p>
+                        <p className="text-xs text-muted-foreground">{t.sections.client}</p>
                         <p className="font-medium">{project.clientName}</p>
                       </div>
                     </div>
@@ -455,7 +464,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <div className="flex items-start gap-3 p-3 bg-background/50 rounded-lg">
                       <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Company</p>
+                        <p className="text-xs text-muted-foreground">{t.badges.clientCompany}</p>
                         <p className="font-medium">{project.clientCompany}</p>
                       </div>
                     </div>
@@ -471,8 +480,8 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       <Calendar className="h-6 w-6 text-green-500" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold">Timeline</h3>
-                      <p className="text-xs text-muted-foreground">Project duration</p>
+                      <h3 className="text-lg font-bold">{t.sections.timeline.title}</h3>
+                      <p className="text-xs text-muted-foreground">{t.sections.timeline.subtitle}</p>
                     </div>
                   </div>
 
@@ -483,7 +492,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                           <Calendar className="h-5 w-5 text-green-500" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Start Date</p>
+                          <p className="text-xs text-muted-foreground">{t.sections.timeline.start}</p>
                           <p className="font-semibold">{formatDate(project.startDate)}</p>
                         </div>
                       </div>
@@ -495,7 +504,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                           <CheckCircle2 className="h-5 w-5 text-blue-500" />
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">End Date</p>
+                          <p className="text-xs text-muted-foreground">{t.sections.timeline.end}</p>
                           <p className="font-semibold">{formatDate(project.endDate)}</p>
                         </div>
                       </div>
@@ -511,8 +520,8 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <Link2 className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Quick Links</h3>
-                    <p className="text-xs text-muted-foreground">External resources</p>
+                    <h3 className="text-lg font-bold">{t.sections.links.title}</h3>
+                    <p className="text-xs text-muted-foreground">{t.sections.links.subtitle}</p>
                   </div>
                 </div>
 
@@ -524,7 +533,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       onClick={() => window.open(project.projectUrl!, "_blank")}
                     >
                       <Globe className="h-4 w-4" />
-                      <span>Visit Website</span>
+                      <span>{t.actions.visitSite}</span>
                       <ExternalLink className="h-3 w-3 ml-auto" />
                     </Button>
                   )}
@@ -536,14 +545,14 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       onClick={() => window.open(project.githubUrl!, "_blank")}
                     >
                       <Github className="h-4 w-4" />
-                      <span>Repository</span>
+                      <span>{t.actions.repository}</span>
                       <ExternalLink className="h-3 w-3 ml-auto" />
                     </Button>
                   )}
 
                   {!project.projectUrl && !project.githubUrl && (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      No external links
+                      {t.states.noLinks}
                     </p>
                   )}
                 </div>
@@ -556,30 +565,30 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <Clock className="h-6 w-6 text-gray-500" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Metadata</h3>
-                    <p className="text-xs text-muted-foreground">System info</p>
+                    <h3 className="text-lg font-bold">{t.sections.metadata.title}</h3>
+                    <p className="text-xs text-muted-foreground">{t.sections.metadata.subtitle}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Project ID</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.sections.metadata.projectId}</p>
                     <code className="text-xs bg-muted px-2 py-1 rounded block truncate">
                       {project.id}
                     </code>
                   </div>
                   <Separator />
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Created</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.sections.metadata.created}</p>
                     <p className="text-sm font-medium">{formatDate(project.createdAt)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.sections.metadata.updated}</p>
                     <p className="text-sm font-medium">{formatDate(project.updatedAt)}</p>
                   </div>
                   <Separator />
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Image ID</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.sections.metadata.imageId}</p>
                     <code className="text-xs bg-muted px-2 py-1 rounded block truncate">
                       {project.imageId}
                     </code>
@@ -594,26 +603,26 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <FileImage className="h-6 w-6 text-purple-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold">Image Details</h3>
-                    <p className="text-sm text-muted-foreground">Asset information</p>
+                    <h3 className="text-2xl font-bold">{t.sections.image.title}</h3>
+                    <p className="text-sm text-muted-foreground">{t.sections.image.subtitle}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Dimensions</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.sections.image.dimensions}</p>
                     <p className="font-semibold">{image?.width} × {image?.height}</p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">File Size</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.sections.image.size}</p>
                     <p className="font-semibold">{formatFileSize(image?.size || 0)}</p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Format</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.sections.image.type}</p>
                     <p className="font-semibold uppercase">{image?.type.split('/')[1]}</p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Type</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.sections.image.format}</p>
                     <p className="font-semibold">{image?.imageType || "Unknown"}</p>
                   </div>
                 </div>
@@ -622,7 +631,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                   <div className="flex flex-col">
                     <div>
 
-                      <p className="text-xs text-muted-foreground mb-2">Filename</p>
+                      <p className="text-xs text-muted-foreground mb-2">{t.sections.image.filename}</p>
                       <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
                         {image.filename}
                         <ClipboardCopyButton value={image.filename} />
@@ -630,7 +639,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     </div>
                     <div>
 
-                      <p className="text-xs text-muted-foreground mb-2">File Hash</p>
+                      <p className="text-xs text-muted-foreground mb-2">{t.sections.image.fileHash}</p>
                       <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
                         {image.fileHash}
                         <ClipboardCopyButton value={image.fileHash} />
@@ -638,14 +647,14 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     </div>
                     <div>
 
-                      <p className="text-xs text-muted-foreground mb-2">Blur Hash</p>
+                      <p className="text-xs text-muted-foreground mb-2">{t.sections.image.blurHash}</p>
                       <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
                         {image.blurHash}
                         <ClipboardCopyButton value={image.blurHash || ""} />
                       </code>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground mb-2">Storage Key</p>
+                      <p className="text-xs text-muted-foreground mb-2">{t.sections.image.storageKey}</p>
                       <code className="text-sm bg-muted px-3 py-1.5 rounded  truncate flex justify-between items-center ">
                         {image.key}
                         <ClipboardCopyButton value={image.key} />
@@ -667,8 +676,9 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
         onConfirm={async () => await handleDelete(deleteId!)}
-        title="Delete Project"
-        description="Are you sure you want to delete this project? This action cannot be undone."
+        title={t.dialog.delete.title}
+        description={t.dialog.delete.description}
+        // description="Are you sure you want to delete this project? This action cannot be undone."
       />
     </>
   )
@@ -677,7 +687,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
 function LoadingSkeleton() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+      <div className=" border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

@@ -45,8 +45,11 @@ export const HeroApi = baseApi.injectEndpoints({
       //   providesTags: ["Hero"],
     }),
 
-    getHeroById: builder.query<successResponse<IHero>, string>({
-      query: (id) => `/hero/${id}`,
+    getHeroById: builder.query<
+      successResponse<IHero>,
+      { id: string; lang: string }
+    >({
+      query: ({ id }) => `/hero/${id}`,
     }),
     // Create hero
     createHero: builder.mutation<successResponse<IHero>, FormData>({
@@ -71,6 +74,20 @@ export const HeroApi = baseApi.injectEndpoints({
       invalidatesTags: ["Hero"],
     }),
 
+    toggleActive: builder.mutation<
+      successResponse<{
+        id: string;
+        isActive: boolean;
+      }>,
+      { id: string; }
+    >({
+      query: ({ id}) => ({
+        url: `/hero/toggle-active/${id}`,
+        method: "PUT",
+      }),
+      invalidatesTags: ["Hero"],
+    }),
+
     // delete
     deleteHero: builder.mutation<successResponse<IHero>, string>({
       query: (id) => ({
@@ -83,6 +100,7 @@ export const HeroApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useToggleActiveMutation,
   useGetAllHeroesQuery,
   useGetHeroByIdQuery,
   useCreateHeroMutation,
@@ -90,5 +108,4 @@ export const {
   useDeleteHeroMutation,
   useGetActiveHeroesQuery,
   useLazyHeroesSearchQuery,
-  
 } = HeroApi;

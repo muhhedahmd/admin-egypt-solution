@@ -8,6 +8,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import axios from "axios"
+
 
 export function RegisterForm() {
   const router = useRouter()
@@ -15,9 +17,9 @@ export function RegisterForm() {
     email: "",
     password: "",
     confirmPassword: "",
-    firstName: "",
-    lastName: "",
-    role: "USER",
+    name: "",
+    role: "ADMIN",
+    gender: "MALE",
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -44,28 +46,22 @@ export function RegisterForm() {
     setLoading(true)
 
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+
+        await axios.post(process.env.NEXT_PUBLIC_BACKEND_URL_API + "/auth/register", {
           email: formData.email,
           password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+          name: formData.name,
+          gender: formData.gender,
           role: formData.role,
-        }),
+      }, {
+        withCredentials: true
       })
+   
 
-      const data = await response.json()
 
-      if (!response.ok) {
-        setError(data.error || "Registration failed")
-        return
-      }
-
-      // Redirect to OTP verification
-      router.push(`/auth/otp?email=${encodeURIComponent(formData.email)}`)
+      router.push(`/admin`)
     } catch (err) {
+      console.log(err)
       setError("An error occurred. Please try again.")
     } finally {
       setLoading(false)
@@ -77,29 +73,19 @@ export function RegisterForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1"> Name</label>
             <Input
               type="text"
-              name="firstName"
-              value={formData.firstName}
+              name="name"
+              value={formData.name}
               onChange={handleChange}
-              placeholder="John"
+              placeholder="John Dou"
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-            <Input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              placeholder="Doe"
-              required
-            />
-          </div>
+
         </div>
 
         <div>
@@ -138,19 +124,36 @@ export function RegisterForm() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-          <select
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="USER">User</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-        </div>
+        <div className="flex items-center justify-start w-full gap-4">
 
+          <div className="w-1/2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div className="w-1/2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            <select
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+
+              <option value="ADMIN">Admin</option>
+              <option value="EDITOR">Editor</option>
+              <option value="VIEWER">Viewer</option>
+            </select>
+          </div>
+
+        </div>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Creating account..." : "Create Account"}
         </Button>

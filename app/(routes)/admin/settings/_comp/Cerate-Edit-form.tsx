@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -8,16 +7,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save, Upload, X } from "lucide-react";
-
+import { ArrowLeft, Save, Upload, X, Languages } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
 import { useCreateCompanyInfoMutation, useGetCompanyInfoQuery, useUpdateCompanyInfoMutation } from "@/lib/store/api/companyInfo";
 import { toast } from "sonner";
+import { useLanguage } from "@/providers/lang";
+import { companyInfoTranslationsForm } from "@/i18n/companyinfo";
+
+
 
 export default function CompanyInfoFormPage() {
-    
   const router = useRouter();
   const params = useParams();
+  const { currentLang: langFromContext } = useLanguage();
+  const t = companyInfoTranslationsForm[langFromContext?.toLowerCase() as keyof typeof companyInfoTranslationsForm || "en"];
+  
   const isEdit = !!params?.id;
   const companyId = params?.id as string;
 
@@ -27,10 +32,33 @@ export default function CompanyInfoFormPage() {
   const [createCompanyInfo, { isLoading: isCreating }] = useCreateCompanyInfoMutation();
   const [updateCompanyInfo, { isLoading: isUpdating }] = useUpdateCompanyInfoMutation();
 
+  // Separate state for active tab
+  const [activeTab, setActiveTab] = useState<"EN" | "AR">("EN");
+  
+  // Separate translation data for each language
+  const [translationData, setTranslationData] = useState({
+    EN: {
+      name: "",
+      tagline: "",
+      description: "",
+      footerText: "",
+      metaTitle: "",
+      metaDescription: "",
+      metaKeywords: "",
+    },
+    AR: {
+      name: "",
+      tagline: "",
+      description: "",
+      footerText: "",
+      metaTitle: "",
+      metaDescription: "",
+      metaKeywords: "",
+    },
+  });
+
+  // Non-translatable fields
   const [formData, setFormData] = useState({
-    name: "",
-    tagline: "",
-    description: "",
     email: "",
     phone: "",
     address: "",
@@ -43,9 +71,6 @@ export default function CompanyInfoFormPage() {
     instagram: "",
     github: "",
     youtube: "",
-    metaTitle: "",
-    metaDescription: "",
-    metaKeywords: "",
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -55,26 +80,38 @@ export default function CompanyInfoFormPage() {
   useEffect(() => {
     if (isEdit && data?.data) {
       const info = data.data;
+      
+      // Set non-translatable fields
       setFormData({
-        name: info.name || "",
-        tagline: info.tagline || "",
-        description: info.description || "",
-        email: info.email || "",
-        phone: info.phone || "",
-        address: info.address || "",
-        city: info.city || "",
-        country: info.country || "",
-        postalCode: info.postalCode || "",
-        facebook: info.facebook || "",
-        twitter: info.twitter || "",
-        linkedin: info.linkedin || "",
-        instagram: info.instagram || "",
-        github: info.github || "",
-        youtube: info.youtube || "",
-        metaTitle: info.metaTitle || "",
-        metaDescription: info.metaDescription || "",
-        metaKeywords: info.metaKeywords || "",
+        email: info.company.email || "",
+        phone: info.company.phone || "",
+        address: info.company.address || "",
+        city: info.company.city || "",
+        country: info.company.country || "",
+        postalCode: info.company.postalCode || "",
+        facebook: info.company.facebook || "",
+        twitter: info.company.twitter || "",
+        linkedin: info.company.linkedin || "",
+        instagram: info.company.instagram || "",
+        github: info.company.github || "",
+        youtube: info.company.youtube || "",
       });
+
+      // Set translations for each language
+      const newTranslationData = { ...translationData };
+      info.translation.forEach((trans) => {
+        newTranslationData[trans.lang] = {
+          name: trans.name || "",
+          tagline: trans.tagline || "",
+          description: trans.description || "",
+          footerText: trans.footerText || "",
+          metaTitle: trans.metaTitle || "",
+          metaDescription: trans.metaDescription || "",
+          metaKeywords: trans.metaKeywords || "",
+        };
+      });
+      setTranslationData(newTranslationData);
+
       if (info.logo) {
         setLogoPreview(info.logo.url);
       }
@@ -83,6 +120,18 @@ export default function CompanyInfoFormPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleTranslationChange = (lang: "EN" | "AR") => (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setTranslationData({
+      ...translationData,
+      [lang]: {
+        ...translationData[lang],
+        [e.target.name]: e.target.value,
+      },
+    });
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,10 +159,24 @@ export default function CompanyInfoFormPage() {
     try {
       const formDataToSend = new FormData();
       
-      // Append all form fields
+      // Append non-translatable fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value) {
           formDataToSend.append(key, value);
+        }
+      });
+
+      // Append English translation fields with _en suffix
+      Object.entries(translationData.EN).forEach(([key, value]) => {
+        if (value) {
+          formDataToSend.append(`${key}_en`, value);
+        }
+      });
+
+      // Append Arabic translation fields with _ar suffix
+      Object.entries(translationData.AR).forEach(([key, value]) => {
+        if (value) {
+          formDataToSend.append(`${key}_ar`, value);
         }
       });
 
@@ -129,16 +192,14 @@ export default function CompanyInfoFormPage() {
 
       if (isEdit) {
         await updateCompanyInfo({ id: companyId, formData: formDataToSend }).unwrap();
-        toast("Company info updated successfully!");
+        toast.success(t.successUpdate);
       } else {
         await createCompanyInfo(formDataToSend).unwrap();
-        toast.success("Company info created successfully!");
+        toast.success(t.successCreate);
       }
-
-    //   router.push("/admin/settings");
     } catch (error) {
       console.error("Error saving company info:", error);
-      toast.error("Failed to save company info. Please try again.");
+      toast.error(t.error);
     }
   };
 
@@ -153,10 +214,10 @@ export default function CompanyInfoFormPage() {
         </Button>
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
-            {isEdit ? "Edit" : "Create"} Company Information
+            {isEdit ? t.editTitle : t.createTitle}
           </h2>
           <p className="text-muted-foreground">
-            {isEdit ? "Update your" : "Set up your"} company details and settings
+            {isEdit ? t.editSubtitle : t.createSubtitle}
           </p>
         </div>
       </div>
@@ -165,58 +226,134 @@ export default function CompanyInfoFormPage() {
         <div className="grid gap-6 md:grid-cols-3">
           {/* Main Form */}
           <div className="md:col-span-2 space-y-6">
-            {/* Basic Information */}
+            {/* Language Tabs for Translatable Content */}
             <Card>
               <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-                <CardDescription>Essential company details</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>{t.basicInfo}</CardTitle>
+                    <CardDescription>{t.basicInfoDesc}</CardDescription>
+                  </div>
+                  <Languages className="h-5 w-5 text-muted-foreground" />
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Company Name *</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
+              <CardContent>
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "EN" | "AR")}>
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="EN">{t.english}</TabsTrigger>
+                    <TabsTrigger value="AR">{t.arabic}</TabsTrigger>
+                  </TabsList>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tagline">Tagline</Label>
-                  <Input
-                    id="tagline"
-                    name="tagline"
-                    value={formData.tagline}
-                    onChange={handleInputChange}
-                    placeholder="Your company's tagline"
-                  />
-                </div>
+                  <TabsContent value="EN" className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name-en">{t.companyName} {t.required}</Label>
+                      <Input
+                        id="name-en"
+                        name="name"
+                        value={translationData.EN.name}
+                        onChange={handleTranslationChange("EN")}
+                        required
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={4}
-                    placeholder="Brief description of your company"
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tagline-en">{t.tagline}</Label>
+                      <Input
+                        id="tagline-en"
+                        name="tagline"
+                        value={translationData.EN.tagline}
+                        onChange={handleTranslationChange("EN")}
+                        placeholder={t.taglinePlaceholder}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description-en">{t.description}</Label>
+                      <Textarea
+                        id="description-en"
+                        name="description"
+                        value={translationData.EN.description}
+                        onChange={handleTranslationChange("EN")}
+                        rows={4}
+                        placeholder={t.descriptionPlaceholder}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="footerText-en">{t.footerText}</Label>
+                      <Textarea
+                        id="footerText-en"
+                        name="footerText"
+                        value={translationData.EN.footerText}
+                        onChange={handleTranslationChange("EN")}
+                        rows={3}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="AR" className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name-ar">{t.companyName} {t.required}</Label>
+                      <Input
+                        id="name-ar"
+                        name="name"
+                        value={translationData.AR.name}
+                        onChange={handleTranslationChange("AR")}
+                        required
+                        dir="rtl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tagline-ar">{t.tagline}</Label>
+                      <Input
+                        id="tagline-ar"
+                        name="tagline"
+                        value={translationData.AR.tagline}
+                        onChange={handleTranslationChange("AR")}
+                        placeholder={t.taglinePlaceholder}
+                        dir="rtl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="description-ar">{t.description}</Label>
+                      <Textarea
+                        id="description-ar"
+                        name="description"
+                        value={translationData.AR.description}
+                        onChange={handleTranslationChange("AR")}
+                        rows={4}
+                        placeholder={t.descriptionPlaceholder}
+                        dir="rtl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="footerText-ar">{t.footerText}</Label>
+                      <Textarea
+                        id="footerText-ar"
+                        name="footerText"
+                        value={translationData.AR.footerText}
+                        onChange={handleTranslationChange("AR")}
+                        rows={3}
+                        dir="rtl"
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
 
             {/* Contact Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
+                <CardTitle>{t.contactInfo}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email">{t.email} {t.required}</Label>
                     <Input
                       id="email"
                       name="email"
@@ -228,7 +365,7 @@ export default function CompanyInfoFormPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="phone">{t.phone}</Label>
                     <Input
                       id="phone"
                       name="phone"
@@ -241,7 +378,7 @@ export default function CompanyInfoFormPage() {
                 <Separator />
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address">{t.address}</Label>
                   <Input
                     id="address"
                     name="address"
@@ -252,7 +389,7 @@ export default function CompanyInfoFormPage() {
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
+                    <Label htmlFor="city">{t.city}</Label>
                     <Input
                       id="city"
                       name="city"
@@ -262,7 +399,7 @@ export default function CompanyInfoFormPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="country">Country</Label>
+                    <Label htmlFor="country">{t.country}</Label>
                     <Input
                       id="country"
                       name="country"
@@ -272,7 +409,7 @@ export default function CompanyInfoFormPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="postalCode">Postal Code</Label>
+                    <Label htmlFor="postalCode">{t.postalCode}</Label>
                     <Input
                       id="postalCode"
                       name="postalCode"
@@ -287,7 +424,7 @@ export default function CompanyInfoFormPage() {
             {/* Social Media */}
             <Card>
               <CardHeader>
-                <CardTitle>Social Media Links</CardTitle>
+                <CardTitle>{t.socialMedia}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -360,47 +497,96 @@ export default function CompanyInfoFormPage() {
               </CardContent>
             </Card>
 
-            {/* SEO */}
+            {/* SEO - Language Specific */}
             <Card>
               <CardHeader>
-                <CardTitle>SEO Settings</CardTitle>
-                <CardDescription>Optimize your website for search engines</CardDescription>
+                <CardTitle>{t.seo}</CardTitle>
+                <CardDescription>{t.seoDesc}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="metaTitle">Meta Title</Label>
-                  <Input
-                    id="metaTitle"
-                    name="metaTitle"
-                    value={formData.metaTitle}
-                    onChange={handleInputChange}
-                    placeholder="Your Company Name - Tagline"
-                  />
-                </div>
+              <CardContent>
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "EN" | "AR")}>
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="EN">{t.english}</TabsTrigger>
+                    <TabsTrigger value="AR">{t.arabic}</TabsTrigger>
+                  </TabsList>
 
-                <div className="space-y-2">
-                  <Label htmlFor="metaDescription">Meta Description</Label>
-                  <Textarea
-                    id="metaDescription"
-                    name="metaDescription"
-                    value={formData.metaDescription}
-                    onChange={handleInputChange}
-                    rows={3}
-                    placeholder="Brief description for search results"
-                  />
-                </div>
+                  <TabsContent value="EN" className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="metaTitle-en">{t.metaTitle}</Label>
+                      <Input
+                        id="metaTitle-en"
+                        name="metaTitle"
+                        value={translationData.EN.metaTitle}
+                        onChange={handleTranslationChange("EN")}
+                        placeholder={t.metaTitlePlaceholder}
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="metaKeywords">Meta Keywords</Label>
-                  <Input
-                    id="metaKeywords"
-                    name="metaKeywords"
-                    value={formData.metaKeywords}
-                    onChange={handleInputChange}
-                    placeholder="keyword1, keyword2, keyword3"
-                  />
-                  <p className="text-xs text-muted-foreground">Separate keywords with commas</p>
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="metaDescription-en">{t.metaDescription}</Label>
+                      <Textarea
+                        id="metaDescription-en"
+                        name="metaDescription"
+                        value={translationData.EN.metaDescription}
+                        onChange={handleTranslationChange("EN")}
+                        rows={3}
+                        placeholder={t.metaDescriptionPlaceholder}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="metaKeywords-en">{t.metaKeywords}</Label>
+                      <Input
+                        id="metaKeywords-en"
+                        name="metaKeywords"
+                        value={translationData.EN.metaKeywords}
+                        onChange={handleTranslationChange("EN")}
+                        placeholder={t.metaKeywordsPlaceholder}
+                      />
+                      <p className="text-xs text-muted-foreground">{t.metaKeywordsHelper}</p>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="AR" className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="metaTitle-ar">{t.metaTitle}</Label>
+                      <Input
+                        id="metaTitle-ar"
+                        name="metaTitle"
+                        value={translationData.AR.metaTitle}
+                        onChange={handleTranslationChange("AR")}
+                        placeholder={t.metaTitlePlaceholder}
+                        dir="rtl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="metaDescription-ar">{t.metaDescription}</Label>
+                      <Textarea
+                        id="metaDescription-ar"
+                        name="metaDescription"
+                        value={translationData.AR.metaDescription}
+                        onChange={handleTranslationChange("AR")}
+                        rows={3}
+                        placeholder={t.metaDescriptionPlaceholder}
+                        dir="rtl"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="metaKeywords-ar">{t.metaKeywords}</Label>
+                      <Input
+                        id="metaKeywords-ar"
+                        name="metaKeywords"
+                        value={translationData.AR.metaKeywords}
+                        onChange={handleTranslationChange("AR")}
+                        placeholder={t.metaKeywordsPlaceholder}
+                        dir="rtl"
+                      />
+                      <p className="text-xs text-muted-foreground">{t.metaKeywordsHelper}</p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
@@ -410,7 +596,7 @@ export default function CompanyInfoFormPage() {
             {/* Logo Upload */}
             <Card>
               <CardHeader>
-                <CardTitle>Company Logo</CardTitle>
+                <CardTitle>{t.logo}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {logoPreview ? (
@@ -431,7 +617,7 @@ export default function CompanyInfoFormPage() {
                       onClick={handleRemoveLogo}
                     >
                       <X className="mr-2 h-4 w-4" />
-                      Remove Logo
+                      {t.removeLogo}
                     </Button>
                   </div>
                 ) : (
@@ -441,7 +627,7 @@ export default function CompanyInfoFormPage() {
                       htmlFor="logo-upload"
                       className="cursor-pointer text-sm text-blue-600 hover:underline"
                     >
-                      Click to upload logo
+                      {t.uploadLogo}
                     </Label>
                     <Input
                       id="logo-upload"
@@ -451,7 +637,7 @@ export default function CompanyInfoFormPage() {
                       onChange={handleLogoChange}
                     />
                     <p className="text-xs text-muted-foreground mt-2">
-                      PNG, JPG or SVG (max. 2MB)
+                      {t.uploadHelper}
                     </p>
                   </div>
                 )}
@@ -463,7 +649,7 @@ export default function CompanyInfoFormPage() {
               <CardContent className="pt-6 space-y-2">
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   <Save className="mr-2 h-4 w-4" />
-                  {isLoading ? "Saving..." : isEdit ? "Update" : "Create"}
+                  {isLoading ? t.saving : isEdit ? t.update : t.create}
                 </Button>
                 <Button
                   type="button"
@@ -471,7 +657,7 @@ export default function CompanyInfoFormPage() {
                   className="w-full"
                   onClick={() => router.back()}
                 >
-                  Cancel
+                  {t.cancel}
                 </Button>
               </CardContent>
             </Card>

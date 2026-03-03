@@ -25,6 +25,7 @@ import {
   ProjectWithRelations,
   ServiceWithImage,
   slide,
+  SlideShow,
   SlideshowType,
   TeamMemberWithImage,
   TestimonialWithImage,
@@ -33,12 +34,13 @@ import {
   PaginatedSlidesResponse,
   useCreateSlideShowAndAttachManyMutation,
 } from "@/lib/store/api/slideShow-api";
-import { SlideShow } from "@/types/slideShows";
+// import { SlideShow } from "@/types/slideShows";
 import { toast } from "sonner";
 import { PreviwDialog } from "./utils/previwDialog";
+import { useLanguage } from "@/providers/lang";
+import { slideshowsFormI18n } from "@/i18n/slideShow";
 
 const SLIDESHOW_TYPES = [
-  { value: "HERO", label: "Hero Banner" },
   { value: "SERVICES", label: "Services Showcase" },
   { value: "PROJECTS", label: "Project Showcase" },
   { value: "CLIENTS", label: "Client Logos" },
@@ -50,42 +52,44 @@ const SLIDESHOW_TYPES = [
 
 
 interface EnhancedSlideshowFormProps {
-  initialData?: SlideShow;
-  slidesForEdit?: PaginatedSlidesResponse;
+  // slidesForEdit?: PaginatedSlidesResponse;
 }
 
 export function SlideshowForm({
-  initialData,
-  slidesForEdit,
+
 }: EnhancedSlideshowFormProps) {
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [Description, setDescription] = useState(initialData?.title || "");
+
+  const { currentLang } = useLanguage()
+  const t = slideshowsFormI18n[(currentLang?.toLowerCase() as "en" | "ar") || 'en']
+  const [title, setTitle] = useState("");
+  const [Description, setDescription] = useState("");
   const [type, setType] = useState<SlideshowType>(SlideshowType.SERVICES);
   const [selectedClients, setSelectedclients] = useState<ClientWithImages[]>([])
   const [selectedTeam, setSelectedTeam] = useState<TeamMemberWithImage[]>([])
   const [selectedTestimonial, setSelectedTestimonial] = useState<TestimonialWithImage[]>([])
+  const [selectedServices, setSelectedServices] = useState<ServiceWithImage[]>([]);
+  const [selectedProjects, setSelectedProjects] = useState<ProjectWithRelations[] >([]);
 
-
+useEffect(() => {
+  setSelectedclients(  [])
+  setSelectedTeam( [])
+  setSelectedTestimonial( [])
+  setSelectedServices( [])
+  setSelectedProjects( [])
+  
+} , [type])
   const [composition, setComposition] = useState<CompositionType>(
     CompositionType.CAROUSEL
-    
+
   );
-  const [status, setStatus] = useState(
-    !initialData?.isActive ? "INACTIVE" : "ACTIVE"
-  );
-  const [autoplay, setAutoplay] = useState(initialData?.autoPlay ?? true);
+  const [status, setStatus] = useState( "ACTIVE");
+  const [autoplay, setAutoplay] = useState( true);
   const [autoplayInterval, setAutoplayInterval] = useState(
-    initialData?.interval || 5000
+     5000
   );
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedComposition, setSelectedComposition] =
     useState<CompositionType>(composition);
-  const [selectedServices, setSelectedServices] = useState<ServiceWithImage[]>(
-    []
-  );
-  const [selectedProjects, setSelectedProjects] = useState<
-    ProjectWithRelations[]
-  >([]);
   const [openArrangDialog, setOpenArrangDialog] = useState(false);
 
   const [allSlides, SetAllSlides] = useState<slide[]>([]);
@@ -96,8 +100,8 @@ export function SlideshowForm({
     const allSelected = [
 
       { items: selectedServices, type: 'service' },
-      { items: selectedProjects.map(p => ({ ...p.project, image: p.image  , isVisible:p.isVisible})), type: 'project' },
-      { items: selectedClients.map(c => ({ ...c.client, logo: c.logo, image: c.image , isVisible:c.isVisible })), type: 'client' },
+      { items: selectedProjects.map(p => ({ ...p.project, image: p.image, isVisible: p.isVisible })), type: 'project' },
+      { items: selectedClients.map(c => ({ ...c.client, logo: c.logo, image: c.image, isVisible: c.isVisible })), type: 'client' },
       { items: selectedTeam, type: 'team' },
       { items: selectedTestimonial.map(t => ({ ...t, avatar: t.avatar })), type: 'testimonial' },
     ];
@@ -138,36 +142,36 @@ export function SlideshowForm({
 
   const validateForm = (): boolean => {
     if (!title.trim()) {
-      toast.error("Validation Error", {
-        description: "Slideshow title is required",
+      toast.error(t.form.toasts.validationError(""), {
+        description: t.form.validation.requiredDescription,
       });
       return false;
     }
 
     if (title.trim().length < 3) {
-      toast.error("Validation Error", {
-        description: "Title must be at least 3 characters",
+      toast.error(t.form.toasts.validationError(""), {
+        description: t.form.validation.requiredTitle,
       });
       return false;
     }
 
     if (!Description.trim() || (Description.length < 10 || Description.length > 499)) {
-      toast.error("Validation Error", {
-        description: "Description is required and must be between 10 and 500 characters",
+      toast.error(t.form.toasts.validationError(""), {
+        description: t.form.validation.requiredDescription,
       });
       return false;
     }
 
     if (allSlides.length === 0) {
-      toast.error("Validation Error", {
-        description: "Please add at least one slide",
+      toast.error(t.form.toasts.validationError(""), {
+        description: t.form.validation.minSlides,
       });
       return false;
     }
 
     if (autoplay && autoplayInterval < 1000) {
-      toast.error("Validation Error", {
-        description: "Autoplay interval must be at least 1000ms",
+      toast.error(t.form.toasts.validationError(""), {
+        description: t.form.validation.minInterval,
       });
       return false;
     }
@@ -230,10 +234,10 @@ export function SlideshowForm({
   return (
     <>
       {isLoading && (
-        <div className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center">
+        <div className="fixed w-screen h-screen top-0 left-0  inset-0 bg-black/50 z-[9999] flex items-center justify-center">
           <div className="bg-white rounded-lg p-8 flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <p className="text-lg font-semibold">Saving...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-lg font-semibold">{t.form.previews.loading}</p>
           </div>
         </div>
       )}
@@ -250,33 +254,33 @@ export function SlideshowForm({
           <Card className="p-6 space-y-6">
             {/* Basic Settings */}
             <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Basic Settings</h2>
+              <h2 className="text-lg font-semibold">{t.form.headers.basicSettings}</h2>
 
               <div className="space-y-2">
-                <Label htmlFor="title">Slideshow Title</Label>
+                <Label htmlFor="title">{t.form.labels.title}</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Homepage Hero"
+                  placeholder={t.form.placeholders.title}
                   disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="Description">Slideshow Description</Label>
+                <Label htmlFor="Description">{t.form.labels.description}</Label>
                 <Textarea
                   rows={2}
                   id="Description"
                   value={Description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="e.g., Homepage Hero"
+                  placeholder={t.form.placeholders.description}
                   disabled={isLoading}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
+                  <Label htmlFor="type">{t.form.labels.type}</Label>
                   <Select
                     value={type}
                     onValueChange={(t) => setType(t as SlideshowType)}
@@ -286,20 +290,23 @@ export function SlideshowForm({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {SLIDESHOW_TYPES.map((t) => (
-                        <SelectItem
+                      {SLIDESHOW_TYPES.map((t) => {
+                        if (t.value === SlideshowType.CUSTOM) return null;
+
+                        return <SelectItem
                           key={t.value}
                           value={t.value as SlideshowType}
                         >
                           {t.label}
                         </SelectItem>
-                      ))}
+                      }
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
+                  <Label htmlFor="status">{t.form.labels.status}</Label>
                   <Select
                     value={status}
                     onValueChange={setStatus}
@@ -309,9 +316,9 @@ export function SlideshowForm({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="INACTIVE">Inactive</SelectItem>
-                      <SelectItem value="DRAFT">Draft</SelectItem>
+                      <SelectItem value="ACTIVE">{t.form.statuses.ACTIVE}</SelectItem>
+                      <SelectItem value="INACTIVE">{t.form.statuses.INACTIVE}</SelectItem>
+                      {/* <SelectItem value="DRAFT">Draft</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -322,7 +329,7 @@ export function SlideshowForm({
             <div className="space-y-4 border-t pt-6">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Settings className="h-4 w-4" />
-                Autoplay Settings
+                {t.form.headers.autoplaySettings}
               </h2>
 
               <div className="flex items-center gap-4">
@@ -334,13 +341,13 @@ export function SlideshowForm({
                     disabled={isLoading}
                     className="w-4 h-4"
                   />
-                  <span className="text-sm">Enable Autoplay</span>
+                  <span className="text-sm">{t.form.labels.autoplayEnabled}</span>
                 </label>
               </div>
 
               {autoplay && (
                 <div className="space-y-2">
-                  <Label htmlFor="interval">Autoplay Interval (ms)</Label>
+                  <Label htmlFor="interval">{t.form.labels.autoplayInterval}</Label>
                   <Input
                     id="interval"
                     type="number"
@@ -353,8 +360,8 @@ export function SlideshowForm({
                     disabled={isLoading}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {(autoplayInterval / 1000).toFixed(1)} seconds between
-                    slides
+                    {t.form.misc.secondsLabel(+ (autoplayInterval / 1000).toFixed(1))}
+
                   </p>
                 </div>
               )}
@@ -364,6 +371,7 @@ export function SlideshowForm({
             <div className="space-y-4 border-t pt-6 w-full">
               <div className="flex items-center justify-start w-full">
                 <SlideShowSelect
+                  type={type}
                   selectedServices={selectedServices}
                   setSelectedServices={setSelectedServices}
                   selectedProjects={selectedProjects}
@@ -390,10 +398,10 @@ export function SlideshowForm({
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Saving...
+                    {t.form.previews.loading}
                   </>
                 ) : (
-                  "Save Slideshow"
+                  t.form.buttons.save
                 )}
               </Button>
               <Button
@@ -403,7 +411,8 @@ export function SlideshowForm({
                 disabled={isLoading}
               >
                 <Eye className="h-4 w-4 mr-2" />
-                {previewOpen ? "Hide" : "Show"} Preview
+
+                {previewOpen ? t.form.buttons.previewHide : t.form.buttons.previewShow}
               </Button>
             </div>
           </Card>
@@ -412,37 +421,37 @@ export function SlideshowForm({
         {/* Configuration Panel */}
         <div className="lg:col-span-1">
           <Card className="p-2  px-5 sticky top-6">
-            <h2 className="text-lg font-semibold mb-4">Configuration</h2>
+            <h2 className="text-lg font-semibold mb-4">{t.form.headers.configuration}</h2>
             <div className="space-y-4 text-sm grid grid-cols-1 md:grid-cols-2  lg:grid-cols-4 gap-4">
               <div>
-                <p className="text-muted-foreground">Type</p>
+                <p className="text-muted-foreground">{t.form.labels.type}</p>
                 <p className="font-medium">
                   {SLIDESHOW_TYPES.find((t) => t.value === type)?.label}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Composition</p>
+                <p className="text-muted-foreground">{t.form.composition.title}</p>
                 <p className="font-medium">
                   {
                     COMPOSITION_TYPES_ARRAY.find((c) => c === composition)
-    
+
                   }
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Total Slides</p>
+                <p className="text-muted-foreground">{t.form.labels.totalSlides}</p>
                 <p className="font-medium">{allSlides.length}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Status</p>
+                <p className="text-muted-foreground">{t.form.labels.status}</p>
                 <p className="font-medium capitalize">{status}</p>
               </div>
               <div>
-                <p className="text-muted-foreground">Autoplay</p>
+                <p className="text-muted-foreground">{t.form.badges.autoplay}</p>
                 <p className="font-medium">
                   {autoplay
-                    ? `Every ${(autoplayInterval / 1000).toFixed(1)}s`
-                    : "Disabled"}
+                    ? t.form.misc.secondsLabel(autoplayInterval / 1000)
+                    : t.form.misc.secondsLabel(0)}
                 </p>
               </div>
             </div>
@@ -465,10 +474,10 @@ export function SlideshowForm({
                 className="w-1/2  border-2 border-muted-foreground text-muted-foreground h-24 shadow-md flex items-center justify-center duration-300 group  rounded-md hover:bg-primary">
                 <Expand className=" group-hover:text-primary-foreground text-muted-foreground h-8 w-8 mr-2" />
                 <span className="group-hover:text-primary-foreground text-muted-foreground ">
-                  Arrange
+                  {t.form.buttons.arrange}
                 </span>
               </button>
-              <PreviwDialog autoPlay={autoplay} interval={autoplayInterval} allSlides={allSlides} selectedComposition={selectedComposition} />
+              <PreviwDialog title={t.form.previewDialog.title} autoPlay={autoplay} interval={autoplayInterval} allSlides={allSlides} selectedComposition={selectedComposition} />
 
             </div>
           </div>

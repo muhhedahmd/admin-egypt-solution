@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation"
 import { useDebounce } from "@uidotdev/usehooks"
 import { useLazyHeroesSearchQuery } from "@/lib/store/api/hero-api"
 import HeroLoader from "./hero-loader"
+import { useLanguage } from "@/providers/lang"
+import { heroGalleryI18n } from "@/i18n/hero"
 
 interface HeroGalleryProps {
   initialHeroes: {
@@ -24,6 +26,8 @@ export const HeroGallery = React.memo(
   ({ initialHeroes, }: HeroGalleryProps) => {
 
     const router = useRouter()
+    const { currentLang } = useLanguage()
+    const t = heroGalleryI18n[currentLang?.toLowerCase() as "en" | "ar" || "en"]
     const [searchTerm, setSearchTerm] = useState("")
     const [filterVariant, setFilterVariant] = useState<string>("all")
     const [filterStatus, setFilterStatus] = useState<string>("all")
@@ -37,50 +41,23 @@ export const HeroGallery = React.memo(
         })
       }
     }, [debouncedSearch])
-    console.log({ data :data })
 
 
-    const filteredHeroes = useMemo(() => {
-      // return initialHeroes.filter((hero) => {
-      //   const matchesSearch =
-      //     hero.hero.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      //     hero.hero.title.toLowerCase().includes(debouncedSearch.toLowerCase())
-      //   const matchesVariant = filterVariant === "all" || hero.hero.variant === filterVariant
-      //   const matchesStatus = filterStatus === "all" || (filterStatus === "active" ? hero.hero.isActive : !hero.hero.isActive)
-      //   return matchesSearch && matchesVariant && matchesStatus
-      // })
-    }, [initialHeroes, debouncedSearch, filterVariant, filterStatus])
-
-    const handleDelete = (id: string) => {
-      // setHeroes((prev) => prev.filter((h) => h.hero.id !== id))
-    }
-
-    const handleDuplicate = (hero: HeroData) => {
-      const newHero: HeroData = {
-        ...hero,
-        id: `${hero.id}-${Date.now()}`,
-        name: `${hero.name} (Copy)`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-    }
-
-    const DToRender = data?.data.length && searchTerm ? data.data : initialHeroes 
-
+    const DToRender = data?.data.length && searchTerm ? data.data : initialHeroes
+    console.log(DToRender, data, initialHeroes)
     return (
 
       <div className="w-full space-y-6 p-4 md:p-6">
         <div className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Hero Sections</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{t.title}</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                {/* {filteredHeroes.length} hero{filteredHeroes.length !== 1 ? "s" : ""} */}
               </p>
             </div>
             <Button onClick={() => router.push("/admin/sections/hero/new")} className="w-full md:w-auto">
               <Plus className="w-4 h-4 mr-2" />
-              New Hero
+              {t.newHero}
             </Button>
           </div>
 
@@ -88,7 +65,7 @@ export const HeroGallery = React.memo(
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search heroes by name or title..."
+                placeholder={t.searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -100,13 +77,13 @@ export const HeroGallery = React.memo(
                 <SelectValue placeholder="Filter by variant" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Variants</SelectItem>
-                <SelectItem value="CENTERED">Centered</SelectItem>
-                <SelectItem value="SPLIT">Split</SelectItem>
-                <SelectItem value="IMAGE_BACKGROUND">Image Background</SelectItem>
-                <SelectItem value="MINIMAL">Minimal</SelectItem>
-                <SelectItem value="VIDEO_BACKGROUND">Video</SelectItem>
-                <SelectItem value="FULL_SCREEN">Full Screen</SelectItem>
+                <SelectItem value="all">{t.filters.allVariants}</SelectItem>
+                <SelectItem value="CENTERED">{t.filters.variants["CENTERED"]}</SelectItem>
+                <SelectItem value="SPLIT">{t.filters.variants["SPLIT"]}</SelectItem>
+                <SelectItem value="IMAGE_BACKGROUND">{t.filters.variants["IMAGE_BACKGROUND"]}</SelectItem>
+                <SelectItem value="MINIMAL">{t.filters.variants["MINIMAL"]}</SelectItem>
+                <SelectItem value="VIDEO_BACKGROUND">{t.filters.variants["VIDEO_BACKGROUND"]}</SelectItem>
+                <SelectItem value="FULL_SCREEN">{t.filters.variants["FULL_SCREEN"]}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -115,44 +92,51 @@ export const HeroGallery = React.memo(
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">{t.filters.allStatus}</SelectItem>
+                <SelectItem value="active">{t.filters.status["active"]}</SelectItem>
+                <SelectItem value="inactive">{t.filters.status["inactive"]}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
-        { DToRender && DToRender.length> 0 ? (
-          
+        {DToRender && DToRender.length > 0 ? (
+
           <HeroCarousel heroes={DToRender} />
         ) : (
 
-
-
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="space-y-2">
-              <p className="text-lg font-medium text-foreground">No heroes found</p>
+              <p className="text-lg font-medium text-foreground">
+                {t.emptyState.title}
+              </p>
+
               <p className="text-sm text-muted-foreground">
                 {searchTerm || filterVariant !== "all" || filterStatus !== "all"
-                  ? "Try adjusting your filters or search term"
-                  : "Create your first hero section to get started"}
+                  ? t.emptyState.filteredHint
+                  : t.emptyState.emptyHint}
               </p>
+
               {!searchTerm && filterVariant === "all" && filterStatus === "all" && (
-                <Button onClick={() => router.push("/admin/sections/hero/new")} variant="outline" className="mt-4 bg-transparent">
+                <Button
+                  onClick={() => router.push("/admin/sections/hero/new")}
+                  variant="outline"
+                  className="mt-4 bg-transparent"
+                >
                   <Plus className="w-4 h-4 mr-2" />
-                  Create Hero
+                  {t.emptyState.createHero}
                 </Button>
               )}
             </div>
           </div>
-        )} 
+
+        )}
         {
-        isLoading && (
-          <div className="space-y-4 p-4">
-            <HeroLoader/>
-          </div>
-        )
-      }
+          isLoading && (
+            <div className="space-y-4 p-4">
+              <HeroLoader />
+            </div>
+          )
+        }
       </div>
     )
   },

@@ -3,7 +3,7 @@
 import { useState, useEffect, use, } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Pencil, Trash2, Eye, ExternalLink, Github, Calendar, Star, Layers, FileImage } from "lucide-react"
+import { MoreHorizontal, Pencil, Trash2, Eye, ExternalLink, Github, Calendar, Star, Layers, FileImage, Languages } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
 import { useDeleteProjectMutation, useGetProjectsQuery } from "@/lib/store/api/projects-api"
@@ -13,6 +13,8 @@ import BlurredImage from "@/app/_comp/BlurredHashImage"
 import { useIntersectionObserver } from "@uidotdev/usehooks";
 import { toast } from "sonner"
 import { DeleteDialog } from "./delete-dialog"
+import { useLanguage } from "@/providers/lang"
+import { projectsTableI18n } from "@/i18n/project"
 
 
 export function ProjectsTable() {
@@ -23,6 +25,9 @@ export function ProjectsTable() {
     threshold: .1
   })
 
+  const {currentLang} = useLanguage()
+  const t = projectsTableI18n[(currentLang?.toLowerCase() as  "en" | "ar" )|| 'en']
+  // const currenttranslation 
   const {
     data: projectsData,
     isLoading,
@@ -32,14 +37,16 @@ export function ProjectsTable() {
   } = useGetProjectsQuery({
     skip: page,
     take: 10
-
   })
+
 
   const [allProjects, setAllProjects] = useState<{
     project: Project;
     image: Image | null;
+    translation : any[] ,
     technologies: Partial<Technology>[];
   }[]>([]);
+
 
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
@@ -74,7 +81,7 @@ export function ProjectsTable() {
     try {
       console.log(id)
       // setAllServices(prev => prev.filter(s => s.id !== id))
-      await del(  id
+      await del(id
       ).then(res => {
         if (res.data) {
           toast.success("Service deleted successfully!")
@@ -113,9 +120,9 @@ export function ProjectsTable() {
         <div className="rounded-full bg-destructive/10 p-6 mb-4">
           <Trash2 className="h-10 w-10 text-destructive" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Failed to load projects</h3>
+        <h3 className="text-xl font-semibold mb-2">{t.table.error.title}</h3>
         <p className="text-muted-foreground text-center max-w-md">
-          There was an error loading your projects. Please try again later.
+          {t.table.error.description}
         </p>
       </div>
     )
@@ -127,9 +134,9 @@ export function ProjectsTable() {
         <div className="rounded-full bg-muted p-6 mb-4">
           <Layers className="h-10 w-10 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">No projects found</h3>
+        <h3 className="text-xl font-semibold mb-2">{t.table.empty.title}</h3>
         <p className="text-muted-foreground text-center max-w-md">
-          Get started by creating your first project.
+          {t.table.empty.description}
         </p>
       </div>
     )
@@ -138,8 +145,9 @@ export function ProjectsTable() {
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {allProjects && allProjects.map((item) => (
-          <article
+        {allProjects && allProjects.map((item) => {
+          const currenttranslation = item?.translation.find(translation => translation.lang.toLowerCase() === currentLang?.toLowerCase())
+          return <article
             key={item.project.id}
             className="group relative overflow-hidden rounded-2xl border bg-gradient-to-br from-card to-card/50 backdrop-blur transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] hover:border-primary/50"
           >
@@ -165,7 +173,7 @@ export function ProjectsTable() {
                 {item.project.isFeatured && (
                   <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 border-0 shadow-lg">
                     <Star className="h-3 w-3 mr-1 fill-current" />
-                    Featured
+                    {t.table.badges.featured}
                   </Badge>
                 )}
                 <Badge
@@ -175,7 +183,7 @@ export function ProjectsTable() {
                   }
                   className="shadow-lg"
                 >
-                  {item.project.status}
+                  {t.table.status[`${item.project.status}`] || item.project.status}
                 </Badge>
               </div>
 
@@ -193,22 +201,22 @@ export function ProjectsTable() {
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => router.push(`/admin/projects/${item.project.slug}`)}>
                       <Eye className="mr-2 h-4 w-4" />
-                      View Details
+                      {t.table.actions.view}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push(`/admin/projects/${item.project.slug}/edit`)}>
                       <Pencil className="mr-2 h-4 w-4" />
-                      Edit Project
+                      {t.table.actions.edit}
                     </DropdownMenuItem>
                     {item.project.projectUrl && (
-                      <DropdownMenuItem onClick={() => window.open(item.project.projectUrl!, "_blank")}>
+                      <DropdownMenuItem disabled={!item.project.projectUrl} onClick={() => window.open(item.project.projectUrl!, "_blank")}>
                         <ExternalLink className="mr-2 h-4 w-4" />
-                        Visit Website
+                        {t.table.actions.view}
                       </DropdownMenuItem>
                     )}
                     {item.project.githubUrl && (
-                      <DropdownMenuItem onClick={() => window.open(item.project.githubUrl!, "_blank")}>
+                      <DropdownMenuItem disabled={!item.project.githubUrl} onClick={() => window.open(item.project.githubUrl!, "_blank")}>
                         <Github className="mr-2 h-4 w-4" />
-                        View on GitHub
+                        {t.table.actions.github}
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
@@ -216,18 +224,13 @@ export function ProjectsTable() {
                       onClick={() => setDeleteId(item.project.id)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Project
+                      {t.table.actions.delete}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
 
-              {/* Order badge */}
-              <div className="absolute bottom-4 right-4">
-                <Badge variant="secondary" className="shadow-lg backdrop-blur-sm bg-background/80">
-                  Order #{item.project.order}
-                </Badge>
-              </div>
+         
             </div>
 
             {/* Content */}
@@ -235,7 +238,7 @@ export function ProjectsTable() {
               {/* Title and Slug */}
               <div>
                 <h3 className="text-2xl font-bold tracking-tight mb-1 line-clamp-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                  {item.project.title}
+                  {currenttranslation.title}
                 </h3>
                 <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
                   /{item.project.slug}
@@ -244,15 +247,15 @@ export function ProjectsTable() {
 
               {/* Description */}
               <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-                {item.project.description}
+                {currenttranslation.description}
               </p>
 
               {/* Rich Description Preview */}
-              {item.project.richDescription && (
+              {currenttranslation.richDescription && (
                 <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3 border border-border/50">
                   <div
                     className="line-clamp-2"
-                    dangerouslySetInnerHTML={{ __html: item.project.richDescription }}
+                    dangerouslySetInnerHTML={{ __html: currenttranslation.richDescription }}
                   />
                 </div>
               )}
@@ -266,7 +269,7 @@ export function ProjectsTable() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground mb-0.5">Client</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">{t.table.badges.client}</p>
                     <p className="font-medium text-sm truncate">
                       {item.project.clientName}
                     </p>
@@ -303,10 +306,11 @@ export function ProjectsTable() {
 
               {/* Technologies */}
               {item.technologies.length > 0 && (
+
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Layers className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground">Technologies</span>
+                    <span className="text-xs font-medium text-muted-foreground">{t.table.badges.technologies  }</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {item.technologies.map((tech, index) => (
@@ -328,32 +332,50 @@ export function ProjectsTable() {
                 </div>
               )}
 
-              {/* Image Metadata */}
-              {
-                item.image &&
 
-                <div className="pt-3 border-t border-border/50">
+              {/* Image Metadata */}
+              <div className="pt-3 border-t border-border/50 text-xs text-muted-foreground flex items-center justify-between">
+                {
+                  item.image &&
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
+
+
                     <div className="flex items-center gap-2">
                       <FileImage className="h-3.5 w-3.5" />
                       <span>{item.image.width}×{item.image.height}</span>
                       <span>•</span>
                       <span>{formatFileSize(item?.image?.size || 0)}</span>
                     </div>
-                    {
-                      item.project.updatedAt &&
-                      <div className="flex items-center gap-2">
-                        <span>Updated {formatDate(item.project.updatedAt)}</span>
-                      </div>
-                    }
 
                   </div>
-                </div>
+                }
+                <div className="flex items-center justify-start flex-[.9] gap-3">
 
-              }
+                {
+                  item?.translation?.map((translation , index) => (
+                    <Badge variant={"default"} key={index} className="flex items-center gap-2">
+                      {/* <Languages className="h-3.5 w-3.5" /> */}
+                      <span>{translation.lang}</span>
+                      {/* <span>•</span> */}
+                      {/* <span>{translation.status}</span> */}
+                    </Badge>
+                  ))
+                }
+
+                </div>
+                {
+                  item.project.updatedAt &&
+                  <div className="flex items-center gap-2">
+                    <span>{t.table.badges.updated(formatDate(item.project.updatedAt))}</span>
+                  </div>
+                }
+
+              </div>
+
+
             </div>
           </article>
-        ))}
+            })}
       </div>
 
       {/* Infinite scroll trigger */}
@@ -362,25 +384,26 @@ export function ProjectsTable() {
         {isFetching && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span>Loading more projects...</span>
+            <span>{t.table.loadingMore}</span>
           </div>
         )}
         {projectsData?.pagination &&
           projectsData.pagination.currentPage >= projectsData.pagination.totalPages && (
             <p className="text-sm text-muted-foreground">
-              All {projectsData.pagination.totalItems} projects loaded
+              {t.table.allLoaded(projectsData.pagination.totalItems)}
+              {/* All {projectsData.pagination.totalItems} projects loaded */}
             </p>
           )}
       </div>
 
-     <DeleteDialog
+      <DeleteDialog
         isLoading={isLoadingDelete}
         isError={isErrorDelete}
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
         onConfirm={async () => await handleDelete(deleteId!)}
-        title="Delete Project"
-        description="Are you sure you want to delete this project? This action cannot be undone."
+        title={t.table.deleteDialog.title}
+        description={t.table.deleteDialog.description }
       />
     </>
   )

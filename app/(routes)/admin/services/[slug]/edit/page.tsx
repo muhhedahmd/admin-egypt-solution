@@ -2,26 +2,35 @@
 import { ServiceForm } from "@/components/admin/service-form"
 import { Button } from "@/components/ui/button"
 import { useGetServiceByIdQuery } from "@/lib/store/api/services-api"
-import { ArrowLeft } from "lucide-react"
+import { AlertCircle, ArrowLeft, ArrowRight } from "lucide-react"
 import Link from "next/link"
-import React from "react"
+import React, { useEffect } from "react"
 import ServiceNewLoader from "../../_comp/service-new-loader"
+import { useLanguage } from "@/providers/lang"
+import { serviceFormI18n } from "@/i18n/services"
+import { cn } from "@/lib/utils"
 
 export default function EditServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const p = React.use(params)
-  console.log(p)
-  // by id to give a parial info not all info 
-  const { data: service, isLoading, isError } = useGetServiceByIdQuery(p.slug)
+  const { currentLang, isRTL   , isLoading : loadingLangChange  , switchLanguage} = useLanguage()
+
+  const slug = p.slug
+  const langArg = currentLang?.toLowerCase()
+
+  const { data: service, isLoading, isError } =
+    useGetServiceByIdQuery(
+      { slug, lang: langArg }
+    )
 
 
+  const t = serviceFormI18n[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
 
   if (isLoading) return <ServiceNewLoader />
 
   if (isError) return <h1>
     Error
   </h1>
-  console.log(service?.data.image)
-  console.log(service?.data.service)
+
   const mockService = {
     ...service?.data.service
   }
@@ -31,12 +40,36 @@ export default function EditServicePage({ params }: { params: Promise<{ slug: st
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/admin/services">
-            <ArrowLeft className="h-4 w-4" />
+            {
+              isRTL ?
+                <ArrowRight className="h-4 w-4" />
+                :
+                <ArrowLeft className="h-4 w-4" />
+            }
           </Link>
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Service</h1>
-          <p className="text-muted-foreground">Update service information</p>
+        <div className="flex justify-between items-start w-full">
+
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t["header"]["editTitle"]}</h1>
+            <p className="text-muted-foreground">{t["header"]["editSubtitle"]}</p>
+          </div>
+
+          <div className={cn("border-orange-400 text-orange-400  text-sm p-2 rounded-md border flex items-center justify-start self-end gap-3   ", !isRTL && "")}>
+
+            <AlertCircle className="h-5 w-5 text-orange-400  text-md" />
+            {
+              isRTL ?
+                " ستظهر هذه الخدمة في الصفحة العربية فقط." :
+                "This service will only appear on the english page.."
+            }
+            <Button variant={"secondary"} className="cursor-pointer" onClick={()=>switchLanguage(currentLang === 'EN' ? 'AR' : 'EN')}>
+              {
+                isRTL ? "تغير للانجليزية" : "Change to Arabic"
+              }
+            </Button>
+
+          </div>
         </div>
       </div>
 
@@ -44,7 +77,7 @@ export default function EditServicePage({ params }: { params: Promise<{ slug: st
         ...mockService,
         image: null,
         iconImage: null,
-      }} initalImage={
+      } as any}  initalImage={
         service?.data?.Image
       } />
     </div>

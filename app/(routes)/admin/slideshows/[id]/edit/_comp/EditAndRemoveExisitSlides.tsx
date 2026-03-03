@@ -5,7 +5,7 @@ import { DoorClosed, Layers, Edit2, CloudFog, Loader2, } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { EditSlideDialog } from './edit-slide-dalog'
 import SlideShowSelect from '@/components/admin/utils/slideShowSelect'
-import { ClientWithImages,  ProjectWithRelations, ServiceWithImage, slide, TeamMemberWithImage, TestimonialWithImage } from '@/types/schema'
+import { ClientWithImages, ProjectWithRelations, ServiceWithImage, slide,  TeamMemberWithImage, TestimonialWithImage } from '@/types/schema'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 import { useEffect, useState } from 'react'
@@ -15,7 +15,9 @@ import { SlideCard } from './slide-card'
 import { ArrangeSlidesDialog } from '@/components/admin/utils/slides/Arrange-slides'
 import { toast } from 'sonner'
 import { PreviwDialog } from '@/components/admin/utils/previwDialog'
-import { CompositionType } from '@/types/slideShows'
+import { CompositionType, SlideshowType } from '@/types/slideShows'
+import { reFormated } from '@/components/admin/utils/GenericTapContent'
+import { useLanguage } from '@/providers/lang'
 // import { toast } from 'sonner'
 // import { slideArrangeMinmal } from '@/components/admin/utils/ArrangMinmalCard'
 
@@ -24,7 +26,8 @@ interface EditAndRemoveExistSlidesProps {
     slidesData: PaginatedSlidesResponse
     slideshowId: string,
     composititonType?: CompositionType
-    reFetch: () => void
+    reFetch: () => void ,
+    slideshowType?: SlideshowType
 }
 
 
@@ -32,13 +35,13 @@ export const EditAndRemoveExisitSlides = ({
     slidesData,
     slideshowId,
     composititonType,
-    reFetch
+    reFetch,
+    slideshowType : showType
 }: EditAndRemoveExistSlidesProps) => {
-
-
+    const { currentLang } = useLanguage()
 
     // Existing slides from database ( records)
-    const [existingSlides, setExistingSlides] = useState<Slide[]>(slidesData.slides);
+    const [existingSlides, setExistingSlides] = useState<Slide[]>(reFormated(slidesData.slides  , currentLang));
 
     // New slides to be added
     const [newSlides, setNewSlides] = useState<slide[]>([]);
@@ -82,6 +85,7 @@ export const EditAndRemoveExisitSlides = ({
 
         // Format existing slides
         const formatExisting = existingSlides.map((slide: any) => {
+            console.log("slide", existingSlides)
 
             if (slide.type === "service") {
 
@@ -384,7 +388,7 @@ export const EditAndRemoveExisitSlides = ({
                 isVisible: slide?.isVisible === false ? false : true,
                 action: 'delete',
                 type: slide.type,
-                _id: slide?._id,
+                _id: (slide as any)?._id,
 
             });
             return updated;
@@ -463,13 +467,11 @@ export const EditAndRemoveExisitSlides = ({
                 newSlides,
                 updateSlides,
                 deletedSlides: deletedSlidesFormat,
-                updatedOrder , 
+                updatedOrder,
                 existingSlideChanges,
                 existingSlides
             };
-            console.log({
-                dataToSave
-            })
+     
             const res = await Operate({
                 id: slideshowId,
                 data: dataToSave,
@@ -555,7 +557,7 @@ export const EditAndRemoveExisitSlides = ({
                                             DELETED
                                         </Badge>
                                         <SlideCard
-                                            slide={slide}
+                                            slide={slide as any}
                                             index={index}
                                             onEdit={() => { }}
                                             onDelete={() => { }}
@@ -597,6 +599,7 @@ export const EditAndRemoveExisitSlides = ({
                                 <DialogTitle>Add New Slide</DialogTitle>
                             </DialogHeader>
                             <SlideShowSelect
+                            type={showType as any}
                                 disabledItems={existingSlides?.map((s) => {
                                     return {
                                         id: String(s.data.id),
@@ -627,7 +630,7 @@ export const EditAndRemoveExisitSlides = ({
                     </Button>
                     {
                         composititonType &&
-                        <PreviwDialog minmalBtb={true} allSlides={AllSlidesExisitORNew} selectedComposition={ composititonType} />
+                        <PreviwDialog title="Preview" autoPlay interval={3} minmalBtb={true} allSlides={AllSlidesExisitORNew} selectedComposition={composititonType as any} />
                     }
 
                 </CardFooter>

@@ -3,12 +3,11 @@ import type {
   AttachmentTypes,
   BulkSlideOperation,
   deattachManyDTO as DetachManyDTO,
-  SlideShow,
   SlideshowType,
 } from "@/types/slideShows";
 import { baseApi } from "./base-api";
 import { PaginatedResponse, successResponse } from "@/types/services";
-import { CreateAndAttachMany, Image } from "@/types/schema";
+import { CreateAndAttachMany, Image, SlideShow } from "@/types/schema";
 
 export type minimalSlide = {
   id: string;
@@ -26,8 +25,9 @@ export interface Slide {
   type: "services" | "projects" | "clients" | "testimonials" | "team";
   order: number;
   isVisible: boolean;
-  customTitle ?: string
-customDescription ?: string
+  translation : any[]
+  customTitle?: string;
+  customDescription?: string;
   data: {
     name?: string;
     title?: string;
@@ -38,7 +38,6 @@ customDescription ?: string
     [key: string]: any;
   };
 }
-
 
 export interface PaginationInfo {
   totalPages: number;
@@ -64,14 +63,12 @@ export const slideshowApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getSlideShows: builder.query<
       PaginatedResponse<SlideShow>,
-
       {
         skip: number;
         take: number;
       }
     >({
       query: ({ skip, take } = { skip: 0, take: 10 }) => {
-
         return {
           url: "/slide-show",
           params: {
@@ -95,8 +92,22 @@ export const slideshowApi = baseApi.injectEndpoints({
     >({
       query: () => `/slide-show/all-minimal`,
     }),
-    
-    getSlideShowById: builder.query<successResponse<SlideShow>, string>({
+
+    getSlideShowById: builder.query<
+      successResponse<{
+        slideShow: SlideShow;
+        translation: {
+          id: string;
+          createdAt: Date;
+          updatedAt: Date;
+          title: string;
+          description: string | null;
+          lang: "EN" | "AR";
+          slideShowId: string;
+        }[];
+      }>,
+      string
+    >({
       query: (id) => `/slide-show/${id}`,
       providesTags: (result, error, id) => [{ type: "SlideShows", id }],
     }),
@@ -225,7 +236,7 @@ export const slideshowApi = baseApi.injectEndpoints({
       ],
     }),
 
-    updateAttachMany : builder.mutation<
+    updateAttachMany: builder.mutation<
       successResponse<SlideShow>,
       { id: string; body: any }
     >({
@@ -283,6 +294,7 @@ export const slideshowApi = baseApi.injectEndpoints({
       successResponse<PaginatedSlidesResponse>,
 
       {
+        lang ?: "EN" | "AR",
         id: string;
         page: number;
         pagesPerType?: Partial<
@@ -294,9 +306,8 @@ export const slideshowApi = baseApi.injectEndpoints({
         perPage: number;
       }
     >({
-      
       query: ({ id, page, pagesPerType, perPage }) => ({
-
+        
         url: `/slide-show/get-paginated-slides/${id}`,
         method: "POST",
         body: {
@@ -305,6 +316,8 @@ export const slideshowApi = baseApi.injectEndpoints({
           pagesPerType,
         },
       }),
+
+
       // Merge logic for infinite scroll
     }),
 
@@ -319,12 +332,14 @@ export const slideshowApi = baseApi.injectEndpoints({
         "SlideShows",
       ],
     }),
-    bulkOperations: builder.mutation<successResponse<BulkSlideOperation>, { id :string , data : any}>({
-      query: ({ id , data}) => ({
+    bulkOperations: builder.mutation<
+      successResponse<BulkSlideOperation>,
+      { id: string; data: any }
+    >({
+      query: ({ id, data }) => ({
         url: `/slide-show/bulk-operations/${id}`,
         method: "POST",
-        body : data,
-      
+        body: data,
       }),
       // invalidatesTags: (result, error, { slideShowId }) => [
       //   { type: "SlideShows", id: slideShowId },
@@ -415,8 +430,6 @@ export const slideshowApi = baseApi.injectEndpoints({
       },
     }),
   }),
- 
-
 });
 
 export const {
@@ -437,5 +450,5 @@ export const {
   useLazyGetSlideShowsByTypeQuery,
   useReorderBulkMutation,
   useUpdateAttachManyMutation,
-  useBulkOperationsMutation
+  useBulkOperationsMutation,
 } = slideshowApi;

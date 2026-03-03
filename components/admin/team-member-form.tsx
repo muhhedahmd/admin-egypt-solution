@@ -12,29 +12,62 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { useRouter } from "next/navigation"
-import { Save, Upload, X, User, Linkedin, Github, Twitter, Loader2 } from "lucide-react"
+import { Save, X, User, Linkedin, Github, Twitter, Loader2 } from "lucide-react"
 import Image from "next/image"
 import { useCreateTeamMemberMutation, useUpdateTeamMemberMutation } from "@/lib/store/api/team-api"
 import { toast } from "sonner"
+import { useLanguage } from "@/providers/lang"
+import { tTeamMemberForm } from "@/i18n/team"
 
-// Zod validation schema matching the backend
-const teamMemberFormSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255, "Name is too long"),
-  position: z.string().min(1, "Position is required").max(255, "Position is too long"),
-  bio: z.string().optional(),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  linkedin: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
-  github: z.string().url("Invalid GitHub URL").optional().or(z.literal("")),
-  twitter: z.string().url("Invalid Twitter URL").optional().or(z.literal("")),
-  isActive: z.boolean().default(true),
-  isFeatured: z.boolean().default(false),
-  // order: z.number().int().min(0, "Order must be 0 or greater").default(0),
-  image: z.any().optional(),
-  imageState: z.enum(["KEEP", "REMOVE", "UPDATE"]).optional(),
-})
+const createTeamMemberFormSchema = (t: typeof tTeamMemberForm.en) =>
+  
+  z.object({
+    name: z
+      .string()
+      .min(1, t.validation.nameRequired)
+      .max(255, t.validation.nameTooLong),
 
-type TeamMemberFormValues = z.infer<typeof teamMemberFormSchema>
+    position: z
+      .string()
+      .min(1, t.validation.positionRequired)
+      .max(255, t.validation.positionTooLong),
+
+    bio: z.string().optional(),
+
+    email: z
+      .string()
+      .email(t.validation.invalidEmail)
+      .optional()
+      .or(z.literal("")),
+
+    phone: z.string().optional(),
+
+    linkedin: z
+      .string()
+      .url(t.validation.invalidLinkedIn)
+      .optional()
+      .or(z.literal("")),
+
+    github: z
+      .string()
+      .url(t.validation.invalidGithub)
+      .optional()
+      .or(z.literal("")),
+
+    twitter: z
+      .string()
+      .url(t.validation.invalidTwitter)
+      .optional()
+      .or(z.literal("")),
+
+    isActive: z.boolean().default(true),
+    isFeatured: z.boolean().default(false),
+
+    image: z.any().optional(),
+    imageState: z.enum(["KEEP", "REMOVE", "UPDATE"]).optional(),
+  })
+
+type TeamMemberFormValues = z.infer<ReturnType<typeof createTeamMemberFormSchema>>
 
 interface TeamMemberImage {
   id: string
@@ -61,12 +94,15 @@ interface TeamMemberFormProps {
   }
 }
 
-export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamMemberFormProps) {
+export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }:TeamMemberFormProps) {
 
   const router = useRouter()
   const isEditMode = !!initialData
-  const [cerate, { isLoading: _isLoading, isError, isSuccess }] = useCreateTeamMemberMutation()
-  const [update, { isLoading: _isLoadingUpdate, isError: isUpdatedError, isSuccess: isUpdated }] = useUpdateTeamMemberMutation()
+  const { currentLang } = useLanguage()
+  const t = tTeamMemberForm[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
+
+  const [cerate, { isLoading: _isLoading,  }] = useCreateTeamMemberMutation()
+  const [update, { isLoading: _isLoadingUpdate, }] = useUpdateTeamMemberMutation()
   const [imagePreview, setImagePreview] = useState<string | null>(
     initialData?.image?.url || null
   )
@@ -78,9 +114,9 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
     formState: { errors },
     setValue,
     watch,
-    getValues,
   } = useForm<TeamMemberFormValues>({
-    resolver: zodResolver(teamMemberFormSchema),
+
+    resolver: zodResolver(createTeamMemberFormSchema(t)),
     defaultValues: {
       name: initialData?.name || "",
       position: initialData?.position || "",
@@ -116,32 +152,33 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("File too large", {
-          description: "Please upload an image smaller than 10MB",
-        })
-        return
-      }
+    if (!file) return
 
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        toast.error("Invalid file type", {
-          description: "Please upload an image file",
-        })
-        return
-      }
-
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-        setValue("imageState", "UPDATE")
-      }
-      reader.readAsDataURL(file)
-      setValue("image", file)
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t.validation.fileTooLarge, {
+        description: t.validation.fileTooLargeDesc,
+      })
+      return
     }
+
+    if (!file.type.startsWith("image/")) {
+      toast.error(t.validation.invalidFileType, {
+        description: t.validation.invalidFileTypeDesc,
+      })
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+      setValue("imageState", "UPDATE")
+    }
+    reader.readAsDataURL(file)
+
+    setValue("image", file)
   }
+
 
   const removeImage = () => {
     setImagePreview(null)
@@ -151,6 +188,7 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
 
   const onSubmit = async (data: TeamMemberFormValues) => {
     setIsSubmitting(true)
+
     try {
       const formData = new FormData()
 
@@ -165,54 +203,49 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
       if (data.twitter) formData.append("twitter", data.twitter)
       formData.append("isActive", String(data.isActive))
       formData.append("isFeatured", String(data.isFeatured))
-      // formData.append("order", String(data.order))
 
-      // Handle image state for edit mode
+      // Image state for edit mode
       if (isEditMode) {
         formData.append("imageState", data.imageState || "KEEP")
       }
 
-      // Append file if present
+      // Append image file
       if (data.image instanceof File) {
         formData.append("image", data.image)
       }
 
-      const method = isEditMode ? "PUT" : "POST"
-
-      if (method === "POST") {
-
-        await cerate(formData)
-
-        toast.success("Success!", {
-          description: `Team member ${isEditMode ? "updated" : "created"} successfully`,
-        })
-
-
-
-      }
-      if (method === "PUT") {
+      if (isEditMode) {
         if (!initialData) return
+
         await update({
           id: initialData.id,
-          body: formData
+          body: formData,
         })
 
-        toast.success("Success!", {
-          description: `Team member ${isEditMode ? "updated" : "created"} successfully`,
+        toast.success(t.toast.successTitle, {
+          description: t.toast.updated,
         })
+      } else {
+        await cerate(formData)
 
-
+        toast.success(t.toast.successTitle, {
+          description: t.toast.created,
+        })
       }
-
     } catch (error) {
       console.error("Error saving team member:", error)
-      toast.error("Error", {
-        description: error instanceof Error ? error.message : "Failed to save team member. Please try again.",
+
+      toast.error(t.toast.errorTitle, {
+        description:
+          error instanceof Error
+            ? error.message
+            : t.toast.saveFailed,
       })
     } finally {
       setIsSubmitting(false)
     }
   }
+
   const isLoading = _isLoading || isSubmitting || isLoadingFetchingToUpdate || _isLoadingUpdate
 
   return (
@@ -221,9 +254,9 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
       <div className="flex items-start h-[87%] overflow-auto w-full justify-start gap-4 flex-col  md:flex-row">
 
 
-        <Card style={{ height: "-webkit-fill-available " }} className="w-full  md:w-3/4 ">
+        <Card style={{ height: "-webkit-fill-available " }} className="w-full  md:w-3/4  ">
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+            <CardTitle>{t.titles.basicInfo}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 flex flex-col justify-between h-full ">
             <div className="flex flex-col w-full gap-5">
@@ -231,13 +264,13 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">
-                    Full Name <span className="text-red-500">*</span>
+                    {t.labels.fullName}<span className="text-red-500">*</span>
                   </Label>
                   <Input
                     disabled={isLoading}
                     id="name"
                     {...register("name")}
-                    placeholder="John Doe"
+                    placeholder={t.placeholders.name}
                     className={errors.name ? "border-red-500" : ""}
                   />
                   {errors.name && (
@@ -247,13 +280,13 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
 
                 <div className="space-y-2">
                   <Label htmlFor="position">
-                    Position <span className="text-red-500">*</span>
+                    {t.labels.position} <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     disabled={isLoading}
                     id="position"
                     {...register("position")}
-                    placeholder="Senior Developer"
+                    placeholder={t.placeholders.position}
                     className={errors.position ? "border-red-500" : ""}
                   />
                   {errors.position && (
@@ -263,12 +296,13 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bio">Biography</Label>
+                <Label htmlFor="bio">{t.labels.biography}</Label>
                 <Textarea
+                className="resize-none  min-h-64"
                   id="bio"
                   {...register("bio")}
-                  placeholder="Brief bio about the team member..."
-                  rows={5}
+                  placeholder={t.placeholders.bio}
+                  rows={20}
                 />
                 {errors.bio && (
                   <p className="text-sm text-red-500">{errors.bio.message}</p>
@@ -277,13 +311,13 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t.labels.email}</Label>
                   <Input
                     disabled={isLoading}
                     id="email"
                     type="email"
                     {...register("email")}
-                    placeholder="john@example.com"
+                    placeholder={t.placeholders.email}
                     className={errors.email ? "border-red-500" : ""}
                   />
                   {errors.email && (
@@ -292,13 +326,13 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone">{t.labels.phone}</Label>
                   <Input
                     disabled={isLoading}
                     id="phone"
                     type="tel"
                     {...register("phone")}
-                    placeholder="+1 (555) 000-0000"
+                    placeholder={t.placeholders.phone}
                   />
                   {errors.phone && (
                     <p className="text-sm text-red-500">{errors.phone.message}</p>
@@ -314,10 +348,10 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="isActive" className="cursor-pointer">
-                    Active Team Member
+                    {t.labels.activeMember}
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Inactive members won't be displayed on the website
+                    {t.labels.activeNote}
                   </p>
                 </div>
                 <Switch
@@ -330,10 +364,10 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label htmlFor="isFeatured" className="cursor-pointer">
-                    Featured Team Member
+                    {t.labels.featuredMember}
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Featured members appear prominently on the team page
+                    {t.labels.featuredNote}
                   </p>
                 </div>
                 <Switch
@@ -351,11 +385,11 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
           <Card className="w-full">
 
             <CardHeader>
-              <CardTitle>Profile Image</CardTitle>
+              <CardTitle>{t.titles.profileImage}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Team Member Photo</Label>
+                <Label>{t.labels.teamMemberPhoto}</Label>
                 <div className="flex flex-col space-y-4">
                   {imagePreview ? (
                     <div className="relative w-40 h-40 mx-auto border-2 rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-900">
@@ -391,17 +425,17 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
                       >
                         <User className="h-16 w-16 text-slate-400 mb-3" />
                         <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                          Click to upload photo
+                          {t.labels.clickToUpload}
                         </span>
                         <span className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                          PNG, JPG, WebP up to 10MB
+                          {t.labels.uploadFormats}
                         </span>
                       </label>
                     </div>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
-                  Recommended: Square image (1:1 ratio) for best results
+                  {t.labels.recommended}
                 </p>
               </div>
             </CardContent>
@@ -410,21 +444,21 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
           <Card className="h-full w-full ">
 
             <CardHeader>
-              <CardTitle>Social Media Links</CardTitle>
+              <CardTitle>{t.titles.socialLinks}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 h-full flex justify-between items-center flex-col w-full">
 
               <div className="space-y-4 w-full">
                 <Label htmlFor="linkedin" className="flex items-center gap-2">
                   <Linkedin className="h-4 w-4 text-blue-600" />
-                  LinkedIn Profile
+                  {t.labels.linkedin}
                 </Label>
                 <Input
                   disabled={isLoading}
                   id="linkedin"
                   type="url"
                   {...register("linkedin")}
-                  placeholder="https://linkedin.com/in/johndoe"
+                  placeholder={t.placeholders.linkedin}
                   className={errors.linkedin ? "border-red-500" : ""}
                 />
                 {errors.linkedin && (
@@ -435,14 +469,14 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
               <div className="space-y-2 w-full">
                 <Label htmlFor="github" className="flex items-center gap-2">
                   <Github className="h-4 w-4" />
-                  GitHub Profile
+                  {t.labels.github}
                 </Label>
                 <Input
                   disabled={isLoading}
                   id="github"
                   type="url"
                   {...register("github")}
-                  placeholder="https://github.com/johndoe"
+                  placeholder={t.placeholders.github}
                   className={errors.github ? "border-red-500" : ""}
                 />
                 {errors.github && (
@@ -453,14 +487,14 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
               <div className="space-y-2 w-full">
                 <Label htmlFor="twitter" className="flex items-center gap-2">
                   <Twitter className="h-4 w-4 text-sky-500" />
-                  Twitter Profile
+                  {t.labels.twitter}
                 </Label>
                 <Input
                   disabled={isLoading}
                   id="twitter"
                   type="url"
                   {...register("twitter")}
-                  placeholder="https://twitter.com/johndoe"
+                  placeholder={t.placeholders.twitter}
                   className={errors.twitter ? "border-red-500" : ""}
                 />
                 {errors.twitter && (
@@ -486,18 +520,18 @@ export function TeamMemberForm({ initialData, isLoadingFetchingToUpdate }: TeamM
           onClick={() => router.push("/admin/team")}
           disabled={isSubmitting || isLoading}
         >
-          Cancel
+          {t.labels.cancel}
         </Button>
         <Button type="submit" disabled={isSubmitting || isLoading}>
           {isSubmitting || isLoading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
+              {t.labels.saving}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              {isEditMode ? "Update Team Member" : "Add Team Member"}
+              {isEditMode ? t.labels.updateMember : t.labels.addMember}
             </>
           )}
         </Button>

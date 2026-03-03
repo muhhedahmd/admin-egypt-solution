@@ -3,6 +3,7 @@
 import React from 'react'
 import { useGetHeroByIdQuery } from '@/lib/store/api/hero-api'
 import { HeroEditor } from '../../_comp/new/hero-editor'
+import { useLanguage } from '@/providers/lang'
 
 interface PageProps {
     params: Promise<{ id: string }>
@@ -10,8 +11,12 @@ interface PageProps {
 
 const Page = ({ params }: PageProps) => {
     const p = React.use(params)
-    const { data, isLoading, error } = useGetHeroByIdQuery(p.id)
-    
+    const {currentLang }= useLanguage()
+    const { data, isLoading, error } = useGetHeroByIdQuery({id : p.id , lang :  currentLang})
+    console.log(
+        data
+    )
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-screen">
@@ -31,7 +36,7 @@ const Page = ({ params }: PageProps) => {
         )
     }
 
-    return <HeroEditor initialData={data?.data} />
+    return <HeroEditor initialData={data?.data as any} />
 }
 
 export default Page

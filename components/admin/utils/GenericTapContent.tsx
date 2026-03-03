@@ -15,8 +15,9 @@ import { useIntersectionObserver } from "@uidotdev/usehooks"
 import { LucideGlasses, AlertCircle, X, Star } from "lucide-react"
 import React, { type ChangeEvent, useEffect, useRef, useState } from "react"
 import { useGetClientsQuery, useLazySearchClientsQuery } from "@/lib/store/api/client-api"
-import { useGetTeamMembersQuery } from "@/lib/store/api/team-api"
-import { useGetTestimonialsQuery } from "@/lib/store/api/testimonials-api"
+import { useGetTeamMembersQuery, useLazySearchTeamMembersQuery, useSearchTeamMembersQuery } from "@/lib/store/api/team-api"
+import { useGetTestimonialsQuery, useLazySearchTestimonialsQuery } from "@/lib/store/api/testimonials-api"
+import { useLanguage } from "@/providers/lang"
 
 const TAKE = 10
 
@@ -115,7 +116,7 @@ const testimonialConfig: ItemConfig<TestimonialWithImage> = {
 }
 
 interface TabContentProps<T extends SelectableItem> {
-    disabledItems ?: string[] 
+    disabledItems?: string[]
     selectedItems: T[]
     setSelectedItems: React.Dispatch<React.SetStateAction<T[]>>
     tabType: string
@@ -124,14 +125,29 @@ interface TabContentProps<T extends SelectableItem> {
     extraInputs?: boolean
     config: ItemConfig<T>
     useQuery: typeof useGetServicesQuery | typeof useGetProjectsQuery | typeof useGetClientsQuery | typeof useGetTeamMembersQuery | typeof useGetTestimonialsQuery
-    useLazySearch: typeof useLazySearchServicesQuery | typeof useLazySearchProjectsQuery | typeof useLazySearchClientsQuery
+    useLazySearch: typeof useLazySearchServicesQuery | typeof useLazySearchProjectsQuery | typeof useLazySearchClientsQuery |typeof useLazySearchTestimonialsQuery | typeof useLazySearchTeamMembersQuery
     searchParamKey: string // 'q' for projects, 'search' for services
     dataExtractor: (data: any) => T[] // Extract data from API response
     paginationExtractor: (data: any) => pagination | undefined
 }
 
+export const reFormated = (data: any , currentLang: string) => {
+         return  data.map((item: any) => {
+                const SperatedItem = { ...item?.teamMember, ...item?.client, ...item?.project, ...item?.service, ...item?.testimonial, ...item }
+                const findTranslation = item?.translation?.find((t: any) => t?.lang?.toUpperCase() === currentLang?.toUpperCase())
+                const currentTranslation = {
+                    ...findTranslation,
+                    TranslationId: findTranslation?.id
+                }
+                return {
+                    ...SperatedItem,
+                    ...currentTranslation,
+
+                }
+            })
+    }
 const TabContent = <T extends SelectableItem>({
-    disabledItems, 
+    disabledItems,
     selectedItems,
     setSelectedItems,
     tabType,
@@ -145,24 +161,28 @@ const TabContent = <T extends SelectableItem>({
     dataExtractor,
     paginationExtractor,
 }: TabContentProps<T>) => {
+    const { currentLang } = useLanguage()
     const [skip, setSkip] = useState(0)
     const { data, isLoading, isError, refetch } = useQuery({
         skip,
         take: TAKE,
-    } , {
+    }, {
 
     })
 
     const [fetchedItems, setFetchedItems] = useState<T[]>([])
 
+    
     useEffect(() => {
         if (data) {
-            const newData = dataExtractor(data)
+           
+
+            const newData = reFormated(dataExtractor(data) , currentLang)
             if (newData) {
                 setFetchedItems((prev) => {
                     const existingIds = prev.map((item) => config.getId(item))
                     const newItems = newData?.filter(
-                        (item) => !existingIds.includes(config.getId(item))
+                        (item : any) => !existingIds.includes(config.getId(item))
                     )
                     return [...prev, ...newItems]
                 })
@@ -170,8 +190,7 @@ const TabContent = <T extends SelectableItem>({
         }
     }, [data, config, dataExtractor])
 
-    const [searchTrigger, { data: searchRes, isLoading: searchLoading, isError: searchError }] =
-        useLazySearch()
+    const [searchTrigger, { data: searchRes, isLoading: searchLoading, isError: searchError }] =  useLazySearch()
 
     const [searchInp, setSearchInp] = useState("")
     const debouncedSearchInp = useDebounce(searchInp, 2000)
@@ -221,7 +240,7 @@ const TabContent = <T extends SelectableItem>({
     }, [debouncedSearchInp, searchTrigger, searchParamKey])
 
     const displayData = searchInp
-        ? (searchRes ? dataExtractor(searchRes) : undefined)
+        ? (searchRes ? reFormated(dataExtractor(searchRes) , currentLang) : undefined)
         : fetchedItems
 
     const isLoadingData = searchInp ? searchLoading : isLoading
@@ -265,7 +284,7 @@ const TabContent = <T extends SelectableItem>({
                 setSkip={setSkip}
                 refetch={refetch}
                 setSelectedItems={setSelectedItems}
-                data={disabledItems ?  displayData?.filter((item) => !disabledItems.includes(config.getId(item))) : displayData}
+                data={disabledItems ? displayData?.filter((item :any) => !disabledItems.includes(config.getId(item))) : displayData}
                 pagination={paginationExtractor(data)}
                 isLoading={isLoadingData}
                 hasError={hasError}
@@ -486,10 +505,10 @@ const SelectContentTabSlideShow = <T extends SelectableItem>({
                                 {
                                     config.getRatting && config.getRatting(item) && (
                                         <div className="flex items-center justify-start gap-2">
-                                           { Array.from({length: config.getRatting(item)}).map((_, idx) => (
-                                               <Star key={idx} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                           ))}  <span className="text-xs text-muted-foreground">
-                                            {config.getRatting(item)}/5
+                                            {Array.from({ length: config.getRatting(item) }).map((_, idx) => (
+                                                <Star key={idx} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                            ))}  <span className="text-xs text-muted-foreground">
+                                                {config.getRatting(item)}/5
                                             </span>
                                         </div>
                                     )

@@ -3,27 +3,29 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Briefcase,
-  FolderKanban,
   Users,
-  FileText,
+
   Mail,
   Eye,
   MessageSquare,
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-// import { StatsCard } from "@/components/admin/stats-card";
 import { useGetAnalyticsOverviewQuery } from "@/lib/store/api/analytic-api";
-import { StatsCard } from "@/components/admin/stats-card";
 import { AnalyticsChart } from "@/components/admin/analytics-chart";
+import { useLanguage } from "@/providers/lang";
+import { adminDashboardTranslations } from "@/i18n/admin-dashboard";
 
 export default function AdminDashboard() {
   // Fetch analytics data for last 30 days
   const { data: analyticsData, isLoading: analyticsLoading } =
     useGetAnalyticsOverviewQuery({ days: 30 });
+  const { 
+    currentLang , 
 
-    console.log(analyticsData)
+
+  } = useLanguage()
+    const t = adminDashboardTranslations[currentLang?.toLowerCase() as "en" | "ar" as keyof typeof adminDashboardTranslations] || adminDashboardTranslations["en"];
     // Fetch analytics for previous period (for comparison)
     const { data: previousAnalytics } = useGetAnalyticsOverviewQuery({ days: 60 });
     console.log(analyticsData , previousAnalytics)
@@ -32,13 +34,13 @@ export default function AdminDashboard() {
   const stats = analyticsData?.data;
   const previousStats = previousAnalytics?.data;
 
-  // Calculate percentage changes
+  // percentage 
   const calculateChange = (current: number, previous: number) => {
     if (!previous) return 0;
     return ((current - previous) / previous) * 100;
   };
 
-  // Calculate period metrics (last 30 days vs previous 30 days)
+  // Calculate period metrics for comparison
   const getPeriodMetrics = () => {
     if (!stats || !previousStats) return null;
 
@@ -85,49 +87,19 @@ export default function AdminDashboard() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t.header.title}</h1>
         <p className="text-muted-foreground">
-          Welcome back! Here's an overview of your website.
+          {t.header.subtitle}
         </p>
       </div>
 
-      {/* Top Stats Cards - These would come from different APIs */}
-      {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Total Services"
-          value="12"
-          change="+2 this month"
-          icon={Briefcase}
-          trend="up"
-        />
-        <StatsCard
-          title="Active Projects"
-          value="28"
-          change="+5 this month"
-          icon={FolderKanban}
-          trend="up"
-        />
-        <StatsCard
-          title="Team Members"
-          value="15"
-          change="No change"
-          icon={Users}
-          trend="neutral"
-        />
-        <StatsCard
-          title="Blog Posts"
-          value="47"
-          change="+8 this month"
-          icon={FileText}
-          trend="up"
-        />
-      </div> */}
+   
             {/* Analytics Metrics from Real Data */}
       <div className="grid gap-4 md:grid-cols-3">
         {/* Page Views */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Page Views</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.metrics.pageViews}</CardTitle>
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -162,7 +134,7 @@ export default function AdminDashboard() {
         {/* New Contacts */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">New Contacts</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.metrics.newContacts}</CardTitle>
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -197,7 +169,7 @@ export default function AdminDashboard() {
         {/* Blog Views */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Blog Views</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.metrics.blogViews}</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -235,7 +207,7 @@ export default function AdminDashboard() {
         <Card className="col-span-4">
 
           <CardHeader>
-            <CardTitle>Analytics Overview</CardTitle>
+            <CardTitle>{t.analytics.overview}</CardTitle>
           </CardHeader>
           <CardContent className="w-full">
             {analyticsLoading ? (
@@ -255,7 +227,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unique Visitors</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.metrics.uniqueVisitors}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -267,7 +239,7 @@ export default function AdminDashboard() {
                   {stats?.totalVisitors.toLocaleString() || "0"}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Last 30 days
+                  {t.descriptions.avgAcrossPages}
                 </p>
               </>
             )}
@@ -276,7 +248,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bounce Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.metrics.bounceRate}</CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -288,7 +260,7 @@ export default function AdminDashboard() {
                   {stats?.avgBounceRate.toFixed(1) || "0"}%
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Average across all pages
+                  {t.descriptions.avgAcrossPages}
                 </p>
               </>
             )}
@@ -297,7 +269,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Session Time</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.metrics.avgSessionTime}</CardTitle>
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -309,7 +281,7 @@ export default function AdminDashboard() {
                   {formatSessionTime(stats?.avgSessionTime || 0)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Time spent per session
+                  {t.descriptions.timePerSession}
                 </p>
               </>
             )}
@@ -318,7 +290,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.metrics.conversionRate}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -336,7 +308,7 @@ export default function AdminDashboard() {
                   %
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Visitors to contacts
+                  {t.descriptions.visitorsToContacts}
                 </p>
               </>
             )}

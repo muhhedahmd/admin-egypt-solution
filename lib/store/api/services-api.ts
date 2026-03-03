@@ -82,10 +82,13 @@ export const servicesApi = baseApi.injectEndpoints({
         service: Service;
         Image: Image;
       }>,
-      string
+      {
+        slug?: string;
+        lang?: string;
+      }
     >({
-      query: (id) => `/services/${id}`,
-      providesTags: (result, error, id) => [{ type: "Services", id }],
+      query: ({slug}) => `/services/${slug}`,
+      providesTags: (result, error, { slug }) => [{ type: "Services", slug }],
     }),
     getServiceBySlug: builder.query<Service, string>({
       query: (slug) => `/services/slug/${slug}`,

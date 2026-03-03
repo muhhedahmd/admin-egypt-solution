@@ -10,11 +10,15 @@ import { DeleteDialog } from "@/components/admin/delete-dialog"
 import Blurredimage from "@/app/_comp/BlurredHashImage"
 import Image from "next/image"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
-import { clientRespons, useDeleteClientMutation, useGetClientsQuery } from "@/lib/store/api/client-api"
+import { ClientWithTranslation, useDeleteClientMutation, useGetClientsQuery } from "@/lib/store/api/client-api"
 import { toast } from "sonner"
+import { useLanguage } from "@/providers/lang"
+import { tClientsTable } from "@/i18n/client"
 
 export function ClientsTable() {
   const router = useRouter()
+  const { currentLang } = useLanguage()
+  const t = tClientsTable[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
   const [page, setPage] = useState(0)
   const [ref, entry] = useIntersectionObserver({
     rootMargin: "0px",
@@ -32,8 +36,7 @@ export function ClientsTable() {
     skip: page,
     take: 10
   })
-  console.log({ error, clientData, isLoading, isError, isFetching, refetch })
-  const [allClients, setAllClients] = useState<clientRespons[]>([])
+  const [allClients, setAllClients] = useState<ClientWithTranslation[]>([])
 
   useEffect(() => {
     if (clientData?.data) {
@@ -91,12 +94,12 @@ export function ClientsTable() {
         <div className="rounded-full bg-destructive/10 p-6 mb-4">
           <Trash2 className="h-10 w-10 text-destructive" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Failed to load clients</h3>
+        <h3 className="text-xl font-semibold mb-2">{t.failedToLoad.title}</h3>
         <p className="text-muted-foreground text-center max-w-md mb-4">
-          There was an error loading your clients. Please try again.
+          {t.failedToLoad.description}
         </p>
         <Button onClick={() => refetch()} variant="outline">
-          Retry
+          {t.failedToLoad.retryButton}
         </Button>
       </div>
     )
@@ -108,9 +111,9 @@ export function ClientsTable() {
         <div className="rounded-full bg-muted p-6 mb-4">
           <Package className="h-10 w-10 text-muted-foreground" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">No clients found</h3>
+        <h3 className="text-xl font-semibold mb-2">{t.noClients.title}</h3>
         <p className="text-muted-foreground text-center max-w-md">
-          Get started by creating your first client.
+          {t.noClients.description}
         </p>
       </div>
     )
@@ -122,8 +125,9 @@ export function ClientsTable() {
 
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {allClients.map((client) => (
-          <article
+        {allClients.map((client) => {
+          const currentTranlation = client?.translation?.find((t) => t.lang?.toLocaleLowerCase() === currentLang?.toLocaleLowerCase())
+          return <article
             key={client.client.id}
             className="group relative overflow-hidden rounded-2xl border bg-gradient-to-br from-card to-card/50 backdrop-blur transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] hover:border-primary/50"
           >
@@ -151,14 +155,14 @@ export function ClientsTable() {
                 {client.client.isFeatured && (
                   <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 border-0 shadow-lg">
                     <Star className="h-3 w-3 mr-1 fill-current" />
-                    Featured
+                    {t.badges.featured}
                   </Badge>
                 )}
                 <Badge
                   variant={client.client.isActive ? "default" : "secondary"}
                   className="shadow-lg"
                 >
-                  {client.client.isActive ? "Active" : "Inactive"}
+                  {client.client.isActive ? t.badges.active : t.badges.inactive}
                 </Badge>
               </div>
 
@@ -176,29 +180,25 @@ export function ClientsTable() {
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem onClick={() => router.push(`/admin/clients/${client.client.id}`)}>
                       <Eye className="mr-2 h-4 w-4" />
-                      View Details
+                      {t.dropdown.view}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push(`/admin/clients/${client.client.id}/edit`)}>
                       <Pencil className="mr-2 h-4 w-4" />
-                      Edit client
+                      {t.dropdown.edit}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
                       onClick={() => setDeleteId(client.client.id)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Delete client
+                      {t.dropdown.delete}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
 
               {/* Order badge */}
-              <div className="absolute bottom-4 right-4">
-                <Badge variant="secondary" className="shadow-lg backdrop-blur-sm bg-background/80">
-                  Order #{client.client.order}
-                </Badge>
-              </div>
+
             </div>
 
             {/* Content */}
@@ -209,14 +209,14 @@ export function ClientsTable() {
                   {client.logo && (
                     <Image
                       src={client.logo.url}
-                      alt={client.client.name + "-icon"}
+                      alt={currentTranlation?.name || "" + "-icon"}
                       width={24}
                       height={24}
                       className="rounded-md bg-muted w-6 h-6 object-cover"
                     />
                   )}
                   <h3 className="text-xl font-bold tracking-tight line-clamp-1 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                    {client.client.name}
+                    {currentTranlation?.name || client.client.name || ""}
                   </h3>
                 </div>
                 <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
@@ -225,28 +225,28 @@ export function ClientsTable() {
                 {client.client.website &&
 
                   <code className=" block  mt-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                    website: {client.client.website}
+                    {t.labels.website}: {client.client.website}
                   </code>
                 }
                 {
                   client.client.industry &&
                   <code className=" block  mt-2 text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                    Indestury: {client.client.industry}
+                    {t.labels.industry}: {client.client.industry}
                   </code>
                 }
               </div>
 
               {/* Description */}
               <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
-                {client.client.description}
+                {currentTranlation?.description || client.client.description}
               </p>
 
               {/* Rich Description Preview */}
-              {client.client.richDescription && (
+              {currentTranlation?.richDescription && (
                 <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3 border border-border/50">
                   <div
                     className="line-clamp-2 prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: client.client.richDescription }}
+                    dangerouslySetInnerHTML={{ __html: currentTranlation?.richDescription }}
                   />
                 </div>
               )}
@@ -273,7 +273,7 @@ export function ClientsTable() {
               )}
             </div>
           </article>
-        ))}
+        })}
       </div>
 
       {/* Infinite scroll trigger */}
@@ -281,13 +281,13 @@ export function ClientsTable() {
         {isFetching && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span>Loading more clients...</span>
+            <span>{t.loading}</span>
           </div>
         )}
         {clientData?.data &&
           allClients.length >= (clientData.pagination.totalItems || 0) && (
             <p className="text-sm text-muted-foreground">
-              All {clientData.pagination.totalItems} clients loaded
+              {t.allLoaded} {clientData.pagination.totalItems}
             </p>
           )}
       </div>
@@ -298,8 +298,8 @@ export function ClientsTable() {
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
         onConfirm={async () => await handleDelete(deleteId!)}
-        title="Delete Project"
-        description="Are you sure you want to delete this project? This action cannot be undone."
+        title={t.deleteDialog.title}
+        description={t.deleteDialog.description}
       />
     </>
   )

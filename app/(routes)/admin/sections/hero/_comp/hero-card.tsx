@@ -4,71 +4,82 @@ import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MoreVertical, Edit, Trash2, Copy } from "lucide-react"
+import { MoreVertical, Edit, Trash2, Languages } from "lucide-react"
 import type { IHero, Image } from "@/types/schema"
 import { useRouter } from "next/navigation"
 import BlurredImage from "@/app/_comp/BlurredHashImage"
 import { Switch } from "@/components/ui/switch"
-import { useUpdateHeroMutation } from "@/lib/store/api/hero-api"
+import { useToggleActiveMutation, useUpdateHeroMutation } from "@/lib/store/api/hero-api"
 import { toast } from "sonner"
+import { HeroTranslation } from "./hero.carousel"
+import { useLanguage } from "@/providers/lang"
 
 interface HeroCardProps {
   hero: {
     hero: IHero,
+    transition: HeroTranslation[]
     backgroundImage?: Image
   }
-
 }
 
 export const HeroCard = React.memo(({ hero }: HeroCardProps) => {
   const router = useRouter()
-  const handleDelete = (id: string) => {
+  const { currentLang } = useLanguage()
+  // const [edit, { isLoading }] = useUpdateHeroMutation()
+  const [toggle, { isLoading }] = useToggleActiveMutation()
+
+  const currentTranslation = React.useMemo(() => {
+    return hero.transition?.find(t => t.lang === currentLang) || {
+      id: "",
+      name: "",
+      ctaText: "",
+      description: "",
+      secondaryCtaText: "",
+      lang: currentLang,
+      subtitle: "",
+      title: ""
+    }
+  }, [hero.transition, currentLang])
+
+
+  const [isActive, setIsActive] = React.useState(hero.hero.isActive)
+
+  const handleChangeActive = async () => {
+    try {
+      const formData = new FormData()
+      formData.append("isActive", String(!hero.hero.isActive))
+      const res = await  toggle({
+        id: hero.hero.id,
+      }).unwrap()
+      setIsActive(res.data?.isActive)
+      toast.success("Hero updated successfully!")
+    } catch (error) {
+      console.log(error)
+    }
   }
-  const [edit, { isLoading, error }] = useUpdateHeroMutation()
 
-  const handleChangeActive = () => {
-   try {
-     
-    const formData = new FormData()
-    formData.append("isActive", String(!hero.hero.isActive))
-    edit({
-      id: hero.hero.id,
-      formData: formData
-    })
-    toast("Hero updated successfully!")
 
-   } catch (error) {
-    console.log(error)
-   }
 
-  }
   return (
     <Card className="p-3 group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105 w-full">
-
       <div
-
-        className="w-full h-40  rounded-md relative"
+        className="w-full h-40 rounded-md relative"
         style={{
-          // backgroundColor: hero.hero.backgroundColor || "",
-          // backgroundImage: hero.backgroundImage?.url ? `url(${hero.backgroundImage?.url})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-
-        {
-          hero.hero.backgroundColor &&
+        {hero.hero.backgroundColor && (
           <BlurredImage
-            alt={hero.backgroundImage?.alt || `${hero.hero.name}-alt`}
-
+            alt={hero.backgroundImage?.alt || `${currentTranslation?.name || hero.hero.name}-alt`}
             imageUrl={hero.backgroundImage?.url || ""}
             width={hero.backgroundImage?.width || 0}
             height={hero.backgroundImage?.height || 0}
-            className=" rounded-md w-full h-full object-cover "
+            className="rounded-md w-full h-full object-cover"
             blurhash={hero.backgroundImage?.blurHash || ""}
             quality={100}
           />
-        }
+        )}
 
         {/* Overlay effect */}
         <div
@@ -77,24 +88,29 @@ export const HeroCard = React.memo(({ hero }: HeroCardProps) => {
             backgroundColor: hero.hero.overlayColor || "",
             opacity: hero.hero.overlayOpacity || 0,
           }}
-        >
-        </div>
+        />
 
         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-          <p className="text-sm font-medium truncate px-2"
+          <p
+            className="text-sm font-medium truncate px-2"
             style={{
               color: hero.hero.titleColor || "",
             }}
-          >{hero.hero.title}</p>
+          >
+            {currentTranslation?.title || hero.hero.title}
+          </p>
         </div>
+
+        {/* Language indicator badge */}
 
       </div>
 
       <CardHeader className="pb-3">
-
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg truncate">{hero.hero.name}</CardTitle>
+            <CardTitle className="text-lg truncate">
+              {currentTranslation?.name || hero.hero.name}
+            </CardTitle>
             <CardDescription className="text-xs mt-1">
               {hero.hero.variant || "CENTERED"} • {hero.hero.minHeight}px
             </CardDescription>
@@ -111,10 +127,10 @@ export const HeroCard = React.memo(({ hero }: HeroCardProps) => {
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleDelete(hero.hero.id)} className="text-destructive">
+              {/* <DropdownMenuItem onClick={() => handleDelete(hero.hero.id)} className="text-destructive">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -124,18 +140,17 @@ export const HeroCard = React.memo(({ hero }: HeroCardProps) => {
         <div className="space-y-2 text-sm">
           <div>
             <p className="text-muted-foreground line-clamp-2">
-              {hero.hero.description || hero.hero.subtitle || "No description"}
+              {currentTranslation?.description || currentTranslation?.subtitle || hero.hero.description || hero.hero.subtitle || "No description"}
             </p>
           </div>
           <div className="flex gap-2 pt-2">
-            {hero.hero.ctaText && (
+            {(currentTranslation?.ctaText || hero.hero.ctaText) && (
               <span className="inline-flex items-center px-2 py-1 rounded bg-primary/10 text-primary text-xs font-medium">
-                {hero.hero.ctaText}
+                {currentTranslation?.ctaText || hero.hero.ctaText}
               </span>
             )}
 
-
-            {hero.hero.isActive ? (
+            {isActive ? (
               <span className="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-medium">
                 Active
               </span>
@@ -147,8 +162,8 @@ export const HeroCard = React.memo(({ hero }: HeroCardProps) => {
             <div className="flex-1 w-full flex items-center justify-end">
               <Switch
                 className="bg-emerald-300"
-                checked={hero.hero.isActive}
-                onCheckedChange={(e) => handleChangeActive()}
+                checked={isActive}
+                onCheckedChange={handleChangeActive}
                 disabled={isLoading}
               />
             </div>

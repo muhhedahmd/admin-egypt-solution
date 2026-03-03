@@ -4,6 +4,7 @@ import StoreProvider from '@/lib/store/provider';
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner';
 import ToastListener from './_comp/TosterListener';
+import { LanguageProvider } from '@/providers/lang';
 
 export const metadata: Metadata = {
   title: 'Company name',
@@ -19,10 +20,15 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans antialiased`}>
         <StoreProvider>
+          <LanguageProvider 
+          initialIsRTL={false}
+          >
 
-          {children}
 
-          <Toaster  />
+            {children}
+          </LanguageProvider>
+
+          <Toaster />
           <ToastListener />
         </StoreProvider>
       </body>

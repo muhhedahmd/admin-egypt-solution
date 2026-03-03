@@ -1,15 +1,13 @@
 
 import BlurredImage from "@/app/_comp/BlurredHashImage"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+
 import { ClientWithRelationsSlide, ProjectWithRelationsSlide, TeamMemberWithImage, Technology, TestimonialWithImage } from "@/types/schema"
 import { ScrollArea } from "@radix-ui/react-scroll-area"
 import { motion, useScroll, useTransform } from "framer-motion"
-import { Calendar, ExternalLink, Github, Globe } from "lucide-react"
+import {  ExternalLink, Github, Globe } from "lucide-react"
 import Image from "next/image"
 
-import Marquee from "react-fast-marquee";
 
 
 
@@ -17,13 +15,12 @@ import Marquee from "react-fast-marquee";
 export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any, imaged?: boolean, splitcarousel?: boolean }) => {
 
 
-
     const DataToRender = data?.name ? data : data.data
 
 
     if (imaged) {
         return <>
-            {DataToRender.image && (
+            {DataToRender?.image && (
                 <div className="mb-5 h-full w-full overflow-hidden rounded-xl bg-muted">
                     <BlurredImage
 
@@ -51,7 +48,7 @@ export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any
                 }}
                 className="group relative h-full overflow-hidden rounded-2xl flex flex-row  w-full gap-4   p-2 hover:border-primary/50 transition-all duration-300"
             >
-                {DataToRender.image && (
+                {DataToRender?.image && (
                     <div className="mb-5  w-2/3 h-130 overflow-hidden rounded-md bg-muted">
 
                         <BlurredImage
@@ -69,10 +66,10 @@ export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any
 
                 <div className="space-y-4 max-w-2/5 h-full">
                     <div className="flex items-center gap-3 text-4xl" >
-                        {DataToRender.icon && DataToRender?.icon?.startsWith("http") ? (
+                        {DataToRender?.icon && DataToRender?.icon?.startsWith("http") ? (
                             <div className="w-12 h-12 rounded-xl bg-primary/10 p-2.5 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
                                 <Image
-                                    src={DataToRender.icon}
+                                    src={DataToRender?.icon}
                                     width={24}
                                     height={24}
                                     alt={DataToRender.name + "-icon"}
@@ -81,7 +78,7 @@ export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any
                             </div>
                         ) : (
                             <span>
-                                {DataToRender.icon}
+                                {DataToRender?.icon}
                             </span>
                         )}
                         <motion.h3
@@ -150,7 +147,7 @@ export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any
         }}
         className="group relative h-full overflow-hidden rounded-2xl  p-2 hover:border-primary/50 transition-all duration-300"
     >
-        {DataToRender.image && (
+        {DataToRender?.image && (
             <div className="mb-5 h-70 overflow-hidden rounded-md bg-muted">
                 <BlurredImage
 
@@ -169,10 +166,10 @@ export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any
         <div className="space-y-4">
 
             <div className="flex items-center gap-3">
-                {DataToRender.icon && DataToRender?.icon?.startsWith("http") ? (
+                {DataToRender?.icon && DataToRender?.icon?.startsWith("http") ? (
                     <div className="w-12 h-12 rounded-xl bg-primary/10 p-2.5 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
                         <Image
-                            src={DataToRender.icon}
+                            src={DataToRender?.icon}
                             width={24}
                             height={24}
                             alt={DataToRender.name + "-icon"}
@@ -181,7 +178,7 @@ export const ServiceCard = ({ data, imaged = false, splitcarousel }: { data: any
                     </div>
                 ) : (
                     <span>
-                        {DataToRender.icon}
+                        {DataToRender?.icon}
                     </span>
                 )}
                 <motion.h3

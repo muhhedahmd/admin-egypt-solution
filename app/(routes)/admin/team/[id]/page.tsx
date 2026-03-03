@@ -24,15 +24,21 @@ import {
     Users,
     ClipboardIcon,
     Briefcase,
+    ArrowRight,
 } from "lucide-react"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
 import { useDeleteTeamMemberMutation, useGetTeamMemberByIdQuery } from "@/lib/store/api/team-api"
 import { toast } from "sonner"
 import Image from "next/image"
+import { useLanguage } from "@/providers/lang"
+import { tTeamMemberDetail } from "@/i18n/team"
+import Link from "next/link"
 
 export default function TeamMemberDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter()
     const p = React.use(params)
+    const {currentLang , isRTL} = useLanguage()
+    const  t = tTeamMemberDetail[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
 
     const { data: memberData, isLoading, isError } = useGetTeamMemberByIdQuery(p.id)
 
@@ -57,17 +63,16 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
 
     const handleDelete = async (id: string) => {
         try {
-            console.log(id)
             await del(id
             ).then(res => {
                 if (res.data) {
-                    toast.success("Service deleted successfully!")
+                    toast.success(t.toast.deleteSuccess)
                     setDeleteId(null)
                     router.push("/admin/team")
                 }
             })
         } catch (error) {
-            toast.error("Failed to delete service. Please try again.")
+            toast.error(t.toast.deleteError)
         }
     }
 
@@ -83,11 +88,15 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                     <div className="rounded-full bg-red-50 dark:bg-red-950 p-6 mb-4 inline-block">
                         <Users className="h-12 w-12 text-red-500" />
                     </div>
-                    <h2 className="text-2xl font-bold mb-2">Team Member Not Found</h2>
-                    <p className="text-muted-foreground mb-6">The team member you're looking for doesn't exist.</p>
+                    <h2 className="text-2xl font-bold mb-2">{t.notFound.title}</h2>
+                    <p className="text-muted-foreground mb-6">{t.notFound.description}</p>
                     <Button onClick={() => router.push('/admin/team')}>
+                        {
+                            isRTL? 
+                        <ArrowRight className="mr-2 h-4 w-4" />:
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Team
+                        }
+                        {t.notFound.back}
                     </Button>
                 </div>
             </div>
@@ -95,15 +104,18 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
     }
 
     const {
-        Image: memberImage,
-        teamMember
-    } = memberData
+        image: memberImage,
+        teamMember,
+        translation
+
+    } = memberData.data
+    const currentTranslation = translation.find(t => t.lang.toLowerCase() === currentLang.toLowerCase())
 
     return (
         <>
             <div className="min-h-screen bg-background">
                 {/* Sticky Header */}
-                <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className=" z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                     <div className="container mx-auto px-4 py-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -113,16 +125,18 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                     onClick={() => router.push('/admin/team')}
                                     className="rounded-full"
                                 >
-                                    <ArrowLeft className="h-5 w-5" />
+                                    {
+                                        isRTL ? <ArrowRight className="h-5 w-5" /> : <ArrowLeft className="h-5 w-5" />
+                                    }
                                 </Button>
                                 <div>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                                        <span>Team</span>
+                                        <span>{t.header.team}</span>
                                         <span>/</span>
                                         <span className="text-foreground font-medium">{teamMember.slug}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <h1 className="text-2xl font-bold tracking-tight">{teamMember.name}</h1>
+                                        <h1 className="text-2xl font-bold tracking-tight">{currentTranslation?.name || ""}</h1>
                                     </div>
                                 </div>
                             </div>
@@ -133,7 +147,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                     className="gap-2"
                                 >
                                     <Pencil className="h-4 w-4" />
-                                    Edit
+                                    {t.header.edit}
                                 </Button>
                                 <Button
                                     variant="destructive"
@@ -158,7 +172,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                         {teamMember.isFeatured && (
                                             <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-0 shadow-sm">
                                                 <Star className="h-3 w-3 mr-1 fill-current" />
-                                                Featured
+                                                {t.labels.featured}
                                             </Badge>
                                         )}
                                         <Badge
@@ -177,7 +191,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                                 {memberImage ? (
                                                     <Image
                                                         src={memberImage.url}
-                                                        alt={memberImage.alt || teamMember.name}
+                                                        alt={memberImage.alt || currentTranslation?.name || ""}
                                                         width={128}
                                                         height={128}
                                                         className="h-full w-full object-cover"
@@ -192,10 +206,10 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
 
                                         {/* Info */}
                                         <div className="flex-1">
-                                            <h2 className="text-3xl font-bold mb-2">{teamMember.name}</h2>
+                                            <h2 className="text-3xl font-bold mb-2">{currentTranslation?.name ||" "}</h2>
                                             <div className="flex items-center gap-2 mb-3">
                                                 <Briefcase className="h-4 w-4 text-muted-foreground" />
-                                                <p className="text-lg text-muted-foreground">{teamMember.position}</p>
+                                                <p className="text-lg text-muted-foreground">{currentTranslation?.position || ""}</p>
                                             </div>
                                             <code className="text-sm bg-background px-3 py-1.5 rounded border">
                                                 /{teamMember.slug}
@@ -209,7 +223,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                     {/* Contact Info */}
                                     {(teamMember.email || teamMember.phone) && (
                                         <div className="space-y-3">
-                                            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Contact</h3>
+                                            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t.sections.contact}</h3>
                                             {teamMember.email && (
                                                 <a
                                                     href={`mailto:${teamMember.email}`}
@@ -219,7 +233,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                                         <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs text-muted-foreground">Email</p>
+                                                        <p className="text-xs text-muted-foreground">{t.labels.email}</p>
                                                         <p className="font-medium">{teamMember.email}</p>
                                                     </div>
                                                 </a>
@@ -233,7 +247,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                                         <Phone className="h-5 w-5 text-green-600 dark:text-green-400" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs text-muted-foreground">Phone</p>
+                                                        <p className="text-xs text-muted-foreground">{t.labels.phone}</p>
                                                         <p className="font-medium">{teamMember.phone}</p>
                                                     </div>
                                                 </a>
@@ -246,37 +260,37 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                         <>
                                             <Separator />
                                             <div className="space-y-3">
-                                                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Social Media</h3>
+                                                <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">{t.sections.social}</h3>
                                                 <div className="flex gap-3">
                                                     {teamMember.linkedin && (
-                                                        <a
+                                                        <Link
                                                             href={teamMember.linkedin}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-950 hover:bg-blue-200 dark:hover:bg-blue-900 text-blue-600 dark:text-blue-400 transition-all hover:scale-110"
                                                         >
                                                             <Linkedin className="h-5 w-5" />
-                                                        </a>
+                                                        </Link>
                                                     )}
                                                     {teamMember.github && (
-                                                        <a
+                                                        <Link
                                                             href={teamMember.github}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="flex items-center justify-center h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-all hover:scale-110"
                                                         >
                                                             <Github className="h-5 w-5" />
-                                                        </a>
+                                                        </Link>
                                                     )}
                                                     {teamMember.twitter && (
-                                                        <a
+                                                        <Link
                                                             href={teamMember.twitter}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="flex items-center justify-center h-12 w-12 rounded-full bg-sky-100 dark:bg-sky-950 hover:bg-sky-200 dark:hover:bg-sky-900 text-sky-600 dark:text-sky-400 transition-all hover:scale-110"
                                                         >
                                                             <Twitter className="h-5 w-5" />
-                                                        </a>
+                                                        </Link>
                                                     )}
                                                 </div>
                                             </div>
@@ -286,20 +300,20 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                             </Card>
 
                             {/* Biography */}
-                            {teamMember.bio && (
+                            {currentTranslation?.bio && (
                                 <Card className="p-8 border shadow-sm">
                                     <div className="flex items-center gap-3 mb-6">
                                         <div className="h-12 w-12 rounded-xl bg-purple-100 dark:bg-purple-950 flex items-center justify-center">
                                             <User className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                                         </div>
                                         <div>
-                                            <h3 className="text-2xl font-bold">About</h3>
-                                            <p className="text-sm text-muted-foreground">Biography</p>
+                                            <h3 className="text-2xl font-bold">{t.sections.about}</h3>
+                                            <p className="text-sm text-muted-foreground">{t.sections.biography}</p>
                                         </div>
                                     </div>
 
                                     <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                                        {teamMember.bio}
+                                        {currentTranslation?.bio}
                                     </p>
                                 </Card>
                             )}
@@ -312,32 +326,32 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                             <FileImage className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                                         </div>
                                         <div>
-                                            <h3 className="text-2xl font-bold">Image Details</h3>
-                                            <p className="text-sm text-muted-foreground">Profile photo information</p>
+                                            <h3 className="text-2xl font-bold">{t.sections.imageDetails}</h3>
+                                            <p className="text-sm text-muted-foreground">{t.sections.imageDescription}</p>
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                                         {memberImage.width && memberImage.height && (
                                             <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                                                <p className="text-xs text-muted-foreground mb-1">Dimensions</p>
+                                                <p className="text-xs text-muted-foreground mb-1">{t.labels.dimensions}</p>
                                                 <p className="font-semibold">{memberImage.width} × {memberImage.height}</p>
                                             </div>
                                         )}
                                         {memberImage.size && (
                                             <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                                                <p className="text-xs text-muted-foreground mb-1">File Size</p>
+                                                <p className="text-xs text-muted-foreground mb-1">{t.labels.fileSize}</p>
                                                 <p className="font-semibold">{formatFileSize(memberImage.size)}</p>
                                             </div>
                                         )}
                                         {memberImage.type && (
                                             <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                                                <p className="text-xs text-muted-foreground mb-1">Format</p>
+                                                <p className="text-xs text-muted-foreground mb-1">{t.labels.format}</p>
                                                 <p className="font-semibold uppercase">{memberImage.type.split('/')[1]}</p>
                                             </div>
                                         )}
                                         <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                                            <p className="text-xs text-muted-foreground mb-1">Type</p>
+                                            <p className="text-xs text-muted-foreground mb-1">{t.labels.type}</p>
                                             <p className="font-semibold">{memberImage.imageType || 'TEAM'}</p>
                                         </div>
                                     </div>
@@ -345,7 +359,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                     <div className="space-y-3">
                                         {memberImage.filename && (
                                             <div>
-                                                <p className="text-xs text-muted-foreground mb-2">Filename</p>
+                                                <p className="text-xs text-muted-foreground mb-2">{t.labels.filename}</p>
                                                 <code className="text-sm bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded flex justify-between items-center">
                                                     <span className="truncate">{memberImage.filename}</span>
                                                     <ClipboardCopyButton value={memberImage.filename} />
@@ -354,7 +368,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                         )}
                                         {memberImage.fileHash && (
                                             <div>
-                                                <p className="text-xs text-muted-foreground mb-2">File Hash</p>
+                                                <p className="text-xs text-muted-foreground mb-2">{t.labels.fileHash}</p>
                                                 <code className="text-sm bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded flex justify-between items-center">
                                                     <span className="truncate">{memberImage.fileHash}</span>
                                                     <ClipboardCopyButton value={memberImage.fileHash} />
@@ -363,7 +377,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                         )}
                                         {memberImage.blurHash && (
                                             <div>
-                                                <p className="text-xs text-muted-foreground mb-2">Blur Hash</p>
+                                                <p className="text-xs text-muted-foreground mb-2">{t.labels.blurHash}</p>
                                                 <code className="text-sm bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded flex justify-between items-center">
                                                     <span className="truncate">{memberImage.blurHash}</span>
                                                     <ClipboardCopyButton value={memberImage.blurHash} />
@@ -372,7 +386,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                         )}
                                         {memberImage.key && (
                                             <div>
-                                                <p className="text-xs text-muted-foreground mb-2">Storage Key</p>
+                                                <p className="text-xs text-muted-foreground mb-2">{t.labels.storageKey}</p>
                                                 <code className="text-sm bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded flex justify-between items-center">
                                                     <span className="truncate">{memberImage.key}</span>
                                                     <ClipboardCopyButton value={memberImage.key} />
@@ -393,8 +407,8 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                         <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold">Member Info</h3>
-                                        <p className="text-xs text-muted-foreground">Quick details</p>
+                                        <h3 className="text-lg font-bold">{t.sections.memberInfo}</h3>
+                                        <p className="text-xs text-muted-foreground">{t.sections.quickDetails}</p>
                                     </div>
                                 </div>
 
@@ -404,8 +418,8 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                             <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                                         </div>
                                         <div>
-                                            <p className="text-xs text-muted-foreground">Status</p>
-                                            <p className="font-semibold">{teamMember.isActive ? "Active" : "Inactive"}</p>
+                                            <p className="text-xs text-muted-foreground">{t.labels.status }</p>
+                                            <p className="font-semibold">{teamMember.isActive ? t.status.active : t.status.inactive}</p>
                                         </div>
                                     </div>
 
@@ -414,20 +428,12 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                             <Star className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                         </div>
                                         <div>
-                                            <p className="text-xs text-muted-foreground">Featured</p>
-                                            <p className="font-semibold">{teamMember.isFeatured ? "Yes" : "No"}</p>
+                                            <p className="text-xs text-muted-foreground">{t.status.featured}</p>
+                                            <p className="font-semibold">{teamMember.isFeatured ? t.labels.yes : t.labels.no}</p>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
-                                        <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-950 flex items-center justify-center">
-                                            <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground">Display Order</p>
-                                            <p className="font-semibold">#{teamMember.order}</p>
-                                        </div>
-                                    </div>
+
                                 </div>
                             </Card>
 
@@ -438,32 +444,32 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                         <Clock className="h-6 w-6 text-slate-600 dark:text-slate-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-bold">Metadata</h3>
-                                        <p className="text-xs text-muted-foreground">System info</p>
+                                        <h3 className="text-lg font-bold">{t.sections.metadata}</h3>
+                                        <p className="text-xs text-muted-foreground">{t.sections.systemInfo}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-3">
                                     <div>
-                                        <p className="text-xs text-muted-foreground mb-1">Member ID</p>
+                                        <p className="text-xs text-muted-foreground mb-1">{t.labels.memberId}</p>
                                         <code className="text-xs bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded block truncate">
                                             {teamMember.id}
                                         </code>
                                     </div>
                                     <Separator />
                                     <div>
-                                        <p className="text-xs text-muted-foreground mb-1">Created</p>
+                                        <p className="text-xs text-muted-foreground mb-1">{t.labels.created}</p>
                                         <p className="text-sm font-medium">{formatDate(teamMember.createdAt as unknown as string)}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
+                                        <p className="text-xs text-muted-foreground mb-1">{t.labels.lastUpdated}</p>
                                         <p className="text-sm font-medium">{formatDate(teamMember.updatedAt as unknown as string)}</p>
                                     </div>
                                     {teamMember.imageId && (
                                         <>
                                             <Separator />
                                             <div>
-                                                <p className="text-xs text-muted-foreground mb-1">Image ID</p>
+                                                <p className="text-xs text-muted-foreground mb-1">{t.labels.imageId}</p>
                                                 <code className="text-xs bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded block truncate">
                                                     {teamMember.imageId}
                                                 </code>
@@ -475,7 +481,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
 
                             {/* Quick Actions */}
                             <Card className="p-6 border shadow-sm">
-                                <h3 className="font-bold mb-4">Quick Actions</h3>
+                                <h3 className="font-bold mb-4">{t.sections.quickActions}</h3>
                                 <div className="space-y-2">
                                     <Button
                                         variant="outline"
@@ -483,7 +489,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                         onClick={() => router.push(`/admin/team/${teamMember.id}/edit`)}
                                     >
                                         <Pencil className="h-4 w-4" />
-                                        Edit Member
+                                        {t.actions.editMember}
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -491,7 +497,7 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                                         onClick={() => setDeleteId(teamMember.id)}
                                     >
                                         <Trash2 className="h-4 w-4" />
-                                        Delete Member
+                                        {t.actions.deleteMember}
                                     </Button>
                                 </div>
                             </Card>
@@ -506,8 +512,8 @@ export default function TeamMemberDetailPage({ params }: { params: Promise<{ id:
                 open={deleteId !== null}
                 onOpenChange={(open) => !open && setDeleteId(null)}
                 onConfirm={async () => await handleDelete(deleteId!)}
-                title="Delete Member"
-                description="Are you sure you want to delete this Member? This action cannot be undone."
+                title={t.actions.deleteTitle}
+                description={t.actions.deleteDescription}
             />
         </>
     )
@@ -520,15 +526,15 @@ function LoadingSkeleton() {
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-full animate-pulse bg-slate-200 dark:bg-slate-800" />
+                            <div className="h-10 w-10 rounded-full animate-wave bg-slate-200 dark:bg-slate-800" />
                             <div className="space-y-2">
-                                <div className="h-4 w-32 animate-pulse bg-slate-200 dark:bg-slate-800 rounded" />
-                                <div className="h-6 w-48 animate-pulse bg-slate-200 dark:bg-slate-800 rounded" />
+                                <div className="h-4 w-32 animate-wave bg-slate-200 dark:bg-slate-800 rounded" />
+                                <div className="h-6 w-48 animate-wave bg-slate-200 dark:bg-slate-800 rounded" />
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <div className="h-10 w-24 animate-pulse bg-slate-200 dark:bg-slate-800 rounded" />
-                            <div className="h-10 w-10 animate-pulse bg-slate-200 dark:bg-slate-800 rounded" />
+                            <div className="h-10 w-24 animate-wave bg-slate-200 dark:bg-slate-800 rounded" />
+                            <div className="h-10 w-10 animate-wave bg-slate-200 dark:bg-slate-800 rounded" />
                         </div>
                     </div>
                 </div>
@@ -537,14 +543,14 @@ function LoadingSkeleton() {
             <div className="container mx-auto px-4 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-8">
-                        <div className="h-80 rounded-xl animate-pulse bg-slate-200 dark:bg-slate-800" />
-                        <div className="h-64 rounded-xl animate-pulse bg-slate-200 dark:bg-slate-800" />
-                        <div className="h-96 rounded-xl animate-pulse bg-slate-200 dark:bg-slate-800" />
+                        <div className="h-80 rounded-xl animate-wave bg-slate-200 dark:bg-slate-800" />
+                        <div className="h-64 rounded-xl animate-wave bg-slate-200 dark:bg-slate-800" />
+                        <div className="h-96 rounded-xl animate-wave bg-slate-200 dark:bg-slate-800" />
                     </div>
                     <div className="space-y-6">
-                        <div className="h-64 rounded-xl animate-pulse bg-slate-200 dark:bg-slate-800" />
-                        <div className="h-48 rounded-xl animate-pulse bg-slate-200 dark:bg-slate-800" />
-                        <div className="h-32 rounded-xl animate-pulse bg-slate-200 dark:bg-slate-800" />
+                        <div className="h-64 rounded-xl animate-wave bg-slate-200 dark:bg-slate-800" />
+                        <div className="h-48 rounded-xl animate-wave bg-slate-200 dark:bg-slate-800" />
+                        <div className="h-32 rounded-xl animate-wave bg-slate-200 dark:bg-slate-800" />
                     </div>
                 </div>
             </div>

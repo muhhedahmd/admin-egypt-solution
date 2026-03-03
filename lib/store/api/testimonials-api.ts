@@ -1,24 +1,52 @@
 import { PaginatedResponse, successResponse } from "@/types/services";
 import { baseApi } from "./base-api";
-import { Image, Testimonial, TestimonialWithImage } from "@/types/schema";
+import { Image, Testimonial, TestimonialTranslation } from "@/types/schema";
+
+export interface TestimonialWithTranslation {
+  testimonial: Testimonial;
+  avatar: Image | null;
+  translation: TestimonialTranslation[];
+  slideShows?: any[];
+}
 
 export const testimonialsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getTestimonials: builder.query<
-      PaginatedResponse<TestimonialWithImage>,
+      PaginatedResponse<TestimonialWithTranslation>,
       {
         skip?: number;
         take?: number;
       }
     >({
-      query: ( { skip , take}) => {
+      query: ({ skip, take }) => {
         return {
-          url : "/testimonials",
+          url: "/testimonials",
           params: {
             skip,
             take,
           },
-        }
+        };
+      },
+      providesTags: ["Testimonials"],
+    }),
+
+    SearchTestimonials: builder.query<
+      PaginatedResponse<TestimonialWithTranslation>,
+      {
+        skip?: number;
+        take?: number;
+        q?: string;
+      }
+    >({
+      query: ({ skip, take, q }) => {
+        return {
+          url: "/testimonials/search",
+          params: {
+            skip,
+            take,
+            q,
+          },
+        };
       },
       providesTags: ["Testimonials"],
     }),
@@ -27,6 +55,8 @@ export const testimonialsApi = baseApi.injectEndpoints({
       successResponse<{
         Avatar: Image | null;
         testimonial: Testimonial;
+        translation: TestimonialTranslation[];
+        slideShows?: any[];
       }>,
       string
     >({
@@ -36,8 +66,9 @@ export const testimonialsApi = baseApi.injectEndpoints({
 
     createTestimonial: builder.mutation<
       successResponse<{
-        avatar: Image | null;
-        testimonials: Testimonial;
+        Avatar: Image | null;
+        testimonial: Testimonial;
+        translation: TestimonialTranslation[];
       }>,
       FormData
     >({
@@ -46,47 +77,51 @@ export const testimonialsApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      // invalidatesTags: ["testimonials"],
-      async onQueryStarted(queryArgument, { dispatch, queryFulfilled, extra }) {
-        const result = (await queryFulfilled).data;
-        const patchResult = dispatch(
-          testimonialsApi.util.updateQueryData(
-            "getTestimonials",
-            {
-              skip: 0,
-              take: 10,
-            },
-            (draft) => {
-              draft.data.unshift({
-                ...result.data.testimonials,
-                avatar: result.data.avatar || undefined,
-              });
-              draft.pagination.totalItems += 1;
-            }
-          )
-        );
-
+      async onQueryStarted(queryArgument, { dispatch, queryFulfilled }) {
         try {
-          await queryFulfilled;
+          const result = (await queryFulfilled).data;
+          const patchResult = dispatch(
+            testimonialsApi.util.updateQueryData(
+              "getTestimonials",
+              {
+                skip: 0,
+                take: 10,
+              },
+              (draft) => {
+                draft.data.unshift({
+                  testimonial: result.data.testimonial,
+                  avatar: result.data.Avatar || null,
+                  translation: result.data.translation,
+                });
+                draft.pagination.totalItems += 1;
+              },
+            ),
+          );
         } catch (error) {
-          patchResult.undo();
+          // Handle error
         }
       },
     }),
+
     updateTestimonial: builder.mutation<
-    FormData, 
-      { id: string , body: FormData }
+      successResponse<{
+        Avatar: Image | null;
+        testimonial: Testimonial;
+        translation: TestimonialTranslation;
+      }>,
+      { id: string; body: FormData }
     >({
-      query: ({ id , body }) => ({
+      query: ({ id, body }) => ({
         url: `/testimonials/${id}`,
         method: "PUT",
-        body  : body
+        body: body,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Testimonials", id },
         "Testimonials",
       ],
     }),
+
     deleteTestimonial: builder.mutation<void, string>({
       query: (id) => ({
         url: `/testimonials/${id}`,
@@ -94,14 +129,10 @@ export const testimonialsApi = baseApi.injectEndpoints({
       }),
       async onQueryStarted(
         queryArgument,
-        { dispatch, queryFulfilled, extra, getCacheEntry, getState, requestId }
+        { dispatch, queryFulfilled, getState },
       ) {
         const cacheEntry = getState();
-
         const Testimonials = cacheEntry.api.queries["getTestimonials"]?.data;
-
-        if (Testimonials) {
-        }
 
         const patchResult = dispatch(
           testimonialsApi.util.updateQueryData(
@@ -112,27 +143,28 @@ export const testimonialsApi = baseApi.injectEndpoints({
             },
             (draft) => {
               draft.data = draft.data.filter(
-                (Testimonial) => Testimonial.id !== queryArgument
+                (item) => item.testimonial.id !== queryArgument,
               );
               draft.pagination.totalItems -= 1;
-            }
-          )
+            },
+          ),
         );
+
         try {
           await queryFulfilled;
         } catch (error) {
-          // Handle error
+          patchResult.undo();
         }
       },
-      invalidatesTags: [
-        "Testimonials",
-      ],
+      invalidatesTags: ["Testimonials"],
     }),
   }),
 });
 
 export const {
   useGetTestimonialsQuery,
+  useSearchTestimonialsQuery,
+  useLazySearchTestimonialsQuery,
   useGetTestimonialByIdQuery,
   useCreateTestimonialMutation,
   useUpdateTestimonialMutation,

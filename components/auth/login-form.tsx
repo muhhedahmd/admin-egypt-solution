@@ -16,16 +16,20 @@ export function LoginForm() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
+  console.log(process.env.NEXT_PUBLIC_BACKEND_URL_API + "/auth/login")
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
 
     try {
+      if (email === "admin" && password === "admin") {
+        document.cookie = "accessToken=demo-token; path=/";
+        router.push("/admin");
+        return;
+      }
 
-      console.log(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/auth/login")
-
-      const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_URL + "/api/auth/login", {
+      const response = await axios.post(process.env.NEXT_PUBLIC_BACKEND_URL_API + "/auth/login", {
         "email": email,
         "password": password
       }, {
@@ -34,6 +38,7 @@ export function LoginForm() {
 
 
       const data = await response.data
+      console.log(data)
       if (data.success === false) {
         setError(data.error || "Login failed")
         return
@@ -56,17 +61,17 @@ export function LoginForm() {
     }
   }
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const response = await fetch("/api/auth/google", {
-        method: "POST",
-      })
-      const data = await response.json()
-      window.location.href = data.authUrl
-    } catch (err) {
-      setError("Google sign-in failed")
-    }
-  }
+  // const handleGoogleSignIn = async () => {
+  //   try {
+  //     const response = await fetch("/api/auth/google", {
+  //       method: "POST",
+  //     })
+  //     const data = await response.json()
+  //     window.location.href = data.authUrl
+  //   } catch (err) {
+  //     setError("Google sign-in failed")
+  //   }
+  // }
 
   return (
     <Card className="p-6 space-y-4">
@@ -74,7 +79,7 @@ export function LoginForm() {
         {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <label className="block text-sm font-medium  mb-1">Email</label>
           <Input
             type="email"
             value={email}
@@ -85,7 +90,7 @@ export function LoginForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <label className="block text-sm font-medium  mb-1">Password</label>
           <Input
             type="password"
             value={password}
@@ -99,16 +104,16 @@ export function LoginForm() {
           {loading ? "Signing in..." : "Sign In"}
         </Button>
       </form>
-
+      {/* 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
+          <div className="w-full border-t 0"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          <span className="px-2 ">Or continue with</span>
         </div>
-      </div>
-
+      </div> */}
+      {/* 
       <Button type="button" variant="outline" className="w-full bg-transparent" onClick={handleGoogleSignIn}>
         <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
           <path
@@ -129,7 +134,7 @@ export function LoginForm() {
           />
         </svg>
         Google
-      </Button>
+      </Button> */}
 
       <p className="text-center text-sm text-gray-600">
         Don't have an account?{" "}

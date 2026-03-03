@@ -2,11 +2,17 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { tHeroNew } from "@/i18n/hero"
+import { useLanguage } from "@/providers/lang"
 import { useDebounce } from "@uidotdev/usehooks"
 import { X, ImageIcon } from "lucide-react"
 import { memo, useEffect, useMemo, useRef, useState } from "react"
 
-export const HeroControls = memo(({ heroData, updateField, handleImageUpload, removeImage, uploadingImage }) => {
+export const HeroControls = memo(({ heroData, updateField, handleImageUpload, removeImage, uploadingImage }: any) => {
+
+  const { currentLang, isRTL } = useLanguage()
+  const t = tHeroNew[currentLang?.toLocaleLowerCase() as "en" | "ar" || "en"]
+
   const heroVariants = ["CENTERED", "SPLIT", "IMAGE_BACKGROUND", "MINIMAL", "VIDEO_BACKGROUND", "FULL_SCREEN"]
   const alignments = ["LEFT", "CENTER", "RIGHT"]
   const buttonVariants = ["PRIMARY", "SECONDARY", "GHOST", "LINK", "OUTLINE"]
@@ -22,13 +28,13 @@ export const HeroControls = memo(({ heroData, updateField, handleImageUpload, re
     <div className="space-y-6 p-4">
       {/* Basic Info */}
       <section>
-        <h3 className="text-sm font-semibold text-foreground mb-3">Content</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t.sections.content}</h3>
         <div className="space-y-3">
-          <InputField label="Section Name" value={heroData.name} onChange={(value) => updateField("name", value)} />
-          <InputField label="Title *" value={heroData.title} onChange={(value) => updateField("title", value)} />
-          <InputField label="Subtitle" value={heroData.subtitle} onChange={(value) => updateField("subtitle", value)} />
+          <InputField label={t.fields.name} value={heroData.name} onChange={(value) => updateField("name", value)} />
+          <InputField label={t.fields.title} value={heroData.title} onChange={(value) => updateField("title", value)} />
+          <InputField label={t.fields.subtitle} value={heroData.subtitle} onChange={(value) => updateField("subtitle", value)} />
           <TextAreaField
-            label="Description"
+            label={t.fields.description}
             value={heroData.description}
             onChange={(value) => updateField("description", value)}
           />
@@ -37,10 +43,11 @@ export const HeroControls = memo(({ heroData, updateField, handleImageUpload, re
 
       {/* Background */}
       <section className="pt-4 border-t border-border">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Background</h3>
+
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t.sections.background}</h3>
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Background Image</label>
+            <label className="block text-sm font-medium text-foreground mb-2">{t.fields.backgroundImage}</label>
             {heroData.backgroundImageUrl ? (
               <div className="relative rounded-lg overflow-hidden h-32 bg-muted flex items-center justify-center">
                 <img
@@ -58,7 +65,7 @@ export const HeroControls = memo(({ heroData, updateField, handleImageUpload, re
             ) : (
               <label className="block border-2 border-dashed border-border rounded-lg p-4 cursor-pointer hover:bg-muted/50 transition text-center">
                 <ImageIcon className="mx-auto mb-2 text-muted-foreground" size={24} />
-                <span className="text-sm text-muted-foreground">Click to upload image</span>
+                <span className="text-sm text-muted-foreground">{t.fields.backgroundImage}</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -74,19 +81,19 @@ export const HeroControls = memo(({ heroData, updateField, handleImageUpload, re
 
 
           <ColorField
-            label="Background Color"
+            label={t.fields.backgroundColor}
             value={heroData.backgroundColor}
             onChange={(value) => updateField("backgroundColor", value)}
           />
 
           <ColorField
-            label="Overlay Color"
+            label={t.fields.overlayColor}
             value={heroData.overlayColor}
             onChange={(value) => updateField("overlayColor", value)}
           />
 
           <SliderField
-            label={`Overlay Opacity: ${heroData.overlayOpacity.toFixed(1)}`}
+            label={t.fields.overlayOpacity + `: ${heroData?.overlayOpacity?.toFixed(1)}`}
             value={heroData.overlayOpacity}
             onChange={(value) => updateField("overlayOpacity", value)}
             min={0}
@@ -98,56 +105,61 @@ export const HeroControls = memo(({ heroData, updateField, handleImageUpload, re
 
       {/* Layout */}
       <section className="pt-4 border-t border-border">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Layout</h3>
+
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t.sections.layout}</h3>
         <div className="space-y-3">
           <SelectField
-            label="Variant"
+            label={t.fields.variant}
             value={heroData.variant}
             options={heroVariants}
             onChange={(value: any) => updateField("variant", value)}
-            description={`${heroData.variant === "FULL_SCREEN" ? "Full viewport height" : heroData.variant === "MINIMAL" ? "Compact layout" : "Standard layout"}`}
+            description={`${heroData.variant === "FULL_SCREEN" ? t.variants.FULL_SCREEN : heroData.variant === "MINIMAL" ? t.variants.MINIMAL : "Standard layout"}`}
           />
           <SelectField
-            label="Alignment"
+            label={t.fields.alignment}
+
             value={heroData.alignment}
             options={alignments}
             onChange={(value: any) => updateField("alignment", value)}
           />
           <InputField
-            label="Min Height (px)"
+            label={t.fields.minHeight}
             type="number"
             value={heroData.minHeight}
             onChange={(value) => updateField("minHeight", Number.parseInt(value))}
           />
           <div className="text-xs text-muted-foreground mt-1">
-            Responsive height: <code className="bg-muted px-2 py-1 rounded">{responsiveHeightSuggestion}</code>
+            {t.fields.responsiveHeight}: <code className="bg-muted px-2 py-1 rounded">{responsiveHeightSuggestion}</code>
           </div>
         </div>
       </section>
 
       {/* Content Styling */}
       <section className="pt-4 border-t border-border">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Typography</h3>
+
+
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t.sections.typography}</h3>
         <div className="space-y-3">
           <SelectField
-            label="Title Size"
+            label={t.fields.titleSize}
+
             value={heroData.titleSize}
             options={titleSizes}
             onChange={(value) => updateField("titleSize", value)}
             description={heroData.titleSize === "7xl" ? "Extra large (recommended for hero)" : ""}
           />
           <ColorField
-            label="Title Color"
+            label={t.fields.titleColor}
             value={heroData.titleColor}
             onChange={(value) => updateField("titleColor", value)}
           />
           <ColorField
-            label="Subtitle Color"
+            label={t.fields.subtitleColor}
             value={heroData.subtitleColor}
             onChange={(value) => updateField("subtitleColor", value)}
           />
           <ColorField
-            label="Description Color"
+            label={t.fields.descriptionColor}
             value={heroData.descriptionColor}
             onChange={(value) => updateField("descriptionColor", value)}
           />
@@ -156,16 +168,17 @@ export const HeroControls = memo(({ heroData, updateField, handleImageUpload, re
 
       {/* CTAs */}
       <section className="pt-4 border-t border-border">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Primary Button</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t.sections.primaryButton}</h3>
         <div className="space-y-3">
+
           <InputField
-            label="Button Text"
+            label={t.fields.ctaText}
             value={heroData.ctaText}
             onChange={(value) => updateField("ctaText", value)}
           />
-          <InputField label="Button URL" value={heroData.ctaUrl} onChange={(value) => updateField("ctaUrl", value)} />
+          <InputField label={t.fields.ctaUrl} value={heroData.ctaUrl} onChange={(value) => updateField("ctaUrl", value)} />
           <SelectField
-            label="Button Variant"
+            label={t.fields.ctaVariant}
             value={heroData.ctaVariant}
             options={buttonVariants}
             onChange={(value) => updateField("ctaVariant", value)}
@@ -174,20 +187,20 @@ export const HeroControls = memo(({ heroData, updateField, handleImageUpload, re
       </section>
 
       <section className="pt-4 border-t border-border">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Secondary Button</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">{t.sections.secondaryButton}</h3>
         <div className="space-y-3">
           <InputField
-            label="Button Text"
+            label={t.fields.ctaText}
             value={heroData.secondaryCtaText}
             onChange={(value) => updateField("secondaryCtaText", value)}
           />
           <InputField
-            label="Button URL"
+            label={t.fields.ctaUrl}
             value={heroData.secondaryCtaUrl}
             onChange={(value) => updateField("secondaryCtaUrl", value)}
           />
           <SelectField
-            label="Button Variant"
+            label={t.fields.ctaVariant}
             value={heroData.secondaryCtaVariant}
             options={buttonVariants}
             onChange={(value) => updateField("secondaryCtaVariant", value)}
@@ -206,20 +219,20 @@ export const HeroControls = memo(({ heroData, updateField, handleImageUpload, re
               onChange={(e) => updateField("showScrollIndicator", e.target.checked)}
               className="w-4 h-4 rounded border border-border"
             />
-            <span className="text-sm font-medium">Show scroll indicator</span>
+            <span className="text-sm font-medium">{t.fields.showScrollIndicator}</span>
           </label>
         </div>
         <div>
-          
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={heroData.isActive}
-            onChange={(e) => updateField("isActive", e.target.checked)}
-            className="w-4 h-4 rounded border border-border"
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={heroData.isActive}
+              onChange={(e) => updateField("isActive", e.target.checked)}
+              className="w-4 h-4 rounded border border-border"
             />
-          <span className="text-sm font-medium">Is Active</span>
-        </label>
+            <span className="text-sm font-medium">{t.fields.isActive}</span>
+          </label>
         </div>
       </section>
     </div>
@@ -229,6 +242,7 @@ export const HeroControls = memo(({ heroData, updateField, handleImageUpload, re
 HeroControls.displayName = "HeroControls"
 
 const InputField = ({ label, value, onChange, type = "text", placeholder = "", description = "" }: {
+
   label: string
   value: string
   onChange: (value: string) => void
@@ -240,7 +254,7 @@ const InputField = ({ label, value, onChange, type = "text", placeholder = "", d
     <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
     <input
       type={type}
-      value={value}
+      value={value || ""}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-background text-foreground"
@@ -249,7 +263,12 @@ const InputField = ({ label, value, onChange, type = "text", placeholder = "", d
   </div>
 )
 
-const TextAreaField = ({ label, value, onChange, placeholder = "" }) => (
+const TextAreaField = ({ label, value, onChange, placeholder = "" }: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+}) => (
   <div>
     <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
     <textarea
@@ -263,16 +282,16 @@ const TextAreaField = ({ label, value, onChange, placeholder = "" }) => (
 )
 
 
-const ColorField = ({ label = "", value = "", onChange = ()=>{} }) => {
+const ColorField = ({ label = "", value = "", onChange = (val: string) => { } }: { label?: string; value?: string; onChange?: (value: string) => void }) => {
   const [temp, setTemp] = useState(value);
 
-  const debounced  = useDebounce(temp, 100);
- 
-  useEffect(()=>{
+  const debounced = useDebounce(temp, 100);
+
+  useEffect(() => {
 
     onChange(debounced)
 
-  } , [debounced])
+  }, [debounced])
 
   return (
     <div>
@@ -283,13 +302,13 @@ const ColorField = ({ label = "", value = "", onChange = ()=>{} }) => {
       <div className="flex items-center gap-2">
         <div className="max-w-16 max-h16 overflow-clip rounded-full">
 
-        <Input
-          type="color"
-          value={temp}
-          onChange={(e) => setTemp(e.target.value)}
-          className="w-7 h-7 p-0 scale-200 rounded-full border-transparent cursor-pointer border-none outline-none "
+          <Input
+            type="color"
+            value={temp}
+            onChange={(e) => setTemp(e.target.value)}
+            className="w-7 h-7 p-0 scale-200 rounded-full border-transparent cursor-pointer border-none outline-none "
           />
-          </div>
+        </div>
 
         <input
           type="text"
@@ -304,15 +323,16 @@ const ColorField = ({ label = "", value = "", onChange = ()=>{} }) => {
 
 export default ColorField;
 
-const SelectField = ({ label, value, options, onChange, description = "" }) => (
+const SelectField = ({ label, value, options, onChange, description = "" }: { label: string; value: string; options: string[]; onChange?: (value: string) => void; description?: string }) => (
+
   <div>
     <label className="block text-sm font-medium text-foreground mb-1">{label}</label>
     <select
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => onChange?.(e.target.value)}
       className="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-background text-foreground"
     >
-      {options.map((opt) => (
+      {options.map((opt: string) => (
         <option key={opt} value={opt}>
           {opt.replace(/_/g, " ")}
         </option>
@@ -322,7 +342,8 @@ const SelectField = ({ label, value, options, onChange, description = "" }) => (
   </div>
 )
 
-const SliderField = ({ label, value, onChange, min, max, step }) => (
+const SliderField = ({ label, value, onChange, min, max, step }: { label: string; value: number; onChange?: (value: number) => void; min: number; max: number; step: number }) => (
+
   <div>
     <label className="block text-sm font-medium text-foreground mb-2">{label}</label>
     <input
@@ -331,7 +352,7 @@ const SliderField = ({ label, value, onChange, min, max, step }) => (
       max={max}
       step={step}
       value={value}
-      onChange={(e) => onChange(Number.parseFloat(e.target.value))}
+      onChange={(e) => onChange?.(Number.parseFloat(e.target.value))}
       className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
     />
   </div>

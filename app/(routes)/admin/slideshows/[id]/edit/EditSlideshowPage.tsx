@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { useGetSlideShowByIdQuery, usePaginatedSlidesMutation } from "@/lib/store/api/slideShow-api"
 import { SlideshowFormSkeleton } from "@/components/admin/utils/slide-show-loader"
 import EditSlideShowForm from "./_comp/edit-slideshow-form"
-import { Badge } from "@/components/ui/badge"
 
 export default function EditSlideshowPage({ params }
     : { params: { id: string } }) {
@@ -32,7 +31,7 @@ export default function EditSlideshowPage({ params }
 
            {slideshow.data
            
-           && <EditSlideShowForm SlideShow={slideshow?.data} />
+           && <EditSlideShowForm SlideShow={slideshow.data.slideShow }   translation={slideshow.data.translation} />
            }
 
         </div>

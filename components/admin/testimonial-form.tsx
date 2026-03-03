@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Card } from "@/components/ui/card"
@@ -14,23 +13,27 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useCreateTestimonialMutation, useUpdateTestimonialMutation } from "@/lib/store/api/testimonials-api"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { toast } from "sonner"
+import { useLanguage } from "@/providers/lang"
+import { tTestimonialForm } from "@/i18n/testimonals"
 
-const testimonialSchema = z.object({
-  clientName: z.string().min(1, "Client name is required"),
-  clientPosition: z.string().optional(),
-  clientCompany: z.string().optional(),
-  content: z.string().min(10, "Content must be at least 10 characters"),
-  rating: z.number().min(1).max(5),
-  isActive: z.boolean(),
-  isFeatured: z.boolean(),
-  avatar: z.any().optional(),
-  avatarState: z.enum(["KEEP", "REMOVE", "UPDATE"]).optional(),
-})
+const testimonialSchema = (t: typeof tTestimonialForm.en) => {
 
-type TestimonialFormData = z.infer<typeof testimonialSchema>
+  return z.object({
+    clientName: z.string().min(1, t.validation.clientNameRequired),
+    clientPosition: z.string().optional(),
+    clientCompany: z.string().optional(),
+    content: z.string().min(10, t.validation.contentMin),
+    rating: z.number().min(1).max(5, t.validation.ratingRange),
+    isActive: z.boolean(),
+    isFeatured: z.boolean(),
+    avatar: z.any().optional(),
+    avatarState: z.enum(["KEEP", "REMOVE", "UPDATE"]).optional(),
+  })
+}
+
+type TestimonialFormData = z.infer<ReturnType<typeof testimonialSchema>>
 
 interface TestimonialFormProps {
   initialData?: {
@@ -49,12 +52,13 @@ interface TestimonialFormProps {
 export function TestimonialForm({ initialData }: TestimonialFormProps) {
   const router = useRouter()
   const isEditMode = !!initialData
-
+  const { currentLang } = useLanguage()
+  const t = tTestimonialForm[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
   const [createTestimonial, { isLoading: isCreating }] = useCreateTestimonialMutation()
   const [updateTestimonial, { isLoading: isUpdating }] = useUpdateTestimonialMutation()
 
   const form = useForm<TestimonialFormData>({
-    resolver: zodResolver(testimonialSchema),
+    resolver: zodResolver(testimonialSchema(t)),
     defaultValues: {
       clientName: initialData?.clientName || "",
       clientPosition: initialData?.clientPosition || "",
@@ -90,15 +94,15 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
-        toast.error("File too large", {
-          description: "Please upload an image smaller than 10MB"
+        toast.error(t.toast.fileTooLargeTitle, {
+          description: t.toast.fileTooLargeDesc
         })
         return
       }
 
       if (!file.type.startsWith('image/')) {
-        toast.error("Invalid file type", {
-          description: "Please upload an image file"
+        toast.error(t.toast.invalidFileTypeTitle, {
+          description: t.toast.invalidFileTypeDesc
         })
         return
       }
@@ -119,9 +123,9 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
 
     const file = e.dataTransfer.files?.[0]
     if (file && file.type.startsWith('image/')) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("File too large", {
-          description: "Please upload an image smaller than 10MB"
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(t.toast.fileTooLargeTitle, {
+          description: t.toast.fileTooLargeDesc
         })
         return
       }
@@ -174,21 +178,20 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
         }).unwrap()
 
         toast.success("Success!", {
-          description: "Testimonial updated successfully"
+          description: t.toast.updateSuccess
         })
       } else {
         await createTestimonial(formData).unwrap()
 
         toast.success("Success!", {
-          description: "Testimonial created successfully"
+          description: t.toast.createSuccess
         })
       }
 
       router.push("/admin/testimonials")
     } catch (error) {
-      console.error("Error saving testimonial:", error)
       toast.error("Error", {
-        description: error instanceof Error ? error.message : "Failed to save testimonial. Please try again."
+        description: error instanceof Error ? error.message : t.toast.saveFailed
       })
     } finally {
       setIsSubmitting(false)
@@ -205,16 +208,16 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
         <Card className="px-2 py-2 overflow-hidden border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
           <div className="p-2">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">Preview</h3>
+              <h3 className="text-sm font-medium text-slate-600 dark:text-slate-400">{t.preview.title}</h3>
               <div className="flex gap-2">
                 {watchedValues.isFeatured && (
                   <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-0">
                     <Star className="h-3 w-3 mr-1 fill-current" />
-                    Featured
+                    {t.preview.featured}
                   </Badge>
                 )}
                 <Badge variant={watchedValues.isActive ? "default" : "secondary"}>
-                  {watchedValues.isActive ? "Active" : "Inactive"}
+                  {watchedValues.isActive ? t.preview.active : t.preview.inactive}
                 </Badge>
               </div>
             </div>
@@ -251,10 +254,10 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                    {watchedValues.clientName || "Client Name"}
+                    {watchedValues.clientName || t.preview.clientNameFallback}
                   </p>
                   <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
-                    {watchedValues.clientPosition || "Position"} {watchedValues.clientCompany && `at ${watchedValues.clientCompany}`}
+                    {watchedValues.clientPosition || t.preview.positionFallback} {watchedValues.clientCompany && `at ${watchedValues.clientCompany}`}
                   </p>
                 </div>
               </div>
@@ -267,7 +270,7 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
           <Card className="w-full lg:w-3/4 h-full">
             <div className="p-6 space-y-6 h-full flex flex-col justify-between">
               <div className="space-y-6">
-                <h3 className="font-semibold text-lg">Client Information</h3>
+                <h3 className="font-semibold text-lg">{t.titles.clientInformation}</h3>
 
                 <FormField
                   control={form.control}
@@ -276,10 +279,10 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        Client Name *
+                        {t.labels.clientName} *
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="John Smith" {...field} disabled={isLoading} />
+                        <Input placeholder={t.placeholders.clientName} {...field} disabled={isLoading} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -294,10 +297,10 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           <Briefcase className="h-4 w-4" />
-                          Position
+                          {t.labels.clientPosition}
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="CEO" {...field} disabled={isLoading} />
+                          <Input placeholder={t.placeholders.clientPosition} {...field} disabled={isLoading} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -311,10 +314,10 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                       <FormItem>
                         <FormLabel className="flex items-center gap-2">
                           <Building2 className="h-4 w-4" />
-                          Company
+                          {t.labels.clientCompany}
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="TechCorp Inc" {...field} disabled={isLoading} />
+                          <Input placeholder={t.placeholders.clientCompany} {...field} disabled={isLoading} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -327,11 +330,11 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                   name="content"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Content *</FormLabel>
+                      <FormLabel>{t.labels.content} *</FormLabel>
                       <FormControl>
                         <Textarea placeholder="Write the testimonial content here..." rows={8} className="resize-none" {...field} disabled={isLoading} />
                       </FormControl>
-                      <FormDescription>{field.value.length} characters</FormDescription>
+                      <FormDescription>{field.value.length} { t.placeholders.content}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -342,7 +345,7 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                   name="rating"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Rating *</FormLabel>
+                      <FormLabel>{t.labels.rating} *</FormLabel>
                       <div className="flex items-center gap-2">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
@@ -377,8 +380,8 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <FormLabel>Active Status</FormLabel>
-                        <FormDescription>Display this testimonial on the website</FormDescription>
+                        <FormLabel>{t.labels.activeStatus}</FormLabel>
+                        <FormDescription>{t.labels.activeNote}</FormDescription>
                       </div>
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
@@ -393,8 +396,8 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <FormLabel>Featured Testimonial</FormLabel>
-                        <FormDescription>Display prominently on your site</FormDescription>
+                        <FormLabel>{t.labels.featuredTestimonial}</FormLabel>
+                        <FormDescription>{t.labels.featuredNote}</FormDescription>
                       </div>
                       <FormControl>
                         <Switch checked={field.value} onCheckedChange={field.onChange} disabled={isLoading} />
@@ -410,7 +413,7 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
             <Card className="w-full">
               <div className="p-6 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-lg">Avatar</h3>
+                  <h3 className="font-semibold text-lg">{t.titles.avatar}</h3>
                   {avatarPreview && (
                     <Button
                       type="button"
@@ -421,7 +424,7 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
                       disabled={isLoading}
                     >
                       <X className="h-4 w-4 mr-1" />
-                      Remove
+                      {t.labels.remove}
                     </Button>
                   )}
                 </div>
@@ -467,9 +470,9 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
 
                       <div className="text-center">
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                          Click or drag to upload
+                          {t.upload.clickOrDrag}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">PNG, JPG up to 10MB</p>
+                        <p className="text-xs text-slate-500 mt-1">{t.upload.formats}</p>
                       </div>
                     </div>
                   </div>
@@ -482,20 +485,20 @@ export function TestimonialForm({ initialData }: TestimonialFormProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 rounded-lg border shadow-lg">
+        <div className="flex justify-end gap-4 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 p-4 rounded-lg border shadow-lg">
           <Button type="button" variant="outline" size="lg" onClick={() => router.push("/admin/testimonials")} disabled={isLoading}>
-            Cancel
+            {t.buttons.cancel}
           </Button>
           <Button onClick={form.handleSubmit(onSubmit)} size="lg" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
+                {t.buttons.saving}
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                {isEditMode ? "Update" : "Create"}
+                {isEditMode ? t.buttons.update : t.buttons.create}
               </>
             )}
           </Button>

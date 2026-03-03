@@ -36,9 +36,9 @@ export const projectApi = baseApi.injectEndpoints({
         technologies: any | null;
         servicesData?: any | null;
       }>,
-      string
+      {projectSlug :string ,currentLang : string}
     >({
-      query: (slug) => `/projects/${slug}`,
+      query: ({projectSlug}) => `/projects/${projectSlug}`,
     }),
 
     getFeaturedProjects: builder.query<any, any>({

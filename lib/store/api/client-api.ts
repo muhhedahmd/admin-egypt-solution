@@ -5,114 +5,148 @@ import {
   successResponse,
 } from "@/types/services";
 import { baseApi } from "./base-api";
-import { Client } from "@/types/schema";
+import { Client, ClientTranslation } from "@/types/schema";
 
-export type clientRespons = {
+export type ClientWithTranslation = {
   client: Client;
   image: Image | null;
   logo: Image | null;
+  translation: ClientTranslation[];
 };
 
 export const clientApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Clients Queries
     getClients: builder.query<
-      PaginatedResponse<clientRespons>,
+      PaginatedResponse<ClientWithTranslation>,
       PaginationParams
     >({
       query: ({ skip = 0, take = 10 }) => `/clients?skip=${skip}&take=${take}`,
       serializeQueryArgs: ({ queryArgs }) => {
         return `clients-${queryArgs?.skip || 0}-${queryArgs?.take || 10}`;
       },
+      providesTags: ["Clients"],
     }),
 
-    getClientById: builder.query<successResponse<clientRespons> , string>({
+    getClientById: builder.query<
+      successResponse<ClientWithTranslation>,
+      string
+    >({
       query: (id) => `/clients/${id}`,
+      providesTags: (result, error, id) => [{ type: "Clients", id }],
     }),
 
-    getActiveClients: builder.query({
+    getActiveClients: builder.query<
+      PaginatedResponse<ClientWithTranslation>,
+      PaginationParams
+    >({
       query: ({ skip = 0, take = 10 }) =>
-        `/api/clients/active/all?skip=${skip}&take=${take}`,
+        `/clients/active/all?skip=${skip}&take=${take}`,
       serializeQueryArgs: ({ queryArgs }) => {
         return `active-${queryArgs?.skip || 0}-${queryArgs?.take || 10}`;
       },
+      providesTags: ["Clients"],
     }),
 
-    searchClients: builder.query<successResponse<clientRespons> , { q: string; skip: number; take: number }>({
+    searchClients: builder.query<
+      successResponse<ClientWithTranslation[]>,
+      { q: string; skip: number; take: number }
+    >({
       query: ({ q, skip = 0, take = 10 }) =>
-        `clients/search?q=${q}`,
+        `clients/search?q=${q}&skip=${skip}&take=${take}`,
       serializeQueryArgs: ({ queryArgs }) => {
         return `search-${queryArgs?.q}-${queryArgs?.skip || 0}-${
           queryArgs?.take || 10
         }`;
       },
+      providesTags: ["Clients"],
     }),
 
     // Clients Mutations
-    createClient: builder.mutation<successResponse<clientRespons>, FormData>({
+    createClient: builder.mutation<
+      successResponse<{
+        Image: Image | null;
+        Logo: Image | null;
+        translation: ClientTranslation[];
+        client: Client;
+      }>,
+      FormData
+    >({
       query: (data) => ({
         url: "/clients",
         method: "POST",
         body: data,
       }),
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
-        const upComingClient = await queryFulfilled;
-        const patch = dispatch(
-          clientApi.util.updateQueryData(
-            "getClients",
-            { skip: 0, take: 10 },
-            (draft) => {
-              draft.data.unshift(upComingClient.data.data);
-            }
-          )
-        );
         try {
-          await queryFulfilled;
+          const upComingClient = await queryFulfilled;
+          const patch = dispatch(
+            clientApi.util.updateQueryData(
+              "getClients",
+              { skip: 0, take: 10 },
+              (draft) => {
+                draft.data.unshift({
+                  client: upComingClient.data.data.client,
+                  image: upComingClient.data.data.Image || null,
+                  logo: upComingClient.data.data.Logo || null,
+                  translation: upComingClient.data.data.translation,
+                });
+                draft.pagination.totalItems += 1;
+              }
+            )
+          );
         } catch (error) {
-          patch.undo();
           console.log(error);
-          // Handle error
         }
       },
     }),
 
-    updateClient: builder.mutation<successResponse<clientRespons> , { id: string; formData: FormData }>({
+    updateClient: builder.mutation<
+      successResponse<{
+        Image: Image | null;
+        Logo: Image | null;
+        translation: ClientTranslation;
+        client: Client;
+      }>,
+      { id: string; formData: FormData }
+    >({
       query: ({ id, formData }) => ({
         url: `/clients/${id}`,
         method: "PUT",
         body: formData,
       }),
-      async onQueryStarted({ id }, { dispatch, queryFulfilled , getCacheEntry ,getState }) {
-        try {
-          await queryFulfilled;
-
-          // dispatch(clientApi.)
-
-          // getCacheEntry().data.api.queries['getClients'].data.map((client) => {
-          //   if(client.client.id == id){
-          //     client.client = queryFulfilled.data.client
-          //   }
-          // })
-        } catch {
-          // Handle error
-        }
-      },
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Clients", id },
+        "Clients",
+      ],
     }),
 
-    deleteClient: builder.mutation({
+    deleteClient: builder.mutation<void, string>({
       query: (id) => ({
         url: `/clients/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Clients"],
       async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          clientApi.util.updateQueryData(
+            "getClients",
+            { skip: 0, take: 10 },
+            (draft) => {
+              draft.data = draft.data.filter(
+                (item) => item.client.id !== id
+              );
+              draft.pagination.totalItems -= 1;
+            }
+          )
+        );
+
         try {
           await queryFulfilled;
-          dispatch(clientApi.util.invalidateTags(["Clients"]));
-        } catch {
-          // Handle error
+        } catch (error) {
+          patchResult.undo();
         }
       },
+      invalidatesTags: ["Clients"],
     }),
   }),
 });

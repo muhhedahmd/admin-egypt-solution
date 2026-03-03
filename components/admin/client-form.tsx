@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -14,7 +14,10 @@ import { Switch } from "@/components/ui/switch"
 import { useRouter } from "next/navigation"
 import { Save, Upload, X, Image as ImageIcon } from "lucide-react"
 import Image from "next/image"
-import { clientRespons, useCreateClientMutation, useUpdateClientMutation } from "@/lib/store/api/client-api"
+import { ClientWithTranslation, useCreateClientMutation, useUpdateClientMutation } from "@/lib/store/api/client-api"
+import { useLanguage } from "@/providers/lang"
+import { tClientForm } from "@/i18n/client"
+import { toast } from "sonner"
 
 // Zod validation schema matching the backend
 const clientFormSchema = z.object({
@@ -26,7 +29,6 @@ const clientFormSchema = z.object({
   richDescription: z.string().optional(),
   isActive: z.boolean().default(true),
   isFeatured: z.boolean().default(false),
-  order: z.number().int().min(0, "Order must be 0 or greater").default(0),
   image: z.any().optional(),
   logo: z.any().optional(),
   imageState: z.enum(["KEEP", "REMOVE", "UPDATE"]).optional(),
@@ -36,13 +38,24 @@ const clientFormSchema = z.object({
 type ClientFormValues = z.infer<typeof clientFormSchema>
 
 interface ClientFormProps {
-  initialData?: clientRespons
+  initialData?: ClientWithTranslation
 }
 
 export function ClientForm({ initialData }: ClientFormProps) {
   const router = useRouter()
+  const { currentLang } = useLanguage()
+  const lang = (currentLang || 'en').toLowerCase() as 'en' | 'ar'
+  const t = tClientForm[lang] || tClientForm["en"]
   const isEditMode = !!initialData
 
+  const currentTrnaltion = initialData?.translation?.find(t => t.lang?.toLowerCase() === lang) || {
+    id: "",
+    lang: currentLang || "en",
+    name: "",
+    description: "",
+    richDescription: "",
+    industry: "",
+  }
   const client = initialData?.client
   const [imagePreview, setImagePreview] = useState<string | null>(
     initialData?.image?.url || null
@@ -50,7 +63,6 @@ export function ClientForm({ initialData }: ClientFormProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(
     initialData?.logo?.url || null
   )
-  console.log({ imagePreview, logoPreview, logo: initialData?.Logo, image: initialData?.Image })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const {
@@ -62,20 +74,33 @@ export function ClientForm({ initialData }: ClientFormProps) {
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientFormSchema),
     defaultValues: {
-      name: client?.name || "",
+      name: currentTrnaltion?.name || "",
       slug: client?.slug || "",
-      industry: client?.industry || "",
+      industry: currentTrnaltion?.industry || "",
       website: client?.website || "",
-      description: client?.description || "",
-      richDescription: client?.richDescription || "",
+      description: currentTrnaltion?.description || "",
+      richDescription: currentTrnaltion?.richDescription || "",
       isActive: client?.isActive ?? true,
       isFeatured: client?.isFeatured ?? false,
-      order: client?.order ?? 0,
       imageState: "KEEP",
       logoState: "KEEP",
     },
   })
 
+
+  useEffect(() => {
+    console.log({
+      currentTrnaltion
+    })
+    if (currentTrnaltion) {
+      setValue("name", currentTrnaltion?.name || "")
+      setValue("industry", currentTrnaltion?.industry || "")
+      setValue("description", currentTrnaltion?.description || "")
+      setValue("richDescription", currentTrnaltion?.richDescription || ""
+      )
+    }
+
+  }, [currentTrnaltion])
 
   const isActive = watch("isActive")
   const isFeatured = watch("isFeatured")
@@ -129,7 +154,6 @@ export function ClientForm({ initialData }: ClientFormProps) {
       if (data.richDescription) formData.append("richDescription", data.richDescription)
       formData.append("isActive", String(data.isActive))
       formData.append("isFeatured", String(data.isFeatured))
-      formData.append("order", String(data.order))
 
       // Handle image states for edit mode
       if (isEditMode) {
@@ -156,17 +180,16 @@ export function ClientForm({ initialData }: ClientFormProps) {
 
         const response = await cerateClient(formData).unwrap()
         if (!response.data) {
-          throw new Error("Failed to save client")
+          throw new Error(t.toast.error)
         }
 
         const result = response.data
-        console.log("Client saved:", result)
       }
       if (method === "PUT" && isEditMode && client?.id) {
         console.log(data)
         const response = await updateClient({ id: client?.id, formData }).unwrap()
         if (!response.data) {
-          throw new Error("Failed to save client")
+          throw new Error(t.toast.error)
         }
 
         const result = await response.data
@@ -174,7 +197,7 @@ export function ClientForm({ initialData }: ClientFormProps) {
       }
 
     } catch (error) {
-      console.error("Error saving client:", error)
+      toast.error(t.toast.error)
       // alert("Failed to save client. Please try again.")
     } finally {
       setIsSubmitting(false)
@@ -186,7 +209,7 @@ export function ClientForm({ initialData }: ClientFormProps) {
       {/* Main Information Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Client Information</CardTitle>
+          <CardTitle>{t.titles.main}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex w-full gap-4 justify-start items-start">
@@ -197,12 +220,12 @@ export function ClientForm({ initialData }: ClientFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="name">
-                  Company Name <span className="text-red-500">*</span>
+                  {t.labels.name} <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="name"
                   {...register("name")}
-                  placeholder="TechCorp Inc"
+                  placeholder={t.placeholders.name}
                   className={errors.name ? "border-red-500" : ""}
                 />
                 {errors.name && (
@@ -212,11 +235,11 @@ export function ClientForm({ initialData }: ClientFormProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="industry">Industry</Label>
+                  <Label htmlFor="industry">{t.labels.industry}</Label>
                   <Input
                     id="industry"
                     {...register("industry")}
-                    placeholder="Technology"
+                    placeholder={t.placeholders.industry}
                   />
                   {errors.industry && (
                     <p className="text-sm text-red-500">{errors.industry.message}</p>
@@ -224,7 +247,7 @@ export function ClientForm({ initialData }: ClientFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
+                  <Label htmlFor="website">{t.labels.website}</Label>
                   <Input
                     id="website"
                     type="url"
@@ -239,11 +262,11 @@ export function ClientForm({ initialData }: ClientFormProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Short Description</Label>
+                <Label htmlFor="description">{t.labels.description}</Label>
                 <Textarea
                   id="description"
                   {...register("description")}
-                  placeholder="Brief description of the client"
+                  placeholder={t.placeholders.description}
                   rows={3}
                 />
                 {errors.description && (
@@ -259,13 +282,13 @@ export function ClientForm({ initialData }: ClientFormProps) {
 
 
               <CardHeader>
-                <CardTitle>Images</CardTitle>
+                <CardTitle>{t.titles.images}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
 
                 <div className="space-y-2 flex items-center gap-4 justify-start">
 
-                  <Label >Company Logo</Label>
+                  <Label>{t.labels.logo}</Label>
                   <div className="flex flex-col space-y-4">
 
                     {logoPreview ? (
@@ -313,7 +336,7 @@ export function ClientForm({ initialData }: ClientFormProps) {
                 {/* Main Image */}
                 <div className="space-y-2">
 
-                  <Label>Main Image</Label>
+                  <Label>{t.labels.mainImage}</Label>
                   <div className="flex flex-col space-y-4">
 
                     {imagePreview ? (
@@ -363,11 +386,11 @@ export function ClientForm({ initialData }: ClientFormProps) {
           <div className="space-y-2 mb-2">
 
 
-            <Label htmlFor="richDescription">Full Description</Label>
+            <Label htmlFor="richDescription">{t.labels.richDescription}</Label>
             <Textarea
               id="richDescription"
               {...register("richDescription")}
-              placeholder="Detailed description of the client and their business"
+              placeholder={t.placeholders.richDescription}
               rows={20}
             />
             {errors.richDescription && (
@@ -377,23 +400,6 @@ export function ClientForm({ initialData }: ClientFormProps) {
             )}
           </div>
 
-          <div className="space-y-2 mb-4">
-            <Label htmlFor="order">Display Order</Label>
-            <Input
-              id="order"
-              type="number"
-              {...register("order", { valueAsNumber: true })}
-              placeholder="0"
-              min="0"
-              className={errors.order ? "border-red-500" : ""}
-            />
-            {errors.order && (
-              <p className="text-sm text-red-500">{errors.order.message}</p>
-            )}
-            <p className="text-xs text-gray-500">
-              Lower numbers appear first in lists
-            </p>
-          </div>
 
           <div className="flex flex-col space-y-4 mb-2">
             <div className="flex items-center space-x-2">
@@ -403,7 +409,7 @@ export function ClientForm({ initialData }: ClientFormProps) {
                 onCheckedChange={(checked) => setValue("isActive", checked)}
               />
               <Label htmlFor="isActive" className="cursor-pointer">
-                Active Client
+                {t.labels.isActive}
               </Label>
             </div>
 
@@ -414,7 +420,7 @@ export function ClientForm({ initialData }: ClientFormProps) {
                 onCheckedChange={(checked) => setValue("isFeatured", checked)}
               />
               <Label htmlFor="isFeatured" className="cursor-pointer">
-                Featured Client
+                {t.labels.isFeatured}
               </Label>
             </div>
           </div>
@@ -431,15 +437,15 @@ export function ClientForm({ initialData }: ClientFormProps) {
           onClick={() => router.push("/admin/clients")}
           disabled={isSubmitting}
         >
-          Cancel
+          {t.buttons.cancel}
         </Button>
         <Button type="submit" disabled={isSubmitting}>
           <Save className="h-4 w-4 mr-2" />
           {isSubmitting
-            ? "Saving..."
+            ? t.buttons.saving
             : isEditMode
-              ? "Update Client"
-              : "Add Client"}
+              ? t.buttons.update
+              : t.buttons.add}
         </Button>
       </div>
     </form>

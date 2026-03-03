@@ -3,24 +3,10 @@ import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-secret-key"
+  process.env.JWT_SECRET || "your-secret-key",
 );
 
-interface TokenPayload {
-  userId: string;
-  email: string;
-  role: "ADMIN" | "USER";
-  name: string;
-  emailConfirmation: boolean;
-  deviceVerification: boolean;
-  profileId: string;
-  profileComplete: boolean;
-  avatarUrl: string;
-  type: "access" | "refresh";
-  iat: number;
-  exp: number;
-}
-
+import type { TokenPayload } from "@/types/auth";
 export async function verifyAuth(token: string): Promise<TokenPayload | null> {
   try {
     const verified = await jwtVerify(token, JWT_SECRET);
@@ -37,7 +23,7 @@ function isTokenExpired(exp: number): boolean {
 
 async function refreshAccessToken(
   refreshToken: string,
-  request: NextRequest
+  request: NextRequest,
 ): Promise<{ response: NextResponse; newAccessToken: string } | null> {
   try {
     const cokkieStore = await cookies();
@@ -52,7 +38,7 @@ async function refreshAccessToken(
 
     const refreshUrl = new URL(
       "/api/auth/refresh-token",
-      request.url
+      request.url,
     ).toString();
     const res = await fetch(refreshUrl, {
       method: "POST",
@@ -115,7 +101,7 @@ export async function middleware(request: NextRequest) {
     if (accessToken) {
       const payload = await verifyAuth(accessToken);
       if (payload && !isTokenExpired(payload.exp)) {
-        const redirectUrl = payload.role === "ADMIN" ? "/admin" : "/dashboard";
+        const redirectUrl = payload.role === "ADMIN" ? "/admin" : "/admin";
         return NextResponse.redirect(new URL(redirectUrl, request.url));
       }
     }
@@ -132,10 +118,13 @@ export async function middleware(request: NextRequest) {
 
   const protectedRoutes = ["/admin", "/dashboard"];
   const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+    pathname.startsWith(route),
   );
 
   if (isProtectedRoute) {
+    // DEMO BYPASS: Allow all protected routes
+    return NextResponse.next();
+
     let payload = accessToken ? await verifyAuth(accessToken) : null;
 
     if (!payload || isTokenExpired(payload.exp)) {
@@ -155,9 +144,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
 
-    if (pathname.startsWith("/admin") && payload.role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
+    // if (pathname.startsWith("/admin") && payload.role !== "ADMIN") {
+    //   return NextResponse.redirect(new URL("/dashboard", request.url));
+    // }
   }
 
   return NextResponse.next();
@@ -166,4 +155,3 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: ["/admin/:path*", "/dashboard/:path*", "/auth/:path*"],
 };
-

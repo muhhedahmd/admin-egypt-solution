@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import {
   ArrowLeft,
@@ -21,12 +21,18 @@ import {
   DollarSign,
   Package,
   ClipboardIcon,
-  ShoppingCart
+  ShoppingCart,
+  ArrowRight,
+  LucidePencilRuler
 } from "lucide-react"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
 import { useDeleteServiceMutation, useGetServiceBySlugQuery } from "@/lib/store/api/services-api"
 import { toast } from "sonner"
 import Image from "next/image"
+import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs"
+import { TabsTrigger } from "@radix-ui/react-tabs"
+import { useLanguage } from "@/providers/lang"
+import { Translations_serviceDetails } from "@/i18n/services"
 
 export default function Page({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter()
@@ -34,7 +40,15 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [del, { isLoading: isLoadingDelete, isError: isErrorDelete, isSuccess }] = useDeleteServiceMutation()
   const { data: serviceData, isLoading, isError } = useGetServiceBySlugQuery(p.slug)
+  const {isRTL , currentLang } = useLanguage()
 
+  
+  const currentTranaltion = serviceData?.data?.service?.serviceTranslation?.find((s: any) => s?.lang?.toLowerCase() === currentLang?.toLowerCase())
+  const serviceTranslation = serviceData?.data?.service?.serviceTranslation
+  const langs = serviceData?.data?.service?.serviceTranslation?.map((s: any) => s.lang)
+  
+  const t = Translations_serviceDetails[currentLang ?.toLowerCase() as 'en' | 'ar' || "en"]
+  
   const formatDate = (date: string) => {
     if (!date) return null
     return new Date(date).toLocaleDateString('en-US', {
@@ -53,7 +67,6 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
   const handleDelete = async (id: string) => {
     try {
 
-      console.log("Deleting service:", id)
       // setAllServices(prev => prev.filter(s => s.id !== id))
       await del({
         id
@@ -98,7 +111,8 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
     <>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className=" z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -108,11 +122,15 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                   onClick={() => router.push('/admin/services')}
                   className="rounded-full"
                 >
-                  <ArrowLeft className="h-5 w-5" />
+                  {
+                    isRTL? 
+                    <ArrowRight className="h-5 w-5" />
+                    :<ArrowLeft className="h-5 w-5" />
+                  }
                 </Button>
                 <div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                    <span>Services</span>
+                    <span>{t.servicesLabel}</span>
                     <span>/</span>
                     <span className="text-foreground font-medium">{service.slug}</span>
                   </div>
@@ -120,7 +138,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     {service.icon && service.icon.startsWith("http") ? (
                       <Image
                         src={service.icon}
-                        alt={service.name + "-icon"}
+                        alt={currentTranaltion?.name + "-icon"}
                         width={28}
                         height={28}
                         className="rounded-md"
@@ -128,7 +146,10 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     ) : <span>
                       {service.icon}
                     </span>}
-                    <h1 className="text-2xl font-bold tracking-tight">{service.name}</h1>
+                    <div className="line-clamp-1"> 
+
+                    <h1 className="text-2xl font-bold tracking-tight line-clamp-1">{currentTranaltion?.name}</h1>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -139,7 +160,17 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                   className="gap-2"
                 >
                   <Pencil className="h-4 w-4" />
-                  Edit
+                  {t.editService}
+                </Button>
+                <Button
+                  onClick={() => router.push(`/admin/services/${service.id}/edit`)}
+                  className="gap-2"
+                >
+                  <LucidePencilRuler className="h-4 w-4" />
+                  {
+                    isRTL? "تعديل" : "Edit"
+                  }
+                    
                 </Button>
                 <Button
                   variant="destructive"
@@ -182,14 +213,6 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       {service.isActive ? "Active" : "Inactive"}
                     </Badge>
                   </div>
-
-                  {/* <div className="absolute top-6 right-6">
-                    <Badge variant="secondary" className="shadow-2xl text-base py-2 px-4 backdrop-blur-sm bg-background/80">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Order #{service.order}
-                    </Badge>
-                  </div> */}
-
                   <div className="absolute bottom-0 left-0 right-0 p-8">
                     <div className="flex items-end justify-between">
                       <div className="flex-1">
@@ -197,7 +220,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                           {service.icon && service.icon.startsWith("http") ? (
                             <Image
                               src={service.icon}
-                              alt={service.name + "-icon"}
+                              alt={currentTranaltion?.name + "-icon"}
                               width={28}
                               height={28}
                               className="rounded-md"
@@ -206,7 +229,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                             {service.icon}
                           </span>}
                           <h2 className="text-4xl font-bold text-white drop-shadow-lg">
-                            {service.name}
+                            {currentTranaltion?.name}
                           </h2>
                         </div>
                         <code className="text-sm text-white/90 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20">
@@ -231,26 +254,63 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <Sparkles className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold">About This Service</h3>
-                    <p className="text-sm text-muted-foreground">Overview and details</p>
+                    <h3 className="text-2xl font-bold">{t.aboutHeading}</h3>
+                    <p className="text-sm text-muted-foreground">{t.aboutSubtitle}</p>
                   </div>
                 </div>
+                <Tabs dir={isRTL ? "rtl" : "ltr"} className="w-full" defaultValue={langs[0]}>
 
-                <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                  {service.description}
-                </p>
+                  <TabsList>
+                    {langs.map((lang: string) => (
+                      <TabsTrigger className="text-left p-2" key={lang} value={lang}>
+                        {lang}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
 
-                {service.richDescription && (
-                  <>
-                    <Separator className="my-6" />
-                    <div className="prose prose-sm max-w-none">
-                      <div
-                        className="text-muted-foreground leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: service.richDescription }}
-                      />
-                    </div>
-                  </>
-                )}
+                  {langs.map((lang: string) => {
+                    const translation = serviceTranslation.find((t: any) => t.lang === lang);
+
+                    return (
+                      <TabsContent key={lang} value={lang}>
+
+                        {translation ? (
+                          <>
+                            <Card>
+
+                              <CardContent>
+
+                                <p className="text-lg  leading-relaxed mb-6">
+                                  {translation.name}
+                                </p>
+                                <p className="text-md text-muted-foreground leading-relaxed mb-6">
+                                  {translation.description}
+                                </p>
+
+                                {translation.richDescription && (
+                                  <>
+                                    <Separator className="my-6" />
+                                    <div className="prose prose-sm max-w-none">
+                                      <div
+                                        className="text-muted-foreground leading-relaxed"
+                                        dangerouslySetInnerHTML={{ __html: translation.richDescription }}
+                                      />
+                                    </div>
+                                  </>
+                                )}
+                              </CardContent>
+                            </Card>
+                          </>
+                        ) : (
+                          <p className="text-muted-foreground">{t.noTranslation}</p>
+                        )}
+                      </TabsContent>
+                    );
+                  })}
+                </Tabs>
+
+
+
               </Card>
 
               {/* Related Projects */}
@@ -261,9 +321,9 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       <Layers className="h-6 w-6 text-emerald-500" />
                     </div>
                     <div>
-                      <h3 className="text-2xl font-bold">Related Projects</h3>
+                      <h3 className="text-2xl font-bold">{t.relatedProjectsHeading}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {projects.length} {projects.length === 1 ? 'project' : 'projects'} using this service
+                        {projects.length} {projects.length === 1 ? 'project' : 'projects'} {t.relatedProjectsCount_one}
                       </p>
                     </div>
                   </div>
@@ -276,8 +336,8 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       >
                         <div className="relative h-48 overflow-hidden">
                           <img
-                            src={projectData.image.url}
-                            alt={projectData.image.alt}
+                            src={projectData?.image?.url}
+                            alt={projectData?.image?.alt}
                             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -335,18 +395,12 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                               onClick={() => router.push(`/admin/projects/${projectData.project.slug}`)}
                               className="gap-2 ml-auto"
                             >
-                              View Details
+                              {t.viewProjectButton}
                               <ExternalLink className="h-3 w-3" />
                             </Button>
                           </div>
 
-                          {projectData.project.order !== 0 && (
-                            <div className="mt-3 pt-3 border-t">
-                              <p className="text-xs text-muted-foreground">
-                                Display Order: <span className="font-semibold">#{projectData.project.order}</span>
-                              </p>
-                            </div>
-                          )}
+                    
                         </div>
                       </Card>
                     ))}
@@ -361,54 +415,54 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <FileImage className="h-6 w-6 text-purple-500" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold">Image Details</h3>
-                    <p className="text-sm text-muted-foreground">Asset information</p>
+                    <h3 className="text-2xl font-bold">{t.imageDetailsHeading}</h3>
+                    <p className="text-sm text-muted-foreground">{t.imageDetailsSubtitle}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Dimensions</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.dimensionsLabel}</p>
                     <p className="font-semibold">{image.width} × {image.height}</p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">File Size</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.fileSizeLabel}</p>
                     <p className="font-semibold">{formatFileSize(image.size)}</p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Format</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.formatLabel}</p>
                     <p className="font-semibold uppercase">{image.type.split('/')[1]}</p>
                   </div>
                   <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Type</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.typeLabel}</p>
                     <p className="font-semibold">{image.imageType}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">Filename</p>
+                    <p className="text-xs text-muted-foreground mb-2">{t.filenameLabel}</p>
                     <code className="text-sm bg-muted px-3 py-1.5 rounded flex justify-between items-center">
                       <span className="truncate">{image.filename}</span>
                       <ClipboardCopyButton value={image.filename} />
                     </code>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">File Hash</p>
+                    <p className="text-xs text-muted-foreground mb-2">{t.fileHashLabel}</p>
                     <code className="text-sm bg-muted px-3 py-1.5 rounded flex justify-between items-center">
                       <span className="truncate">{image.fileHash}</span>
                       <ClipboardCopyButton value={image.fileHash} />
                     </code>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">Blur Hash</p>
+                    <p className="text-xs text-muted-foreground mb-2">{t.blurHashLabel}</p>
                     <code className="text-sm bg-muted px-3 py-1.5 rounded flex justify-between items-center">
                       <span className="truncate">{image.blurHash}</span>
                       <ClipboardCopyButton value={image.blurHash} />
                     </code>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">Storage Key</p>
+                    <p className="text-xs text-muted-foreground mb-2">{t.storageKeyLabel}</p>
                     <code className="text-sm bg-muted px-3 py-1.5 rounded flex justify-between items-center">
                       <span className="truncate">{image.key}</span>
                       <ClipboardCopyButton value={image.key} />
@@ -427,17 +481,14 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <DollarSign className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">PRICING</p>
+                    <p className="text-xs text-muted-foreground">{t.pricingLabel}</p>
                     <h3 className="text-3xl font-bold text-primary">
                       {service.price}
                     </h3>
                   </div>
                 </div>
 
-                <Button className="w-full gap-2" size="lg">
-                  <ShoppingCart className="h-4 w-4" />
-                  Purchase Service
-                </Button>
+      
               </Card>
 
               {/* Service Info */}
@@ -447,8 +498,8 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <Package className="h-6 w-6 text-blue-500" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Service Info</h3>
-                    <p className="text-xs text-muted-foreground">Quick details</p>
+                    <h3 className="text-lg font-bold">{t.serviceInfoHeading}</h3>
+                    <p className="text-xs text-muted-foreground">{t.serviceInfoSubtitle}</p>
                   </div>
                 </div>
 
@@ -458,8 +509,8 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                       <CheckCircle2 className="h-5 w-5 text-green-500" />
                     </div>
                     <div>
-                      <p className="text-xs  text-muted-foreground">Status</p>
-                      <p className="font-semibold">{service.isActive ? "Active" : "Inactive"}</p>
+                      <p className="text-xs  text-muted-foreground">{t.labelStatus}</p>
+                      <p className="font-semibold">{service.isActive ? t.statusActive : t.statusInactive}</p>
                     </div>
                   </div>
 
@@ -469,19 +520,14 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Featured</p>
-                      <p className="font-semibold">{service.isFeatured ? "Yes" : "No"}</p>
+                      <p className="font-semibold">{service.isFeatured ? t.yes : t.no}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Display Order</p>
-                      <p className="font-semibold">#{service.order}</p>
-                    </div>
-                  </div>
+                  {/* <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+           
+                  
+                  </div> */}
                 </div>
               </Card>
 
@@ -492,30 +538,30 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
                     <Clock className="h-6 w-6 text-gray-500" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Metadata</h3>
+                    <h3 className="text-lg font-bold">{t.metadataHeading}</h3>
                     <p className="text-xs text-muted-foreground">System info</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Service ID</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.labelServiceId}</p>
                     <code className="text-xs bg-muted px-2 py-1 rounded block truncate">
                       {service.id}
                     </code>
                   </div>
                   <Separator />
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Created</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.labelCreated}</p>
                     <p className="text-sm font-medium">{formatDate(service.createdAt)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.labelLastUpdated}</p>
                     <p className="text-sm font-medium">{formatDate(service.updatedAt)}</p>
                   </div>
                   <Separator />
                   <div>
-                    <p className="text-xs text-muted-foreground mb-1">Image ID</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.labelImageId}</p>
                     <code className="text-xs bg-muted px-2 py-1 rounded block truncate">
                       {service.imageId}
                     </code>
@@ -525,7 +571,7 @@ export default function Page({ params }: { params: Promise<{ slug: string }> }) 
             </div>
           </div>
         </div>
-      </div>
+      </div >
 
       <DeleteDialog
         isLoading={isLoadingDelete}

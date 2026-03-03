@@ -6,6 +6,8 @@ import { Save, X, Eye, EyeOff, Loader } from "lucide-react"
 import { toast } from "sonner"
 import { useCreateHeroMutation, useUpdateHeroMutation } from "@/lib/store/api/hero-api"
 import { IHero, Image } from "@/types/schema"
+import { useLanguage } from "@/providers/lang"
+import { tHeroNew } from "@/i18n/hero"
 
 const PreviewPanel = dynamic(() => import("./hero-preview").then((m) => m.HeroPreview), {
     loading: () => (
@@ -25,31 +27,37 @@ const ControlsPanel = dynamic(() => import("./hero-controls").then((m) => m.Hero
 
 interface ApiResponse {
     data: {
-        hero: IHero
+        hero: {
+            hero?: IHero 
+        }
         backgroundImage?: Image
     }
-    message: string
-    success: boolean
 }
 
 interface HeroEditorProps {
     initialData?: ApiResponse["data"]
 }
 
-export const HeroEditor = ({ initialData }: HeroEditorProps) => {
+export const HeroEditor = ({ initialData } : HeroEditorProps) => {
+    console.log({ initialData })
     const [previewMode, setPreviewMode] = useState(false)
     const [uploadingImage, setUploadingImage] = useState(false)
     const [createHero, { isLoading: isCreating }] = useCreateHeroMutation()
     const [updateHero, { isLoading: isUpdating }] = useUpdateHeroMutation()
-    
-    const isEditMode = !!initialData?.hero?.id
+    const { currentLang } = useLanguage()
+    const t = tHeroNew[currentLang?.toLocaleLowerCase() as "en" | "ar" || "en"]
+
+
+    const isEditMode = !!initialData?.hero?.hero?.id
     const isSaving = isCreating || isUpdating
 
+
     const [heroData, setHeroData] = useState<Partial<IHero> & { backgroundImageUrl?: string }>({
-        name: "Main Hero",
-        title: "Welcome to Our Platform",
-        subtitle: "Build Amazing Things",
-        description: "Create stunning websites with our powerful tools and intuitive interface.",
+
+        name: "",
+        title: "",
+        subtitle: "",
+        description: "",
         backgroundImageUrl: "",
         backgroundColor: "#1a1a2e",
         overlayColor: "#000000",
@@ -73,16 +81,18 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
         isActive: true,
     })
 
+
     const [newImage, setNewImage] = useState<File | null>(null)
     const [existingImage, setExistingImage] = useState<Image | undefined>(undefined)
     const [imageChanged, setImageChanged] = useState(false)
 
-    // Initialize with existing data if editing
     useEffect(() => {
+
         if (initialData?.hero) {
-            const hero = initialData.hero
+            const hero = initialData.hero.hero
             const bgImage = initialData.backgroundImage
-            
+      
+            if(!hero) return
             setHeroData({
                 id: hero.id,
                 name: hero.name,
@@ -113,7 +123,7 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
                 styleOverrides: hero.styleOverrides,
                 isActive: hero.isActive,
             })
-            
+
             if (bgImage) {
                 setExistingImage(bgImage)
             }
@@ -189,14 +199,14 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
         if (imageChanged) {
             if (newImage) {
                 // New image uploaded
-                updateData.hasNewImage = true ,
-                updateData.imageState = "UPDATE"
-                
+                updateData.hasNewImage = true,
+                    updateData.imageState = "UPDATE"
+
             } else {
                 // Image removed
                 updateData.backgroundImageId = null
-                updateData.removeImage = true ,
-                updateData.imageState = "REMOVE"
+                updateData.removeImage = true,
+                    updateData.imageState = "REMOVE"
             }
         } else if (existingImage) {
             // Keep existing image
@@ -208,19 +218,14 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
     }, [heroData, newImage, existingImage, imageChanged])
 
     const handleSave = useCallback(async () => {
+
         try {
-            if (isEditMode && initialData?.hero?.id) {
-                // UPDATE MODE
+            if (isEditMode && initialData?.hero?.hero?.id) {
                 const updatePayload = prepareUpdateData()
-                
-                console.log("Update Payload:", updatePayload)
-                console.log("Has new image?", !!newImage)
-                console.log("Image changed?", imageChanged)
-                
-                // If there's a new image, use FormData
+
                 if (newImage) {
                     const formData = new FormData()
-                    
+
                     // Append all update fields
                     Object.entries(updatePayload).forEach(([key, value]) => {
                         if (value !== null && value !== undefined && key !== 'hasNewImage') {
@@ -231,27 +236,27 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
                             }
                         }
                     })
-                    
+
                     // Append the new image
                     formData.append("backgroundImage", newImage)
-                    
-                    const result = await updateHero({ 
-                        id: initialData.hero.id,
-                        formData, 
+
+                    const result = await updateHero({
+                        id: initialData.hero.hero.id,
+                        formData,
                         // data: formData 
                     }).unwrap()
-                    
+
                     console.log("Update result:", result)
                 } else {
                     // No new image, send JSON
-                    const result = await updateHero({ 
-                        id: initialData.hero.id, 
-                        formData: updatePayload 
+                    const result = await updateHero({
+                        id: initialData.hero.hero.id,
+                        formData: updatePayload
                     }).unwrap()
-                    
+
                     console.log("Update result:", result)
                 }
-                
+
                 toast.success("Hero section updated successfully")
                 setImageChanged(false)
             } else {
@@ -262,7 +267,7 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
                 Object.entries(heroData).forEach(([key, value]) => {
                     if (key === "backgroundImageUrl") return
                     if (key === "backgroundImageId" && value === null) return
-                    
+
                     if (value !== null && value !== undefined) {
                         if (typeof value === "object" && !(value instanceof File)) {
                             formData.append(key, JSON.stringify(value))
@@ -276,9 +281,9 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
                 if (newImage) {
                     formData.append("backgroundImage", newImage)
                 }
-                
+
                 const result = await createHero(formData).unwrap()
-                
+
                 console.log("Create result:", result)
                 toast.success("Hero section created successfully")
             }
@@ -286,7 +291,7 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
             console.error("Error saving:", error)
             toast.error(`Failed to ${isEditMode ? 'update' : 'save'} hero section`)
         }
-    }, [heroData, newImage, isEditMode, initialData?.hero?.id, createHero, updateHero, prepareUpdateData, imageChanged])
+    }, [heroData, newImage, isEditMode, initialData?.hero.hero?.id, createHero, updateHero, prepareUpdateData, imageChanged])
 
     return (
         <div className="flex h-screen bg-background">
@@ -294,7 +299,7 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
             <div className="w-full md:w-96 bg-card border-r border-border overflow-y-auto shadow-lg flex flex-col">
                 <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-card/95 backdrop-blur z-10">
                     <h2 className="text-lg font-bold text-foreground">
-                        Hero Editor {isEditMode && <span className="text-sm text-muted-foreground">(Edit Mode)</span>}
+                        {t.editor.title} {isEditMode && <span className="text-sm text-muted-foreground">({t.editor.editMode})</span>}
                     </h2>
                     <button
                         onClick={() => setPreviewMode(!previewMode)}
@@ -305,7 +310,7 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
-                    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading controls...</div>}>
+                    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">{t.editor.loadingControls}</div>}>
                         <ControlsPanel
                             heroData={heroData}
                             updateField={updateField}
@@ -325,7 +330,7 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
                         className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-all disabled:opacity-50 font-medium"
                     >
                         {isSaving ? <Loader size={18} className="animate-spin" /> : <Save size={18} />}
-                        {isSaving ? "Saving..." : isEditMode ? "Update" : "Save"}
+                        {isSaving ? t.editor.saving : isEditMode ? t.editor.update : t.editor.save}
                     </button>
                 </div>
             </div>
@@ -340,7 +345,7 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
                             </div>
                         }
                     >
-                        <PreviewPanel heroData={heroData} bgImage={existingImage} />
+                        <PreviewPanel heroData={heroData as IHero & { backgroundImageUrl?: string }} bgImage={existingImage} />
                     </Suspense>
                 </div>
             </div>
@@ -363,7 +368,7 @@ export const HeroEditor = ({ initialData }: HeroEditorProps) => {
                                     </div>
                                 }
                             >
-                                <PreviewPanel heroData={heroData} bgImage={existingImage} />
+                                <PreviewPanel heroData={heroData as IHero & { backgroundImageUrl?: string }} bgImage={existingImage} />
                             </Suspense>
                         </div>
                     </div>

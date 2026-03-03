@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   useLazySearchTechnologiesQuery,
   useLazyGetTechnologiesByCategoryQuery,
-  useGetTechsQuery,
   useLazyGetTechsQuery,
   useLazyGetCategoriesQuery,
   useCerateProjectAndAssignTechnologiesMutation,
@@ -28,12 +27,12 @@ import {
 import { TechSearchDialog } from "@/app/(routes)/admin/projects/_comp/tech-serch-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreateProjectDTO, ServiceWithImage, Technology } from "@/types/schema";
+import {  ServiceWithImage, Technology } from "@/types/schema";
 import { useDebounce } from "@/lib/store/hooks";
 import Image from "next/image";
 import ContolledImage from "@/app/_comp/contolledImage";
 import TabContentService from "./utils/SlideShowSelectTapContent";
-import z, { ZodError } from "zod";
+import z, { } from "zod";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form"; // FIXED: Removed Form import
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,6 +44,8 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
+import { useLanguage } from "@/providers/lang";
+import { projectFormI18n } from "@/i18n/project";
 
 export const createSchema = z.object({
   title: z
@@ -110,6 +111,8 @@ interface ProjectFormProps {
 export function ProjectForm({ initialData }: ProjectFormProps) {
   const router = useRouter();
 
+  const { currentLang } = useLanguage()
+  const t = projectFormI18n[currentLang?.toLowerCase() as "en" | "ar" || "en"]
   const [selectedTechs, setSelectedTechs] = useState<any[]>(
     initialData?.technologies || []
   );
@@ -311,7 +314,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
             {/* Project Information */}
             <div className="pb-3 w-full p-4 rounded-md shadow-sm">
               <h2 className="text-sm font-semibold text-foreground mb-4">
-                Project Information
+                {t.sectionTitles.projectInfo}
               </h2>
               <div className="space-y-4">
                 <FormField
@@ -320,7 +323,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-medium">
-                        Project Title *
+                        {t.fields.title}
                       </FormLabel>
                       <FormControl>
                         <Input placeholder="E-Commerce Platform" {...field} />
@@ -336,7 +339,8 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-medium">
-                        Short Description
+                        {t.fields.shortDescription}
+
                       </FormLabel>
                       <FormControl>
                         <Textarea
@@ -357,7 +361,8 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-medium">
-                        Full Project Description *
+                        {t.fields.fullDescription}
+
                       </FormLabel>
                       <FormControl>
                         <Textarea
@@ -379,11 +384,10 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                     <FormItem className="flex items-center justify-between p-3 bg-secondary/50 rounded-md border border-border">
                       <div>
                         <FormLabel className="text-xs font-medium cursor-pointer">
-                          Featured Project
+                          {t.fields.featured}
+
                         </FormLabel>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Display this project prominently
-                        </p>
+
                       </div>
                       <FormControl>
                         <Switch
@@ -401,7 +405,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
             <div className="w-full flex flex-col justify-between items-center h-full p-4 rounded-md shadow-sm">
               <div className="pb-6 w-full h-1/2">
                 <h2 className="text-sm font-semibold text-foreground mb-4">
-                  Client Information
+                  {t.sectionTitles.clientInfo}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -410,7 +414,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-medium">
-                          Client Name
+                          {t.fields.clientName}
                         </FormLabel>
                         <FormControl>
                           <Input placeholder="John Doe" {...field} />
@@ -426,7 +430,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-medium">
-                          Client Company
+                          {t.fields.clientCompany}
                         </FormLabel>
                         <FormControl>
                           <Input placeholder="ABC Corporation" {...field} />
@@ -440,7 +444,8 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
 
               <div className="w-full h-1/2">
                 <h2 className="text-sm font-semibold text-foreground mb-4">
-                  Links & Timeline
+                  {t.sectionTitles.linksTimeline}
+
                 </h2>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -449,13 +454,13 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                       name="projectUrl"
                       render={({ field }) => (
                         <FormItem>
+                          {t.fields.projectUrl}
                           <FormLabel className="text-xs font-medium">
-                            Project URL
                           </FormLabel>
                           <FormControl>
                             <Input
                               type="url"
-                              placeholder="https://example.com"
+                              placeholder={t.placeholders.projectUrl}
                               {...field}
                             />
                           </FormControl>
@@ -470,12 +475,12 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-medium">
-                            GitHub URL
+                            {t.fields.githubUrl}
                           </FormLabel>
                           <FormControl>
                             <Input
                               type="url"
-                              placeholder="https://github.com/..."
+                              placeholder={t.placeholders.githubUrl}
                               {...field}
                             />
                           </FormControl>
@@ -485,41 +490,45 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                     />
 
                   </div>
-                    <FormField
-                    
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem className="w-full">
-                          <FormLabel className="text-xs font-medium">
+                  <FormField
 
-                            Status 
-                          </FormLabel>
-                          <Select
-                          
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="w-full">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="PLANNING">Planning</SelectItem>
-                              <SelectItem value="IN_PROGRESS">
-                                In Progress
-                              </SelectItem>
-                              <SelectItem value="COMPLETED">
-                                Completed
-                              </SelectItem>
-                              <SelectItem value="ON_HOLD">On Hold</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel className="text-xs font-medium">
+
+                          {t.fields.status}
+                        </FormLabel>
+                        <Select
+
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="PLANNING"> {t.status.PLANNING}</SelectItem>
+                            <SelectItem value="IN_PROGRESS">
+                              {t.status.IN_PROGRESS}
+                            </SelectItem>
+                            <SelectItem value="COMPLETED">
+                              {t.status.COMPLETED}
+                            </SelectItem>
+                            <SelectItem value="ON_HOLD">
+                              {t.status.ON_HOLD}
+
+
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                     <FormField
@@ -528,7 +537,8 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-medium">
-                            Start Date
+                            {t.fields.startDate}
+
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -553,7 +563,8 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs font-medium">
-                            End Date
+                            {t.fields.endDate}
+
                           </FormLabel>
                           <FormControl>
                             <Input
@@ -574,6 +585,17 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                   </div>
                 </div>
               </div>
+              <div className="relative w-full mt-3">
+                <label className="block text-sm font-medium text-foreground mb-1">{t.fields.imageLabel}</label>
+
+                <ContolledImage
+                  orginalUrl={ ""}
+                  selectedImageBlob={selectedImageBlob}
+                  setSelectedImageBlob={setSelectedImageBlob}
+                  setSelectedImageFile={setSelectedImageFile}
+                  className="w-full h-35 md:h-40  border-2 border-dashed border-primary/50 rounded-md flex items-center justify-center cursor-pointer hover:bg-primary/5 transition-all"
+                />
+              </div>
             </div>
           </div>
 
@@ -581,7 +603,8 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
           <div className="border-b border-border pb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-foreground">
-                Technologies
+                {t.sectionTitles.technologies}
+
               </h2>
               <Button
                 type="button"
@@ -590,14 +613,15 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                 variant="outline"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add New Technology
+                {t.technologies.addNew}
+
               </Button>
             </div>
 
             {selectedTechs.length > 0 && (
               <Card className="p-4 mb-4 relative">
                 <label className="text-xs font-medium mb-2 block">
-                  Selected Technologies ({selectedTechs.length})
+                  {t.technologies.selected} : ({selectedTechs.length})
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {selectedTechs.map((tech, index) => (
@@ -639,7 +663,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                     size="sm"
                     onClick={() => setSelectedTechs([])}
                   >
-                    <span>Clear</span>
+                    <span>{t.actions.cancel} </span>
                     <X />
                   </Button>
                 </div>
@@ -655,15 +679,15 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                   onValueChange={(v) => setTechTab(v as "skills" | "category")}
                 >
                   <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="skills">Browse Skills</TabsTrigger>
-                    <TabsTrigger value="category">By Category</TabsTrigger>
+                    <TabsTrigger value="skills">{t.technologies.browseSkills} </TabsTrigger>
+                    <TabsTrigger value="category">{t.technologies.byCategory}</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="skills" className="space-y-3">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search technologies..."
+                        placeholder={t.placeholders.searchTech}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-9"
@@ -678,8 +702,8 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                       <div className="space-y-2">
                         <p className="text-xs text-muted-foreground">
                           {searchQuery
-                            ? `Search results for "${searchQuery}"`
-                            : "Recent technologies"}
+                            ? t.technologies.searchResults(`"${searchQuery}"`)
+                            : t.technologies.recent}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {recentTechs.map((tech) => (
@@ -722,7 +746,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                       onValueChange={setSelectedCategory}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder={t.placeholders.selectCategory} />
                       </SelectTrigger>
                       <SelectContent>
                         {isLoadingCategories ? (
@@ -747,7 +771,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <p className="text-xs text-muted-foreground">
-                            {categoryTechs.length} technologies in{" "}
+                            {categoryTechs.length} {t.technologies.emptyCategory(selectedCategory)}{" "}
                             {selectedCategory}
                           </p>
                           <Button
@@ -756,7 +780,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                             variant="outline"
                             onClick={addAllCategoryTechs}
                           >
-                            Add All
+                            {t.technologies.addAll}
                           </Button>
                         </div>
                         <div className="flex justify-start items-center gap-2 max-h-64 overflow-y-auto">
@@ -791,7 +815,7 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
                       </div>
                     ) : selectedCategory ? (
                       <div className="text-center py-8 text-muted-foreground text-sm">
-                        No technologies in {selectedCategory}
+                        {t.technologies.emptyCategory(selectedCategory)}
                       </div>
                     ) : null}
                   </TabsContent>
@@ -801,13 +825,13 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
 
             <Card className="mt-4">
               <CardHeader>
-                <CardTitle>Services</CardTitle>
+                <CardTitle>{t.sectionTitles.services}</CardTitle>
               </CardHeader>
               <CardContent>
                 <TabContentService
                   tabType={"service"}
-                  title={"Services"}
-                  placeholder={"Search Services..."}
+                  title={t.sectionTitles.services}
+                  placeholder={t.placeholders.searchServices}
                   setSelectedServices={setSelectedServices}
                   selectedServices={selectedServices}
                   ExtraInputs={false}
@@ -823,13 +847,13 @@ export function ProjectForm({ initialData }: ProjectFormProps) {
               variant="outline"
               onClick={() => router.push("/admin/projects")}
             >
-              Cancel
+              {t.actions.cancel}
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               )}
-              {initialData ? "Update Project" : "Create Project"}
+              {initialData ? t.actions.update : t.actions.create}
             </Button>
           </div>
         </form>

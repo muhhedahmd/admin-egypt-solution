@@ -1,12 +1,22 @@
 import { PaginatedResponse, successResponse } from "@/types/services";
 import { baseApi } from "./base-api";
 import { Image, TeamMember, TeamMemberWithImage } from "@/types/schema";
-import { createEntityAdapter } from "@reduxjs/toolkit";
+import { se } from "date-fns/locale";
 
+export type teamMemberTranslation = {
+  name: string;
+  bio?: string;
+  lang: "EN" | "AR";
+  position?: string;
+};
 export const teamApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getTeamMembers: builder.query<
-      PaginatedResponse<TeamMemberWithImage>,
+      PaginatedResponse<{
+        teamMember: TeamMember;
+        image: Image | null;
+        translation: teamMemberTranslation[];
+      }>,
       {
         skip?: number;
         take?: number;
@@ -24,12 +34,43 @@ export const teamApi = baseApi.injectEndpoints({
 
       providesTags: ["Team"],
     }),
-    getTeamMemberById: builder.query<
-      {
-        Image: Image | null;
+    searchTeamMembers: builder.query<
+      PaginatedResponse<{
         teamMember: TeamMember;
-        message: string;
+        image: Image | null;
+        translation: teamMemberTranslation[];
+      }>,
+      {
+        skip?: number;
+        take?: number;
+        q: string;
+      }
+    >({
+      query: ({ q, skip = 0, take = 10 }) => {
+
+        return {
+          url: "/team/search",
+          params: {
+            skip,
+            take,
+            q,
+          },
+        };
       },
+      serializeQueryArgs: ({ queryArgs , endpointName ,endpointDefinition }) => {
+        return `${endpointDefinition}-${endpointName}-${queryArgs?.q}-${queryArgs?.skip || 0}-${
+          queryArgs?.take || 10
+        }`;
+      },
+
+      providesTags: ["Team"],
+    }),
+    getTeamMemberById: builder.query<
+      successResponse<{
+        image: Image | null;
+        teamMember: TeamMember;
+        translation: teamMemberTranslation[];
+      }>,
       string
     >({
       query: (id) => `/team/${id}`,
@@ -40,6 +81,7 @@ export const teamApi = baseApi.injectEndpoints({
       successResponse<{
         Image: Image | null;
         TeamMember: TeamMember;
+        translation: teamMemberTranslation[];
       }>,
       FormData
     >({
@@ -60,12 +102,13 @@ export const teamApi = baseApi.injectEndpoints({
             },
             (draft) => {
               draft.data.unshift({
-                ...result.data.TeamMember,
+                teamMember: result.data.TeamMember,
+                translation: result.data.translation,
                 image: result.data.Image || null,
               });
               draft.pagination.totalItems += 1;
-            }
-          )
+            },
+          ),
         );
 
         try {
@@ -94,36 +137,7 @@ export const teamApi = baseApi.injectEndpoints({
         url: `/team/${id}`,
         method: "DELETE",
       }),
-      // async onQueryStarted(queryArgument, { dispatch, queryFulfilled, extra  , getCacheEntry ,getState ,requestId}) {
 
-      //   const cacheEntry = getState()
-      //   const teamMembers = cacheEntry.api.queries['getTeamMembers']?.data
-
-      //   if(teamMembers){
-
-      //   }
-
-      //   const patchResult = dispatch(
-      //     teamApi.util.updateQueryData(
-      //       "getTeamMembers",
-      //       {
-      //         skip: 0,
-      //         take: 10,
-      //       },
-      //       (draft) => {
-      //         draft.data = draft.data.filter(
-      //           (teamMember) => teamMember.id !== queryArgument
-      //         );
-      //         draft.pagination.totalItems -= 1;
-      //       }
-      //     )
-      //   );
-      //   try {
-      //     await queryFulfilled;
-      //   } catch (error) {
-      //     // Handle error
-      //   }
-      // },
       invalidatesTags: (result, error, id) => [{ type: "Team" }, "Team"],
     }),
   }),
@@ -131,6 +145,8 @@ export const teamApi = baseApi.injectEndpoints({
 
 export const {
   useGetTeamMembersQuery,
+  useSearchTeamMembersQuery,
+  useLazySearchTeamMembersQuery,
   useGetTeamMemberByIdQuery,
   useCreateTeamMemberMutation,
   useUpdateTeamMemberMutation,

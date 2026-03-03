@@ -9,9 +9,10 @@ import { useRouter } from "next/navigation"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
 import Blurredimage from "@/app/_comp/BlurredHashImage"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
-import { useDeleteTeamMemberMutation, useGetTeamMembersQuery } from "@/lib/store/api/team-api"
-import { TeamMemberWithImage } from "@/types/schema"
+import { teamMemberTranslation, useDeleteTeamMemberMutation, useGetTeamMembersQuery } from "@/lib/store/api/team-api"
+import { Image, TeamMember, TeamMemberWithImage } from "@/types/schema"
 import { toast } from "sonner"
+import { useLanguage } from "@/providers/lang"
 
 
 export function TeamTable() {
@@ -22,6 +23,7 @@ export function TeamTable() {
     threshold: 0.1
   })
 
+  const { currentLang } = useLanguage()
   const {
     data: teamData,
     isLoading,
@@ -33,14 +35,18 @@ export function TeamTable() {
     take: 10
   })
 
-  const [allTeam, setAllTeam] = useState<TeamMemberWithImage[]>([])
+  const [allTeam, setAllTeam] = useState<{
+    teamMember: TeamMember;
+    image: Image | null;
+    translation: teamMemberTranslation[];
+  }[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteTeamMemberMutation()
   useEffect(() => {
     if (teamData?.data) {
       setAllTeam((prev) => {
-        const existing = prev.map((member) => member.id)
-        const newMembers = teamData.data.filter((member: TeamMemberWithImage) => !existing.includes(member.id))
+        const existing = prev.map((member) => member.teamMember.id)
+        const newMembers = teamData.data.filter((member) => !existing.includes(member.teamMember.id))
         return [...prev, ...newMembers]
       })
     }
@@ -61,7 +67,7 @@ export function TeamTable() {
       ).then(res => {
         if (res.data) {
           toast.success("Service deleted successfully!")
-          setAllTeam(prev => prev.filter(s => s.id !== id))
+          setAllTeam(prev => prev.filter(s => s.teamMember.id !== id))
           setDeleteId(null)
         }
       })
@@ -107,14 +113,17 @@ export function TeamTable() {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {allTeam.map((member) => (
-          <article
-            key={member.id}
+        {allTeam.map((member) => {
+          const currentTranslation = member?.translation?.find((t) => t.lang?.toLowerCase() === currentLang?.toLowerCase())
+          console.log(member.teamMember)
+
+          return <article
+            key={member.teamMember.id}
             className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-lg transition-all duration-300"
           >
             {/* Card Header with Actions */}
             <div className="absolute top-3 right-3 z-10 flex gap-2">
-              {member.isFeatured && (
+              {member.teamMember.isFeatured && (
                 <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-0 shadow-sm">
                   <Star className="h-3 w-3 mr-1 fill-current" />
                   Featured
@@ -132,17 +141,17 @@ export function TeamTable() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => router.push(`/admin/team/${member.id}`)}>
+                  <DropdownMenuItem onClick={() => router.push(`/admin/team/${member.teamMember.id}`)}>
                     <Eye className="mr-2 h-4 w-4" />
                     View Details
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push(`/admin/team/${member.id}/edit`)}>
+                  <DropdownMenuItem onClick={() => router.push(`/admin/team/${member.teamMember.id}/edit`)}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit Member
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-                    onClick={() => setDeleteId(member.id)}
+                    onClick={() => setDeleteId(member.teamMember.id)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete Member
@@ -156,7 +165,7 @@ export function TeamTable() {
               {member.image ? (
                 <Blurredimage
                   imageUrl={member.image.url}
-                  alt={member.image.alt || member.name}
+                  alt={member.image.alt || currentTranslation?.name || ""}
                   className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
                   height={member.image.height || 400}
                   width={member.image.width || 400}
@@ -178,55 +187,55 @@ export function TeamTable() {
               {/* Name and Position */}
               <div className="space-y-1">
                 <h3 className="font-semibold text-lg leading-tight line-clamp-1">
-                  {member.name}
+                  {currentTranslation?.name || ""}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-1">
-                  {member.position}
+                  {currentTranslation?.position || ""}
                 </p>
               </div>
 
               {/* Slug */}
               <div className="flex items-center gap-2">
                 <code className="text-xs bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">
-                  /{member.slug}
+                  /{member.teamMember.slug}
                 </code>
                 <Badge
-                  variant={member.isActive ? "default" : "secondary"}
+                  variant={member.teamMember.isActive ? "default" : "secondary"}
                   className="text-xs"
                 >
-                  {member.isActive ? "Active" : "Inactive"}
+                  {member.teamMember.isActive ? "Active" : "Inactive"}
                 </Badge>
               </div>
 
               {/* Bio */}
-              {member.bio && (
+              {currentTranslation?.bio && (
                 <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                  {member.bio}
+                  {currentTranslation?.bio}
                 </p>
               )}
 
               {/* Contact Info */}
               <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                {member.email && (
+                {member.teamMember.email && (
                   <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
                     <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span className="truncate">{member.email}</span>
+                    <span className="truncate">{member.teamMember.email}</span>
                   </div>
                 )}
-                {member.phone && (
+                {member.teamMember.phone && (
                   <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
                     <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>{member.phone}</span>
+                    <span>{member.teamMember.phone}</span>
                   </div>
                 )}
               </div>
 
               {/* Social Links */}
-              {(member.linkedin || member.github || member.twitter) && (
+              {(member.teamMember.linkedin || member.teamMember.github || member.teamMember.twitter) && (
                 <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                  {member.linkedin && (
+                  {member.teamMember.linkedin && (
                     <a
-                      href={member.linkedin}
+                      href={member.teamMember.linkedin}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 hover:bg-blue-100 dark:hover:bg-blue-950 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
@@ -235,9 +244,9 @@ export function TeamTable() {
                       <Linkedin className="h-4 w-4" />
                     </a>
                   )}
-                  {member.github && (
+                  {member.teamMember.github && (
                     <a
-                      href={member.github}
+                      href={member.teamMember.github}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors"
@@ -246,9 +255,9 @@ export function TeamTable() {
                       <Github className="h-4 w-4" />
                     </a>
                   )}
-                  {member.twitter && (
+                  {member.teamMember.twitter && (
                     <a
-                      href={member.twitter}
+                      href={member.teamMember.twitter}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 hover:bg-sky-100 dark:hover:bg-sky-950 text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition-colors"
@@ -260,15 +269,10 @@ export function TeamTable() {
                 </div>
               )}
 
-              {/* Footer - Order */}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                <span className="text-xs text-slate-500 dark:text-slate-500">
-                  Order #{member.order}
-                </span>
-              </div>
+
             </div>
           </article>
-        ))}
+        })}
       </div>
 
       {/* Infinite scroll trigger */}

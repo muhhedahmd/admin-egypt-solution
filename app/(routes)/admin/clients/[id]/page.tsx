@@ -26,9 +26,11 @@ import { DeleteDialog } from "@/components/admin/delete-dialog"
 import { useGetClientByIdQuery } from "@/lib/store/api/client-api"
 import { toast } from "sonner"
 import BlurredImage from "@/app/_comp/BlurredHashImage"
+import { useLanguage } from "@/providers/lang"
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter()
+    const { currentLang } = useLanguage()
     const p = React.use(params)
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
@@ -77,13 +79,21 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         )
     }
 
-    const { client, image, logo } = clientData.data
+    const { client, image, logo, translation } = clientData.data
+    const currentTranslation = translation.find((t) => t.lang === currentLang) || {
+        id: "",
+        lang: currentLang,
+        name: "",
+        description: "",
+        richDescription: "",
+        industry: "",
+    }
 
     return (
         <>
-            <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+            <div className="min-h-screen bg-liner-to-br from-background via-background to-primary/5">
                 {/* Sticky Header */}
-                <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className=" z-50 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
                     <div className="container mx-auto px-4 py-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
@@ -101,7 +111,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                         <span>/</span>
                                         <span className="text-foreground font-medium">{client.slug}</span>
                                     </div>
-                                    <h1 className="text-2xl font-bold tracking-tight">{client.name}</h1>
+                                    <h1 className="text-2xl font-bold tracking-tight">{currentTranslation?.name}</h1>
                                 </div>
                             </div>
 
@@ -174,12 +184,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                         )}
                                     </div>
 
-                                    <div className="absolute top-6 right-6">
-                                        <Badge variant="secondary" className="shadow-2xl text-base py-2 px-4 backdrop-blur-sm bg-background/80">
-                                            <TrendingUp className="h-4 w-4 mr-2" />
-                                            Order #{client.order}
-                                        </Badge>
-                                    </div>
+                                
 
                                     <div className="absolute bottom-0 left-0 right-0 p-8">
                                         <div className="flex items-end justify-between">
@@ -200,7 +205,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                                     )}
                                                     <div>
                                                         <h2 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
-                                                            {client.name}
+                                                            {currentTranslation?.name}
                                                         </h2>
                                                         <code className="text-sm text-white/90 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20">
                                                             /{client.slug}
@@ -220,22 +225,22 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                         <Building2 className="h-6 w-6 text-primary" />
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl font-bold">About {client.name}</h3>
+                                        <h3 className="text-2xl font-bold">About {currentTranslation?.name}</h3>
                                         <p className="text-sm text-muted-foreground">Company overview</p>
                                     </div>
                                 </div>
 
                                 <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-                                    {client.description}
+                                    {currentTranslation?.description}
                                 </p>
 
-                                {client.richDescription && (
+                                {currentTranslation?.richDescription && (
                                     <>
                                         <Separator className="my-6" />
                                         <div className="prose prose-sm max-w-none">
                                             <div
                                                 className="text-muted-foreground leading-relaxed"
-                                                dangerouslySetInnerHTML={{ __html: client.richDescription }}
+                                                dangerouslySetInnerHTML={{ __html: currentTranslation?.richDescription }}
                                             />
                                         </div>
                                     </>
@@ -281,25 +286,29 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                    <div className="p-4 bg-muted/50 rounded-lg">
-                                        <p className="text-xs text-muted-foreground mb-1">Dimensions</p>
-                                        <p className="font-semibold">{image.width} × {image.height}</p>
-                                    </div>
-                                    <div className="p-4 bg-muted/50 rounded-lg">
-                                        <p className="text-xs text-muted-foreground mb-1">File Size</p>
-                                        <p className="font-semibold">{formatFileSize(image.size)}</p>
-                                    </div>
-                                    <div className="p-4 bg-muted/50 rounded-lg">
-                                        <p className="text-xs text-muted-foreground mb-1">Format</p>
-                                        <p className="font-semibold uppercase">{image.type.split('/')[1]}</p>
-                                    </div>
-                                    <div className="p-4 bg-muted/50 rounded-lg">
-                                        <p className="text-xs text-muted-foreground mb-1">Type</p>
-                                        <p className="font-semibold">{image.imageType}</p>
-                                    </div>
-                                </div>
+                                {
+                                    image &&
 
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+
+                                        <div className="p-4 bg-muted/50 rounded-lg">
+                                            <p className="text-xs text-muted-foreground mb-1">Dimensions</p>
+                                            <p className="font-semibold">{image?.width} × {image.height}</p>
+                                        </div>
+                                        <div className="p-4 bg-muted/50 rounded-lg">
+                                            <p className="text-xs text-muted-foreground mb-1">File Size</p>
+                                            <p className="font-semibold">{formatFileSize(image?.size || 0)}</p>
+                                        </div>
+                                        <div className="p-4 bg-muted/50 rounded-lg">
+                                            <p className="text-xs text-muted-foreground mb-1">Format</p>
+                                            <p className="font-semibold uppercase">{image.type.split('/')[1]}</p>
+                                        </div>
+                                        <div className="p-4 bg-muted/50 rounded-lg">
+                                            <p className="text-xs text-muted-foreground mb-1">Type</p>
+                                            <p className="font-semibold">{image.imageType}</p>
+                                        </div>
+                                    </div>
+                                }
                                 {
                                     image &&
 
@@ -436,13 +445,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg">
-                                        <TrendingUp className="h-5 w-5 text-muted-foreground" />
-                                        <div className="flex-1">
-                                            <p className="text-xs text-muted-foreground">Display Order</p>
-                                            <p className="font-medium">#{client.order}</p>
-                                        </div>
-                                    </div>
+                                    
                                 </div>
                             </Card>
 
@@ -493,7 +496,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                     <Separator />
                                     <div>
                                         <p className="text-xs text-muted-foreground mb-1">Created</p>
-                                        <p className="text-sm font-medium">{formatDate(client.createdAt as any )}</p>
+                                        <p className="text-sm font-medium">{formatDate(client.createdAt as any)}</p>
 
                                     </div>
                                     <div>
@@ -536,19 +539,19 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 function LoadingSkeleton() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-            <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+            <div className=" z-50 border-b bg-background/95 backdrop-blur">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-full animate-pulse bg-muted" />
+                            <div className="h-10 w-10 rounded-xl animate-wave bg-muted" />
                             <div className="space-y-2">
-                                <div className="h-4 w-32 animate-pulse bg-muted rounded" />
-                                <div className="h-6 w-48 animate-pulse bg-muted rounded" />
+                                <div className="h-4 w-32 animate-wave bg-muted rounded" />
+                                <div className="h-6 w-48 animate-wave bg-muted rounded" />
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <div className="h-10 w-32 animate-pulse bg-muted rounded" />
-                            <div className="h-10 w-10 animate-pulse bg-muted rounded" />
+                            <div className="h-10 w-32 animate-wave bg-muted rounded" />
+                            <div className="h-10 w-10 animate-wave bg-muted rounded" />
                         </div>
                     </div>
                 </div>
@@ -557,14 +560,14 @@ function LoadingSkeleton() {
             <div className="container mx-auto px-4 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-8">
-                        <div className="h-[500px] rounded-2xl animate-pulse bg-muted" />
-                        <div className="h-64 rounded-2xl animate-pulse bg-muted" />
-                        <div className="h-96 rounded-2xl animate-pulse bg-muted" />
+                        <div className="h-[500px] rounded-2xl animate-wave bg-muted" />
+                        <div className="h-64 rounded-2xl animate-wave bg-muted" />
+                        <div className="h-96 rounded-2xl animate-wave bg-muted" />
                     </div>
                     <div className="space-y-6">
-                        <div className="h-48 rounded-2xl animate-pulse bg-muted" />
-                        <div className="h-32 rounded-2xl animate-pulse bg-muted" />
-                        <div className="h-64 rounded-2xl animate-pulse bg-muted" />
+                        <div className="h-48 rounded-2xl animate-wave bg-muted" />
+                        <div className="h-32 rounded-2xl animate-wave bg-muted" />
+                        <div className="h-64 rounded-2xl animate-wave bg-muted" />
                     </div>
                 </div>
             </div>

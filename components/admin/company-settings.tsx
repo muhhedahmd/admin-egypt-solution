@@ -17,16 +17,26 @@ import {
   Github,
   Youtube,
   Edit,
-  
+
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useGetCompanyInfoQuery } from "@/lib/store/api/companyInfo";
+import { useLanguage } from "@/providers/lang";
+import { companyInfoTranslations } from "@/i18n/companyinfo";
 
 export default function CompanyInfoPage() {
   const router = useRouter();
   const { data, isLoading } = useGetCompanyInfoQuery();
-  const companyInfo = data?.data;
+
+  const { currentLang,
+    isRTL
+  } = useLanguage();
+
+  const t = companyInfoTranslations[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
+  
+
+
 
   if (isLoading) {
     return (
@@ -46,14 +56,14 @@ export default function CompanyInfoPage() {
     );
   }
 
-  if (!companyInfo) {
+  if (!data) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Company Info</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-4 mt-2">
               Set up your company information to get started.
             </p>
             <Button onClick={() => router.push("/admin/settings/create")}>
@@ -64,56 +74,56 @@ export default function CompanyInfoPage() {
       </div>
     );
   }
-
+  const {  company : companyInfo  , logo  , translation} = data.data;
+  const currentTranslation = translation.find((trans) => trans.lang?.toLowerCase() === currentLang?.toLowerCase())
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Company Information</h2>
-          <p className="text-muted-foreground">View your company details and settings</p>
+          <h2 className="text-3xl font-bold tracking-tight">{t["pageTitle"]}</h2>
+          <p className="text-muted-foreground mt-2">{t["pageSubtitle"]}</p>
         </div>
         <Button onClick={() => router.push(`/admin/settings/${companyInfo.id}/edit`)}>
           <Edit className="mr-2 h-4 w-4" />
-          Edit Information
+          {t["editInfo"]}
         </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        {/* Main Info */}
         <div className="md:col-span-2 space-y-6">
           {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>{t["basicInfo"]}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-start gap-4">
-                {companyInfo.logo && (
+                {logo && (
                   <div className="relative w-20 h-20 rounded-lg overflow-hidden border">
                     <Image
-                      src={companyInfo.logo.url}
-                      alt={companyInfo.logo.alt || companyInfo.name}
+                      src={logo.url}
+                      alt={logo.alt || currentTranslation?.name || ""}
                       fill
                       className="object-cover"
                     />
                   </div>
                 )}
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold">{companyInfo.name}</h3>
-                  {companyInfo.tagline && (
-                    <p className="text-muted-foreground">{companyInfo.tagline}</p>
+                  <h3 className="text-2xl font-bold">{currentTranslation?.name}</h3>
+                  {currentTranslation?.tagline && (
+                    <p className="text-muted-foreground">{currentTranslation.tagline}</p>
                   )}
                 </div>
               </div>
 
-              {companyInfo.description && (
+              {currentTranslation?.description && (
                 <>
                   <Separator />
                   <div>
-                    <h4 className="font-medium mb-2">Description</h4>
+                    <h4 className="font-medium mb-2">{t["description"]}:</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      {companyInfo.description}
+                      {currentTranslation?.description}
                     </p>
                   </div>
                 </>
@@ -124,14 +134,14 @@ export default function CompanyInfoPage() {
           {/* Contact Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
+              <CardTitle>{t["contactInfo"]}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium">Email</p>
+                    <p className="text-sm font-medium">{t["email"]}</p>
                     <a href={`mailto:${companyInfo.email}`} className="text-sm text-blue-600 hover:underline">
                       {companyInfo.email}
                     </a>
@@ -142,7 +152,7 @@ export default function CompanyInfoPage() {
                   <div className="flex items-center gap-3">
                     <Phone className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium">Phone</p>
+                      <p className="text-sm font-medium">{t["phone"]}</p>
                       <a href={`tel:${companyInfo.phone}`} className="text-sm text-blue-600 hover:underline">
                         {companyInfo.phone}
                       </a>
@@ -157,7 +167,7 @@ export default function CompanyInfoPage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium mb-1">Address</p>
+                      <p className="text-sm font-medium mb-1">{t["address"]}</p>
                       <p className="text-sm text-muted-foreground">
                         {companyInfo.address && <>{companyInfo.address}<br /></>}
                         {companyInfo.city && <>{companyInfo.city}, </>}
@@ -171,30 +181,30 @@ export default function CompanyInfoPage() {
             </CardContent>
           </Card>
 
-          {/* SEO Information */}
-          {(companyInfo.metaTitle || companyInfo.metaDescription || companyInfo.metaKeywords) && (
+
+          {(currentTranslation?.metaTitle || currentTranslation?.metaDescription || currentTranslation?.metaKeywords) && (
             <Card>
               <CardHeader>
-                <CardTitle>SEO Settings</CardTitle>
+                <CardTitle>{t["seoSettings"]}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {companyInfo.metaTitle && (
+                {currentTranslation?.metaTitle && (
                   <div>
-                    <p className="text-sm font-medium mb-1">Meta Title</p>
-                    <p className="text-sm text-muted-foreground">{companyInfo.metaTitle}</p>
+                    <p className="text-sm font-medium mb-1">{t["metaTitle"]}</p>
+                    <p className="text-sm text-muted-foreground">{currentTranslation?.metaTitle}</p>
                   </div>
                 )}
-                {companyInfo.metaDescription && (
+                {currentTranslation?.metaDescription && (
                   <div>
-                    <p className="text-sm font-medium mb-1">Meta Description</p>
-                    <p className="text-sm text-muted-foreground">{companyInfo.metaDescription}</p>
+                    <p className="text-sm font-medium mb-1">{t["metaDescription"]}</p>
+                    <p className="text-sm text-muted-foreground">{currentTranslation?.metaDescription}</p>
                   </div>
                 )}
-                {companyInfo.metaKeywords && (
+                {currentTranslation?.metaKeywords && (
                   <div>
-                    <p className="text-sm font-medium mb-1">Keywords</p>
+                    <p className="text-sm font-medium mb-1">{t["keywords"]}</p>
                     <div className="flex flex-wrap gap-2">
-                      {companyInfo.metaKeywords.split(',').map((keyword, i) => (
+                      {currentTranslation?.metaKeywords.split(',').map((keyword, i) => (
                         <Badge key={i} variant="secondary">{keyword.trim()}</Badge>
                       ))}
                     </div>
@@ -205,18 +215,17 @@ export default function CompanyInfoPage() {
           )}
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           {/* Social Media */}
           <Card>
             <CardHeader>
-              <CardTitle>Social Media</CardTitle>
+              <CardTitle>{t["socialMedia"]}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {companyInfo.facebook && (
                 <a href={companyInfo.facebook} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm hover:text-blue-600 transition-colors">
                   <Facebook className="h-5 w-5" />
-                  <span>Facebook</span>
+                  <span> Facebook</span>
                 </a>
               )}
               {companyInfo.twitter && (
@@ -251,7 +260,7 @@ export default function CompanyInfoPage() {
               )}
               {!companyInfo.facebook && !companyInfo.twitter && !companyInfo.linkedin &&
                 !companyInfo.instagram && !companyInfo.github && !companyInfo.youtube && (
-                  <p className="text-sm text-muted-foreground">No social media links added</p>
+                  <p className="text-sm text-muted-foreground">{t["noSocials"]}</p>
                 )}
             </CardContent>
           </Card>
@@ -259,17 +268,17 @@ export default function CompanyInfoPage() {
           {/* Metadata */}
           <Card>
             <CardHeader>
-              <CardTitle>Information</CardTitle>
+              <CardTitle>{t["information"]}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Created</span>
+                <span className="text-muted-foreground">{t["created"]}</span>
                 <span className="font-medium">
                   {new Date(companyInfo.createdAt).toLocaleDateString()}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Last Updated</span>
+                <span className="text-muted-foreground">{t["updated"]}</span>
                 <span className="font-medium">
                   {new Date(companyInfo.updatedAt).toLocaleDateString()}
                 </span>

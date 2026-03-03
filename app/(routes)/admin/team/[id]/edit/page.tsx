@@ -2,6 +2,7 @@
 import { TeamMemberForm } from "@/components/admin/team-member-form"
 import { Button } from "@/components/ui/button"
 import { useGetTeamMemberByIdQuery } from "@/lib/store/api/team-api"
+import { useLanguage } from "@/providers/lang"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { use } from "react"
@@ -9,15 +10,14 @@ import { use } from "react"
 export default function EditTeamMemberPage({ params }: { params: Promise<{ id: string }> }) {
 
   const _params = use(params)
-
-  const { isLoading, isError, data } = useGetTeamMemberByIdQuery(_params.id)
-
+  const { currentLang } = useLanguage()
+  const { isLoading, data } = useGetTeamMemberByIdQuery(_params.id)
+  const currentTrnalstion = data?.data?.translation?.find((t) => t.lang.toLowerCase() === currentLang.toLowerCase())
   const mockMember = {
-   ...data?.teamMember,
-   image : data?.Image
+    ...data?.data.teamMember,
+    ...currentTrnalstion,
+    image: data?.data.image
   }
-
-
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">

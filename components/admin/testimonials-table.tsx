@@ -9,13 +9,16 @@ import { useRouter } from "next/navigation"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
 import Blurredimage from "@/app/_comp/BlurredHashImage"
 import { useIntersectionObserver } from "@uidotdev/usehooks"
-import { useDeleteTestimonialMutation, useGetTestimonialsQuery } from "@/lib/store/api/testimonials-api"
-import { TestimonialWithImage } from "@/types/schema"
+import { TestimonialWithTranslation, useDeleteTestimonialMutation, useGetTestimonialsQuery } from "@/lib/store/api/testimonials-api"
 import { BlurhashCanvas } from "react-blurhash"
 import { toast } from "sonner"
+import { useLanguage } from "@/providers/lang"
+import { tTestimonialsPagei18n , tTestimonialsTable } from "@/i18n/testimonals"
 
 
 export function TestimonialsTable() {
+const {currentLang } = useLanguage()
+const t = tTestimonialsTable[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
 
 
 
@@ -38,19 +41,17 @@ export function TestimonialsTable() {
     skip: page,
     take: 10
   })
-  console.log({
-    teamData
-  })
-  const [allTestimonial, setAllTtestimonial] = useState<TestimonialWithImage[]>([])
+
+  const [allTestimonial, setAllTtestimonial] = useState<TestimonialWithTranslation[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteTestimonialMutation()
-
+  
 
   useEffect(() => {
     if (teamData?.data) {
       setAllTtestimonial((prev) => {
-        const existing = prev.map((member) => member.id)
-        const newMembers = teamData?.data?.filter((member: TestimonialWithImage) => !existing.includes(member.id))
+        const existing = prev.map((member) => member.testimonial.id)
+        const newMembers = teamData?.data?.filter((member) => !existing.includes(member.testimonial.id))
         return [...prev, ...newMembers]
       })
     }
@@ -68,13 +69,13 @@ export function TestimonialsTable() {
       await del(id
       ).then(res => {
         if (res.data) {
-          toast.success("Service deleted successfully!")
+          toast.success(t.toast.deleteSuccess)
           setDeleteId(null)
-          setAllTtestimonial(prev => prev.filter(s => s.id !== id))
+          setAllTtestimonial(prev => prev.filter(s => s.testimonial.id !== id))
         }
       })
     } catch (error) {
-      toast.error("Failed to delete service. Please try again.")
+      toast.error(t.toast.deleteSuccess)
     }
   }
 
@@ -88,12 +89,12 @@ export function TestimonialsTable() {
         <div className="rounded-full bg-red-50 dark:bg-red-950 p-6 mb-4">
           <Trash2 className="h-10 w-10 text-red-500" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">Failed to load testimonial</h3>
+        <h3 className="text-xl font-semibold mb-2">{t.errorTitle}</h3>
         <p className="text-muted-foreground text-center max-w-md mb-4">
-          There was an error loading your testimonial. Please try again.
+          {t.errorDescription}
         </p>
         <Button onClick={() => refetch()} variant="outline">
-          Retry
+          {t.retry}
         </Button>
       </div>
     )
@@ -105,9 +106,9 @@ export function TestimonialsTable() {
         <div className="rounded-full bg-slate-100 dark:bg-slate-800 p-6 mb-4">
           <Users className="h-10 w-10 text-slate-500" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">No testimonial found</h3>
+        <h3 className="text-xl font-semibold mb-2">{t.emptyTitle}</h3>
         <p className="text-muted-foreground text-center max-w-md">
-          Get started by adding your first testimonial member.
+          {t.emptyDescription}
         </p>
       </div>
     )
@@ -116,17 +117,18 @@ export function TestimonialsTable() {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {allTestimonial.map((testimonial) => (
-          <article
-            key={testimonial.id}
+        {allTestimonial.map((testimonial) => {
+          const currentTranslation = testimonial.translation?.find(t => t.lang?.toLocaleLowerCase() === currentLang?.toLocaleLowerCase())
+         return  <article
+            key={testimonial.testimonial.id}
             className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-lg transition-all duration-300"
           >
             {/* Card Header with Actions */}
             <div className="absolute top-3 right-3 z-10 flex gap-2">
-              {testimonial.isFeatured && (
+              {testimonial.testimonial.isFeatured && (
                 <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-0 shadow-sm">
                   <Star className="h-3 w-3 mr-1 fill-current" />
-                  Featured
+                  {t.card.featured}
                 </Badge>
               )}
 
@@ -142,20 +144,20 @@ export function TestimonialsTable() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
 
-                  <DropdownMenuItem onClick={() => router.push(`/admin/testimonials/${testimonial.id}/edit`)}>
+                  <DropdownMenuItem onClick={() => router.push(`/admin/testimonials/${testimonial.testimonial.id}/edit`)}>
                     <Pencil className="mr-2 h-4 w-4" />
-                    Edit testimonial
+                    {t.card.edit}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push(`/admin/testimonials/${testimonial.id}`)}>
+                  <DropdownMenuItem onClick={() => router.push(`/admin/testimonials/${testimonial.testimonial.id}`)}>
                     <Eye className="mr-2 h-4 w-4" />
-                    view testimonial
+                    {t.card.view}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-                    onClick={() => setDeleteId(testimonial.id)}
+                    onClick={() => setDeleteId(testimonial.testimonial.id)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Member
+                    {t.card.delete}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -167,12 +169,12 @@ export function TestimonialsTable() {
                 <>
                   {
                     testimonial.avatar.blurHash &&
-                    <BlurhashCanvas hash={testimonial.avatar.blurHash} className=" absolute top-0 left-0 w-full h-full" />
+                    <BlurhashCanvas hash={testimonial.avatar.blurHash}  className=" absolute top-0 left-0 w-full h-full" />
                   }
 
                   <Blurredimage
                     imageUrl={testimonial.avatar.url}
-                    alt={testimonial.avatar.alt || testimonial.clientName}
+                    alt={testimonial.avatar.alt || currentTranslation?.clientName || ""}
                     className="max-h-40 max-w-40 w-40 h-40 rounded-full object-cover transition-all duration-500 group-hover:scale-105"
                     height={testimonial.avatar.height || 400}
                     width={testimonial.avatar.width || 400}
@@ -195,17 +197,17 @@ export function TestimonialsTable() {
               {/* Name and Position */}
               <div className="space-y-1">
                 <h3 className="font-semibold text-lg leading-tight line-clamp-1">
-                  {testimonial.clientName}
+                  {currentTranslation?.clientName}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-1">
-                  {testimonial.clientPosition}
+                  {currentTranslation?.clientPosition}
                 </p>
               </div>
 
               {/* Bio */}
-              {testimonial.clientCompany && (
+              {currentTranslation?.content && (
                 <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                  {testimonial.clientCompany}
+                  {currentTranslation?.content}
                 </p>
               )}
 
@@ -215,7 +217,7 @@ export function TestimonialsTable() {
 
                   return <Star
                     key={star}
-                    className={`h-5 w-5 ${star <= testimonial.rating
+                    className={`h-5 w-5 ${star <= testimonial.testimonial.rating
                       ? "fill-yellow-400 text-yellow-400"
                       : "text-slate-300 dark:text-slate-700"
                       }`}
@@ -224,15 +226,11 @@ export function TestimonialsTable() {
               </div>
 
 
-              {/* Footer - Order */}
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                <span className="text-xs text-slate-500 dark:text-slate-500">
-                  Order #{testimonial.order}
-                </span>
-              </div>
+         
             </div>
           </article>
-        ))}
+        
+        })}
       </div>
 
       {/* Infinite scroll trigger */}
@@ -240,13 +238,13 @@ export function TestimonialsTable() {
         {isFetching && (
           <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 dark:border-slate-700 border-t-slate-600 dark:border-t-slate-400" />
-            <span>Loading more testimonial...</span>
+            <span>{t.loadingMore}</span>
           </div>
         )}
         {teamData?.data &&
           allTestimonial.length >= (teamData.pagination.totalItems || 0) && (
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              All {teamData.pagination.totalItems} testimonial loaded
+              {t.allLoaded(teamData.pagination.totalItems)}
             </p>
           )}
       </div>
@@ -274,45 +272,45 @@ function LoadingSkeleton() {
         >
           {/* Image skeleton */}
           <div className="h-64 bg-slate-100 dark:bg-slate-900 relative overflow-hidden">
-            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent" />
+            <div className="absolute inset-0 animate-wave bg-liner-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent" />
           </div>
 
           {/* Content skeleton */}
           <div className="p-5 space-y-4">
             {/* Name and Position */}
             <div className="space-y-2">
-              <div className="h-5 w-3/4 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
-              <div className="h-4 w-1/2 rounded bg-slate-100 dark:bg-slate-900 animate-pulse" />
+              <div className="h-5 w-3/4 rounded bg-slate-200 dark:bg-slate-800 animate-wave" />
+              <div className="h-4 w-1/2 rounded bg-slate-100 dark:bg-slate-900 animate-wave" />
             </div>
 
             {/* Slug and badge */}
             <div className="flex items-center gap-2">
-              <div className="h-6 w-20 rounded bg-slate-100 dark:bg-slate-900 animate-pulse" />
-              <div className="h-6 w-16 rounded bg-slate-100 dark:bg-slate-900 animate-pulse" />
+              <div className="h-6 w-20 rounded bg-slate-100 dark:bg-slate-900 animate-wave" />
+              <div className="h-6 w-16 rounded bg-slate-100 dark:bg-slate-900 animate-wave" />
             </div>
 
             {/* Bio */}
             <div className="space-y-2">
-              <div className="h-4 w-full rounded bg-slate-100 dark:bg-slate-900 animate-pulse" />
-              <div className="h-4 w-4/5 rounded bg-slate-100 dark:bg-slate-900 animate-pulse" />
+              <div className="h-4 w-full rounded bg-slate-100 dark:bg-slate-900 animate-wave" />
+              <div className="h-4 w-4/5 rounded bg-slate-100 dark:bg-slate-900 animate-wave" />
             </div>
 
             {/* Contact */}
             <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <div className="h-4 w-2/3 rounded bg-slate-100 dark:bg-slate-900 animate-pulse" />
-              <div className="h-4 w-1/2 rounded bg-slate-100 dark:bg-slate-900 animate-pulse" />
+              <div className="h-4 w-2/3 rounded bg-slate-100 dark:bg-slate-900 animate-wave" />
+              <div className="h-4 w-1/2 rounded bg-slate-100 dark:bg-slate-900 animate-wave" />
             </div>
 
             {/* Social */}
             <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 animate-pulse" />
-              <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 animate-pulse" />
-              <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 animate-pulse" />
+              <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 animate-wave" />
+              <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 animate-wave" />
+              <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-slate-900 animate-wave" />
             </div>
 
             {/* Footer */}
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-              <div className="h-4 w-16 rounded bg-slate-100 dark:bg-slate-900 animate-pulse" />
+              <div className="h-4 w-16 rounded bg-slate-100 dark:bg-slate-900 animate-wave" />
             </div>
           </div>
         </div>

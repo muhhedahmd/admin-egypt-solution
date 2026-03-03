@@ -3,17 +3,27 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Slide } from "@/lib/store/api/slideShow-api";
 import { cn } from "@/lib/utils";
+import { Image } from "@/types/schema";
 import { Edit2, Eye, EyeOff } from "lucide-react";
 
 
 interface SlideCardProps {
-    slide: Slide;
+    slide: Slide & {
+        image: Image,
+        name: string,
+        icon: string,
+        customDescption: string,
+        description: string,
+        tag: 'new' | 'existing'
+    };
     index: number;
     onEdit: (slide: Slide) => void;
-    onDelete: (slide: Slide) => void;
+    onDelete: (slide: Slide & {
+        tag: "new" | "existing";
+    }) => void;
 }
 
-export const SlideCard = ({ slide , index, onEdit, onDelete }: SlideCardProps) => {
+export const SlideCard = ({ slide, index, onEdit, onDelete }: SlideCardProps) => {
 
 
     return (
@@ -54,7 +64,7 @@ export const SlideCard = ({ slide , index, onEdit, onDelete }: SlideCardProps) =
             <div className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
-                        {slide?.icon && <span className="text-2xl">{slide?.icon}</span>} 
+                        {slide?.icon && <span className="text-2xl">{slide?.icon}</span>}
                         <h3 className="font-display max-w-[10rem] overflow-hidden line-clamp-1 text-lg font-semibold text-foreground leading-tight">
                             {slide?.customTitle || slide?.name}
                         </h3>
@@ -81,13 +91,7 @@ export const SlideCard = ({ slide , index, onEdit, onDelete }: SlideCardProps) =
                     {slide?.customDescption || slide?.description}
                 </p>
 
-                {slide?.price && (
-                    <div className="pt-2">
-                        <span className="inline-block rounded-md bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary">
-                            {slide?.price}
-                        </span>
-                    </div>
-                )}
+
             </div>
         </div>
     );

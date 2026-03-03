@@ -24,10 +24,12 @@ import { DeleteDialog } from "@/components/admin/delete-dialog"
 import { toast } from "sonner"
 import BlurredImage from "@/app/_comp/BlurredHashImage"
 import { useDeleteTestimonialMutation, useGetTestimonialByIdQuery } from "@/lib/store/api/testimonials-api"
+import { useLanguage } from "@/providers/lang"
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter()
     const p = React.use(params)
+    const {currentLang} = useLanguage()
 
     const { data: testimonialData, isLoading, isError } = useGetTestimonialByIdQuery(p.id)
     const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -100,7 +102,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         )
     }
 
-    const { testimonial, Avatar } = testimonialData.data
+    const { testimonial , Avatar , translation ,  slideShows } = testimonialData.data
+    console.log({testimonial , Avatar , translation ,  slideShows  }  )
+    const  currenTrnalation = translation?.find((t) => t?.lang?.toLowerCase() === currentLang?.toLowerCase())
 
     return (
         <>
@@ -122,9 +126,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                                         <span>Testimonials</span>
                                         <span>/</span>
-                                        <span className="text-foreground font-medium">{testimonial.clientName}</span>
+                                        <span className="text-foreground font-medium">{currenTrnalation?.clientName}</span>
                                     </div>
-                                    <h1 className="text-2xl font-bold tracking-tight">{testimonial.clientName}</h1>
+                                    <h1 className="text-2xl font-bold tracking-tight">{currenTrnalation?.clientName}</h1>
                                 </div>
                             </div>
 
@@ -195,9 +199,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                             </div>
                                         )}
 
-                                        <h2 className="text-4xl font-bold mb-2">{testimonial.clientName}</h2>
-                                        <p className="text-lg text-muted-foreground mb-1">{testimonial.clientPosition}</p>
-                                        <p className="text-md text-muted-foreground/80 mb-4">{testimonial.clientCompany}</p>
+                                        <h2 className="text-4xl font-bold mb-2">{currenTrnalation?.clientName}</h2>
+                                        <p className="text-lg text-muted-foreground mb-1">{currenTrnalation?.clientPosition}</p>
+                                        <p className="text-md text-muted-foreground/80 mb-4">{currenTrnalation?.clientCompany}</p>
 
                                         <div className="flex items-center gap-1 mb-6">
                                             {renderStars(testimonial.rating)}
@@ -221,7 +225,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                 <div className="relative">
                                     <Quote className="absolute -top-4 -left-2 h-16 w-16 text-primary/10" />
                                     <blockquote className="text-lg text-muted-foreground leading-relaxed italic pl-8">
-                                        "{testimonial.content}"
+                                        "{currenTrnalation?.content}"
                                     </blockquote>
                                 </div>
                             </Card>
@@ -291,7 +295,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                             </div>
                                             <div>
                                                 <p className="text-xs text-muted-foreground">Position</p>
-                                                <p className="font-semibold">{testimonial.clientPosition}</p>
+                                                <p className="font-semibold">{currenTrnalation?.clientPosition}</p>
                                             </div>
                                         </div>
                                     </Card>
@@ -303,7 +307,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                                             </div>
                                             <div>
                                                 <p className="text-xs text-muted-foreground">Company</p>
-                                                <p className="font-semibold">{testimonial.clientCompany}</p>
+                                                <p className="font-semibold">{currenTrnalation?.clientCompany}</p>
                                             </div>
                                         </div>
                                     </Card>

@@ -4,12 +4,14 @@ import { Eye } from "lucide-react"
 import { CompositionPreview } from "./slides/compositionPreviw"
 
 export const PreviwDialog = ({
+    title = "Preview",
     allSlides,
     selectedComposition,
     minmalBtb,
     autoPlay,
     interval
 }: {
+    title: string
     minmalBtb?: boolean
     selectedComposition: CompositionType
     allSlides: slide[],
@@ -27,18 +29,18 @@ export const PreviwDialog = ({
 
                     {minmalBtb ?
 
-                        <button className="w-fit p-1 cursor-pointer border-2 hover:text-secondary  text-center flex items-center justify-center shadow-md flex items-center justify-center duration-300 group  rounded-md hover:bg-primary">
+                        <button className="w-fit p-1 cursor-pointer border-2 hover:text-secondary  text-center flex items-center justify-center shadow-md duration-300 group  rounded-md hover:bg-primary">
 
                             <Eye className=" group-hover:text-primary-foreground text-muted-foreground h-4 w-4 mr-2" />
-                            preview
+                            {title}
 
 
                         </button>
 
-                        : <button className="w-full  border-2 border-muted-foreground text-muted-foreground h-24 shadow-md flex items-center justify-center duration-300 group  rounded-md hover:bg-primary">
+                        : <button className="w-full  border-2 border-muted-foreground text-muted-foreground h-24 shadow-md flex items-center gap-3  justify-center duration-300 group  rounded-md hover:bg-primary">
                             <Eye className=" group-hover:text-primary-foreground text-muted-foreground h-8 w-8 mr-2" />
                             <span className=" group-hover:text-primary-foreground text-muted-foreground ">
-                                preview
+                                {title}
                                 {allSlides.length ? (
                                     <span className="text-destructive font-semibold">
                                         {` (${allSlides.length > 9 ? "9+" : allSlides.length})`}
@@ -70,8 +72,8 @@ export const PreviwDialog = ({
 
 
                             <CompositionPreview
-                                autoPlay={ autoPlay}
-                                interval={ interval}
+                                autoPlay={autoPlay}
+                                interval={interval}
                                 isInViewport={true}
 
 

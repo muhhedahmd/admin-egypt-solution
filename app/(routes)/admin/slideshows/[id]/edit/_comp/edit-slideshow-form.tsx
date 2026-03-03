@@ -1,10 +1,9 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useForm, Controller, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import z from 'zod'
 
-import { CompositionType, SLIDESHOW_TYPES_ARRAY, SlideshowType } from '@/types/schema'
-import { SlideShow } from '@/types/slideShows'
+import { CompositionType, SlideShow, SLIDESHOW_TYPES_ARRAY, SlideshowType } from '@/types/schema'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -15,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import { useUpdateSlideShowMutation } from '@/lib/store/api/slideShow-api'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
+import { useLanguage } from '@/providers/lang'
 
 
 
@@ -37,9 +37,20 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-export default function EditSlideShowForm({ SlideShow }: { SlideShow: SlideShow }) {
-  const [update, { isLoading, error }] = useUpdateSlideShowMutation()
+export type translationSlideshow = {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  title: string;
+  description: string | null;
+  lang: "EN" | "AR";
+  slideShowId: string;
+}
 
+export default function EditSlideShowForm({ SlideShow, translation }: { SlideShow: SlideShow, translation: translationSlideshow[] }) {
+  const { currentLang } = useLanguage()
+  const currentTranslation = translation?.find((item) => item?.lang === currentLang)
+  const [update, { isLoading, error }] = useUpdateSlideShowMutation()
   const defaultValues: Partial<FormValues> = {
     id: SlideShow?.id,
     order: SlideShow?.order ?? 0,
@@ -61,20 +72,36 @@ export default function EditSlideShowForm({ SlideShow }: { SlideShow: SlideShow 
     control,
     handleSubmit,
     watch,
+    setValue,
+
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: defaultValues as FormValues,
-
+    
   })
+  useEffect(() => {
+    if (currentTranslation) {
+      setValue('title', currentTranslation?.title)
+      setValue('description', currentTranslation?.description)
+      // register('description', { required: true })
+    }
+    if(!currentTranslation){
+      setValue('title', '')
+      setValue('description', '')
+    }
+
+  }, [currentTranslation])
+
+
+
+
+
   const router = useRouter()
   const autoPlay = watch('autoPlay')
 
-  const onSubmit: SubmitHandler<FormValues> =  async (data) => {
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
-
-      // Replace with your save/update logic
-      console.log('submit payload', data)
 
       const formData = new FormData()
       const keys = Object.keys(data) as (keyof typeof data)[]
@@ -191,25 +218,25 @@ export default function EditSlideShowForm({ SlideShow }: { SlideShow: SlideShow 
                 <p className="text-xs text-muted-foreground">{(Number(watch('interval')) / 1000).toFixed(1)} seconds between slides</p>
               </div>
             )}
-              <div className="space-y-2 shadow-xs p-4  flex  items-center justify-center gap-3 rounded-md w-fit">
-                <p >display order  </p>
-                <Badge className="text-xs ">{SlideShow.order}</Badge>
-              </div>
+            <div className="space-y-2 shadow-xs p-4  flex  items-center justify-center gap-3 rounded-md w-fit">
+              <p >display order  </p>
+              <Badge className="text-xs ">{SlideShow.order}</Badge>
+            </div>
           </div>
 
           <div className=" w-full flex gap-3 border-t pt-6">
             <div className='w-full flex items-end justify-end gap-3 '>
 
-            <Button type="submit" className="" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Slideshow'}
-            </Button>
+              <Button type="submit" className="" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : 'Save Slideshow'}
+              </Button>
 
-            <Button  type="button" variant="destructive" className="" disabled={isSubmitting}>
-              delete slideshow
-            </Button>
-            <Button type="button" variant="outline" className="" onClick={() => { router.push("edit/slides") }} disabled={isSubmitting}>
-              Edit Slide
-            </Button>
+              <Button type="button" variant="destructive" className="" disabled={isSubmitting}>
+                delete slideshow
+              </Button>
+              <Button type="button" variant="outline" className="" onClick={() => { router.push("edit/slides") }} disabled={isSubmitting}>
+                Edit Slide
+              </Button>
             </div>
           </div>
         </Card>

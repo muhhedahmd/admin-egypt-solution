@@ -2,25 +2,28 @@ import { useGetSlideShowByIdQuery, usePaginatedSlidesMutation } from '@/lib/stor
 import React, { memo, useEffect } from 'react'
 import { EditAndRemoveExisitSlides } from './EditAndRemoveExisitSlides'
 import { Card, CardContent } from '@/components/ui/card'
+import { CompositionType } from '@/types/slideShows'
 
 export const RenderSlidesToEditExisting = memo(({ slideshowId }: { slideshowId: string }) => {
+
     const [getSlides, {
         isLoading, isError,
         data: slides,
         error,
-
     }] = usePaginatedSlidesMutation()
+
     const { data: slideshow, isLoading: slideshowLoading } = useGetSlideShowByIdQuery(slideshowId)
 
     useEffect(() => {
         if (slideshowId) {
-            getSlides({ id: slideshowId, page: 1, perPage: 100, pagesPerType: {} })
+            getSlides({ id: slideshowId, page: 1, perPage: 20, pagesPerType: {} })
         }
     }, [slideshowId])
 
+    
     const reFetch = () => {
         if (slideshowId) {
-            getSlides({ id: slideshowId, page: 1, perPage: 100, pagesPerType: {} })
+            getSlides({ id: slideshowId, page: 1, perPage: 20, pagesPerType: {} })
         }
     }
 
@@ -40,7 +43,7 @@ export const RenderSlidesToEditExisting = memo(({ slideshowId }: { slideshowId: 
     </Card>
     if (!slideshowId || !slides) return null
     return <>
-        <EditAndRemoveExisitSlides composititonType={slideshow?.data.composition} reFetch={reFetch} slidesData={slides.data} slideshowId={slideshowId} />
+        <EditAndRemoveExisitSlides slideshowType={slideshow?.data.slideShow?.type} composititonType={slideshow?.data.slideShow?.composition as CompositionType} reFetch={reFetch} slidesData={slides.data} slideshowId={slideshowId} />
     </>
 })
 

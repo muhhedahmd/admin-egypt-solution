@@ -2,7 +2,7 @@
 // ENUMS
 // ============================================================================
 
-  import { ServiceType } from "./services";
+import { ServiceType } from "./services";
 
 export enum UserRole {
   ADMIN = "ADMIN",
@@ -34,6 +34,7 @@ export enum SlideshowType {
   TEAM = "TEAM",
   CLIENTS = "CLIENTS",
   CUSTOM = "CUSTOM",
+
 }
 // HERO = "HERO",
 export const SLIDESHOW_TYPES_ARRAY = Object.values(SlideshowType);
@@ -41,21 +42,21 @@ export const SLIDESHOW_TYPES_ARRAY = Object.values(SlideshowType);
 export enum CompositionType {
   SINGLE = "SINGLE",
   GRID = "GRID",
-    CAROUSEL=  "CAROUSEL",
-    STACKED = "STACKED",
-    FADE = "FADE",
-    CUSTOM=  "CUSTOM",
-    ZOOM=  "ZOOM",
-    PARALLAX=  "PARALLAX",
-    COVERFLOW= "COVERFLOW",
-    KEN_BURNS= "KEN_BURNS",
-    FLIP = "FLIP",
-    CUBE= "CUBE",
-    AUTO_GRID= "AUTO_GRID",
-    STORY = "STORY",
-    FILMSTRIP= "FILMSTRIP",
-    LIGHTBOX= "LIGHTBOX",
-    MARQUEE= "MARQUEE",
+  CAROUSEL = "CAROUSEL",
+  STACKED = "STACKED",
+  FADE = "FADE",
+  CUSTOM = "CUSTOM",
+  ZOOM = "ZOOM",
+  PARALLAX = "PARALLAX",
+  COVERFLOW = "COVERFLOW",
+  KEN_BURNS = "KEN_BURNS",
+  FLIP = "FLIP",
+  CUBE = "CUBE",
+  AUTO_GRID = "AUTO_GRID",
+  STORY = "STORY",
+  FILMSTRIP = "FILMSTRIP",
+  LIGHTBOX = "LIGHTBOX",
+  MARQUEE = "MARQUEE",
 }
 export const COMPOSITION_TYPES_ARRAY = Object.values(CompositionType);
 
@@ -476,7 +477,6 @@ export interface SlideShow {
 }
 
 export interface CreateSlideShowDTO {
-
   title: string;
   slug: string;
   description?: string;
@@ -490,24 +490,31 @@ export interface CreateSlideShowDTO {
 }
 
 export interface CreateAndAttachMany {
-    type: "SERVICES" | "PROJECTS" | "TESTIMONIALS" | "TEAM" | "CLIENTS" | "HERO" | "CUSTOM";
-    title: string;
-    composition: "CUSTOM" | "SINGLE" | "GRID" | "CAROUSEL" | "STACKED" | "FADE";
-    isActive: boolean;
-    autoPlay: boolean;
-    interval: number;
+  type:
+    | "SERVICES"
+    | "PROJECTS"
+    | "TESTIMONIALS"
+    | "TEAM"
+    | "CLIENTS"
+    | "HERO"
+    | "CUSTOM";
+  title: string;
+  composition: "CUSTOM" | "SINGLE" | "GRID" | "CAROUSEL" | "STACKED" | "FADE";
+  isActive: boolean;
+  autoPlay: boolean;
+  interval: number;
+  order: number;
+  slides: {
+    id: string;
     order: number;
-    slides: {
-       id : string;
-        order: number;
-        attachType: "service" | "client" | "project" | "testimonial" | "teamMember";
-        attachId: string;
-        isVisible: boolean;
-        customTitle?: string | undefined;
-        customDesc?: string | undefined;
-    }[];
-    description?: string | undefined;
-    background?: string | undefined;
+    attachType: "service" | "client" | "project" | "testimonial" | "teamMember";
+    attachId: string;
+    isVisible: boolean;
+    customTitle?: string | undefined;
+    customDesc?: string | undefined;
+  }[];
+  description?: string | undefined;
+  background?: string | undefined;
 }
 export interface UpdateSlideShowDTO extends Partial<CreateSlideShowDTO> {}
 
@@ -568,33 +575,33 @@ export interface TeamSlideShow {
 // ============================================================================
 
 export type Contact = {
-    email: string;
-    name: string;
-    phone: string | null;
-    company: string | null;
-    subject: string;
-    message: string;
-    category: ContactCategory;
-    status: ContactStatus;
-    priority: ContactPriority;
-    budget: string | null;
-    timeline: string | null;
-    id: string;
-    serviceId: string | null;
-    ipAddress: string | null;
-    userAgent: string | null;
-    source: string | null;
-    referrer: string | null;
-    respondedAt: Date | null;
-    respondedBy: string | null;
-    notes: string | null;
-    response: string | null;
-    resolved: boolean;
-    readAt: Date | null;
-    viewCount: number;
-    createdAt: Date;
-    updatedAt: Date;
-}
+  email: string;
+  name: string;
+  phone: string | null;
+  company: string | null;
+  subject: string;
+  message: string;
+  category: ContactCategory;
+  status: ContactStatus;
+  priority: ContactPriority;
+  budget: string | null;
+  timeline: string | null;
+  id: string;
+  serviceId: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  source: string | null;
+  referrer: string | null;
+  respondedAt: Date | null;
+  respondedBy: string | null;
+  notes: string | null;
+  response: string | null;
+  resolved: boolean;
+  readAt: Date | null;
+  viewCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export interface CreateContactDTO {
   name: string;
@@ -683,8 +690,6 @@ export interface PaginationParams {
   take: number;
 }
 
-
-
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -711,18 +716,19 @@ export interface SortParams {
 // COMBINED TYPES FOR RESPONSES
 // ============================================================================
 
-export type  ServiceWithImage =   ServiceType &  {
+export type ServiceWithImage = ServiceType & {
   image?: Image;
   type?: "service";
   _order?: number;
   customTitle?: string;
   customDesc?: string;
   isVisible?: boolean;
-}
+};
 
-export interface ProjectWithRelations  {
-  project : Project;
+export interface ProjectWithRelations {
+  project: Project;
   image?: Image;
+  translation : any[]
   technologies?: Technology[];
   type?: "project";
   _order?: number;
@@ -730,8 +736,10 @@ export interface ProjectWithRelations  {
   customDesc?: string;
   isVisible?: boolean;
 }
-export interface ProjectWithRelationsSlide  extends  Project   {
+export interface ProjectWithRelationsSlide extends Project {
   image?: Image;
+  translation : any[]
+
   technologies?: Technology[];
   type?: "project";
   _order?: number;
@@ -739,26 +747,31 @@ export interface ProjectWithRelationsSlide  extends  Project   {
   customDesc?: string;
   isVisible?: boolean;
 }
-export interface ClientWithRelationsSlide  extends  Client   {
+export interface ClientWithRelationsSlide extends Client {
   image?: Image;
   logo?: Image;
+  translation : any[]
+
   type?: "client";
   _order?: number;
   customTitle?: string;
   customDesc?: string;
   isVisible?: boolean;
 }
-export interface TestimonialWithImageSlide  extends  Testimonial   {
+export interface TestimonialWithImageSlide extends Testimonial {
   image?: Image;
   type?: "testimonial";
+  translation : any[]
+
   _order?: number;
   customTitle?: string;
   customDesc?: string;
   isVisible?: boolean;
 }
-export interface TeamMemberWithImageSlide  extends  TeamMember   {
+export interface TeamMemberWithImageSlide extends TeamMember {
   image?: Image;
   type?: "team";
+  translation : any[]
   _order?: number;
   customTitle?: string;
   customDesc?: string;
@@ -771,8 +784,8 @@ export interface BlogWithRelations extends Blog {
   categories?: Category[];
 }
 
-export interface ClientWithImages   {
-  client: Client
+export interface ClientWithImages {
+  client: Client;
   image?: Image;
   logo?: Image;
   type?: "client";
@@ -783,7 +796,6 @@ export interface ClientWithImages   {
 }
 
 export interface TeamMemberWithImage extends TeamMember {
-  
   image: Image | null;
   type?: "teamMember";
   _order?: number;
@@ -816,52 +828,61 @@ export type slide =
   | TestimonialWithImageSlide
   | TeamMemberWithImageSlide;
 
+// addtional
 
-  // addtional
-
-  export type HeroVariant = "CENTERED" | "SPLIT" | "IMAGE_BACKGROUND" | "MINIMAL" | "VIDEO_BACKGROUND" | "FULL_SCREEN"
-export type ButtonVariant = "PRIMARY" | "SECONDARY" | "GHOST" | "OUTLINE" | "DANGER"
-export type TextAlign = "LEFT" | "CENTER" | "RIGHT"
+export type HeroVariant =
+  | "CENTERED"
+  | "SPLIT"
+  | "IMAGE_BACKGROUND"
+  | "MINIMAL"
+  | "VIDEO_BACKGROUND"
+  | "FULL_SCREEN";
+export type ButtonVariant =
+  | "PRIMARY"
+  | "SECONDARY"
+  | "GHOST"
+  | "OUTLINE"
+  | "DANGER";
+export type TextAlign = "LEFT" | "CENTER" | "RIGHT";
 
 export interface HeroData {
-  id: string
-  name: string
-  title: string
-  subtitle?: string
-  description?: string
-  backgroundImageId?: string
-  backgroundColor?: string
-  backgroundVideo?: string
-  overlayColor?: string
-  overlayOpacity?: number
-  ctaText?: string
-  ctaUrl?: string
-  ctaVariant?: ButtonVariant
-  secondaryCtaText?: string
-  secondaryCtaUrl?: string
-  secondaryCtaVariant?: ButtonVariant
-  alignment?: TextAlign
-  variant?: HeroVariant
-  minHeight?: number
-  titleSize?: string
-  titleColor?: string
-  subtitleColor?: string
-  descriptionColor?: string
-  showScrollIndicator?: boolean
-  customCSS?: string
-  styleOverrides?: Record<string, any>
-  isActive: boolean
-  createdAt: Date
-  updatedAt: Date
+  id: string;
+  name: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  backgroundImageId?: string;
+  backgroundColor?: string;
+  backgroundVideo?: string;
+  overlayColor?: string;
+  overlayOpacity?: number;
+  ctaText?: string;
+  ctaUrl?: string;
+  ctaVariant?: ButtonVariant;
+  secondaryCtaText?: string;
+  secondaryCtaUrl?: string;
+  secondaryCtaVariant?: ButtonVariant;
+  alignment?: TextAlign;
+  variant?: HeroVariant;
+  minHeight?: number;
+  titleSize?: string;
+  titleColor?: string;
+  subtitleColor?: string;
+  descriptionColor?: string;
+  showScrollIndicator?: boolean;
+  customCSS?: string;
+  styleOverrides?: Record<string, any>;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface HeroPreviewProps {
-  hero: HeroData
-  onEdit: (hero: HeroData) => void
-  onDelete: (id: string) => void
-  onDuplicate: (hero: HeroData) => void
+  hero: HeroData;
+  onEdit: (hero: HeroData) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (hero: HeroData) => void;
 }
-
 
 export interface IHero {
   id: string;
@@ -894,3 +915,29 @@ export interface IHero {
   createdAt: Date;
   updatedAt: Date;
 }
+
+type EnumLang = "EN" | "AR";
+
+export type TestimonialTranslation = {
+  id: string;
+  lang: EnumLang;
+  clientName: string;
+  clientPosition: string | null;
+  clientCompany: string | null;
+  content: string;
+  testimonialId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type ClientTranslation = {
+  name: string;
+  id: string;
+  lang: EnumLang;
+  description: string | null;
+  richDescription: string | null;
+  industry: string | null;
+  clientId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};

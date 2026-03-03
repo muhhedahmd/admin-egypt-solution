@@ -29,14 +29,17 @@ import {
   Loader2
 } from "lucide-react"
 import { DeleteDialog } from "@/components/admin/delete-dialog"
-import { useGetSlideShowByIdQuery, usePaginatedSlidesMutation } from "@/lib/store/api/slideShow-api"
+import { Slide, useGetSlideShowByIdQuery, usePaginatedSlidesMutation } from "@/lib/store/api/slideShow-api"
 import { motion, AnimatePresence } from "framer-motion"
 import { SlidesEmptyState, SlidesErrorState } from "@/components/admin/utils/slides-loader"
 import { CompositionPreview } from "@/components/admin/utils/slides/compositionPreviw"
+import { useLanguage } from "@/providers/lang"
+import { InfiniteSlider } from "./edit/_comp/infintySlider"
+import { CompositionType } from "@/types/schema"
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const containerRef = useRef<HTMLDivElement>(null)
-  console.log({containerRef} , "containerRef")
+  const { currentLang } = useLanguage()
   const router = useRouter()
   const p = React.use(params)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -54,21 +57,36 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const [triggerGetSlides, { data: slidesData, isLoading: slidesLoading, error: slidesError }] =
     usePaginatedSlidesMutation()
 
-  const [allSlides, setAllSlides] = useState<any[]>([])
+  const [allSlides, setAllSlides] = useState<Slide[]>([])
+
+
   useEffect(() => {
     const data = slidesData?.data.slides ? [...allSlides, ...slidesData?.data.slides] : [...allSlides]
-    setAllSlides(() => (data))
-  }, [slidesData?.data.slides])
+      
+  const newData =  data.map((slide)=>{
+      const lang = currentLang?.toLowerCase() === "ar" ? "AR" : "EN"
+      return { 
+        ...slide,
+        data : { 
+          ...slide.data,
+          ...slide.translation.find(t => t.lang === lang)
+        }
+      }
+    } )
+   
+    setAllSlides(newData?.filter((item, index) => newData.findIndex(i => i.id === item.id) === index) || [])
+  }, [slidesData?.data.slides, currentLang])
 
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (p.id) {
       triggerGetSlides({
+        lang : currentLang?.toLowerCase() === "ar" ? "AR" : "EN",
         id: p.id,
         page: 1,
         perPage: 10,
         pagesPerType: pagesPerType as any,
-      })
+      } )
     }
   }, [p.id])
 
@@ -80,28 +98,6 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       year: 'numeric'
     })
   }
-
-  const onScroll = () => {
-
-    if (slidesData?.data.pages.services.hasMore) {
-      handleLoadMore('services')
-      console.log("load more -> services")
-    }
-    // if(pagesPerType.projects < (slidesData?.data?.pages?.projects?.totalPages || 1)){
-    //   handleLoadMore('projects')
-    // }
-    // if(pagesPerType.clients < (slidesData?.data?.pages?.clients?.totalPages || 1)){
-    //   handleLoadMore('clients')
-    // }
-    // if(pagesPerType.testimonials < (slidesData?.data?.pages?.testimonials?.totalPages || 1)){
-    //   handleLoadMore('testimonials')
-    // }
-    // if(pagesPerType.team < (slidesData?.data?.pages?.team?.totalPages || 1)){
-    //   handleLoadMore('team')
-    // }
-
-  }
-
 
   const formatInterval = (ms: number) => {
     const seconds = ms / 1000
@@ -122,7 +118,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     }
   }
 
-  const handleDelete = () => {
+  const handleDelete =  async() => {
     console.log("Deleting slideshow:", p.id)
     setDeleteDialogOpen(false)
     router.push('/admin/slideshows')
@@ -138,6 +134,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
     try {
       await triggerGetSlides({
+        lang : currentLang?.toLowerCase() === "ar" ? "AR" : "EN",
         id: p.id,
         page: newPage,
         perPage: 10,
@@ -173,7 +170,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     )
   }
 
-  const slideshow = slideshowData.data
+  const translation = slideshowData?.data.translation.find((l) => l?.lang?.toLowerCase() === currentLang?.toLowerCase())
+  const slideshow = slideshowData.data.slideShow
 
   // const slides = slidesData?.data?.slides || []
 
@@ -195,7 +193,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
   return (
     <>
-      <div className="max-h-[calc(100vh-5rem)] overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
+      <div className=" bg-gradient-to-br from-background via-background to-primary/5">
         {/* Sticky Header */}
         <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container mx-auto px-4 py-4">
@@ -215,13 +213,14 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     <span>/</span>
                     <span className="text-foreground font-medium">{slideshow.type}</span>
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight">{slideshow.title}</h1>
+                  <h1 className="text-2xl font-bold tracking-tight">{translation?.title}</h1>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
+                  disabled={slidesLoading || allSlides.length === 0 || slideshow.composition === CompositionType.SINGLE || slideshow.composition === CompositionType.PARALLAX || slideshow.composition === CompositionType.CUBE}
                   onClick={() => setFullscreenPreview(true)}
                   className="gap-2"
                 >
@@ -260,10 +259,10 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                         <Badge variant="outline" className="text-lg font-bold px-3 py-1">
                           #{slideshow.order}
                         </Badge>
-                        <h2 className="text-3xl font-bold tracking-tight">{slideshow.title}</h2>
+                        <h2 className="text-3xl font-bold tracking-tight">{translation?.title}</h2>
                       </div>
                       <p className="text-lg text-muted-foreground leading-relaxed">
-                        {slideshow.description}
+                        {translation?.description}
                       </p>
                     </div>
                   </div>
@@ -309,7 +308,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
 
               {/* Compact Preview */}
               {allSlides?.length > 0 && (
-                <Card  className="p-8 border-0 shadow-xl   ">
+                <Card className="p-8 border-0 shadow-xl   ">
                   <div className="flex items-center justify-between mb-6">
 
                     <div className="flex items-center gap-3">
@@ -324,6 +323,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                       </div>
                     </div>
                     <Button
+                                      disabled={slidesLoading || allSlides.length === 0 || slideshow.composition === CompositionType.SINGLE || slideshow.composition === CompositionType.PARALLAX || slideshow.composition === CompositionType.CUBE}
+
                       onClick={() => setFullscreenPreview(true)}
                       variant="outline"
                       className="gap-2"
@@ -333,23 +334,6 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                     </Button>
                   </div>
 
-                  <div className="aspect-video  rounded-xl  overflow-hidden">
-                    {/* <CompositionPreview
-                    containerRef={containerRef}
-                      autoPlay={slideshow.autoPlay}
-                      interval={slideshow.interval}
-                      isInViewport={false}
-                      // onScroll={onScroll}
-                      composition={slideshow.composition as any}
-                      slides={allSlides.map((s) => {
-                        return {
-                          ...s.data,
-                          order: s.order,
-                          type: s.type
-                        }
-                      })}
-                    /> */}
-                  </div>
                 </Card>
               )}
 
@@ -376,11 +360,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                 ) : (
                   <div className="space-y-8">
                     {Object.entries(slidesByType).map(([type, typeSlides]) => (
+
                       <div key={type} className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="font-semibold capitalize text-lg text-primary flex items-center gap-2">
                             <Package className="h-5 w-5" />
-                            {type} ({typeSlides.length})
+                            {type} ({(typeSlides as any)?.length})
                           </h4>
                           {slidesData?.data?.pages?.[type as keyof typeof slidesData.data.pages] && (
                             <div className="text-xs text-muted-foreground">
@@ -390,8 +375,8 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                           )}
                         </div>
 
-                        <EnhancedInfiniteSlider
-                          slides={typeSlides}
+                        <InfiniteSlider
+                          slides={typeSlides as slide[]}
                           type={type}
                           isLoading={slidesLoading}
                           onLoadMore={() => handleLoadMore(type)}
@@ -399,6 +384,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                         />
                       </div>
                     ))}
+
                   </div>
                 )}
               </Card>
@@ -521,53 +507,58 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       </div>
 
       {/* Fullscreen Preview Modal */}
-                  
+
 
       <AnimatePresence>
 
+
         {fullscreenPreview && (
           <motion.div
+        
+
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-100   backdrop-blur-xl"
           >
             <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-6 border-b border-white/10">
+              <div className="flex items-center  justify-between p-6 border-b border-white/10">
+
                 <div>
-                  <h2 className="text-2xl font-bold text-white">{slideshow.title}</h2>
-                  <p className="text-sm text-white/60">{slideshow.composition} Composition • {totalSlides} Slides</p>
+                  <h2 className="text-2xl font-bold ">{translation?.title}</h2>
+                  <p className="text-sm /60">{slideshow.composition} Composition • {totalSlides} Slides</p>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setFullscreenPreview(false)}
-                  className="text-white hover:bg-white/10 rounded-full"
+                  className=" hover:bg-white/10 rounded-full"
                 >
                   <X className="h-6 w-6" />
                 </Button>
               </div>
+              <div className="container mx-auto mt-10 h-auto  overflow-hidden px-4 pb-8 flex-1">
+                <CompositionPreview
+                  autoPlay={slideshow.autoPlay}
+                  interval={slideshow.interval}
+                  isInViewport={true}
+                  composition={slideshow.composition as any}
+                  slides={allSlides.map((slide: any) => ({
+                    ...slide.data,
 
-   
-                  <CompositionPreview
-                    autoPlay={slideshow.autoPlay}
-                    interval={slideshow.interval}
-                    isInViewport={false}
-                    containerRef={containerRef}
-                    composition={slideshow.composition as any}
-                    slides={allSlides.map((slide: any) => ({
-                      ...slide.data,
-                      order: slide.order,
-                      type: slide.type
-                    }))}
-                  />
-                    </div>
-             
+                    order: slide.order,
+                    type: slide.type
+                  }))}
+                />
+              </div>
+            </div>
+
           </motion.div>
         )}
       </AnimatePresence>
 
       <DeleteDialog
+
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={handleDelete}
@@ -578,156 +569,6 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   )
 }
 
-// Enhanced Infinite Slider Component
-function EnhancedInfiniteSlider({
-  slides,
-  type,
-  isLoading,
-  onLoadMore,
-  hasMore
-}: {
-  slides: any[]
-  type: string
-  isLoading: boolean
-  onLoadMore: () => void
-  hasMore: boolean
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
-
-  const checkScroll = useCallback(() => {
-    if (!scrollRef.current) return
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-    setCanScrollLeft(scrollLeft > 10)
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
-  }, [])
-
-  const handleScroll = useCallback(() => {
-    checkScroll()
-    if (!scrollRef.current || !hasMore || isLoading) return
-
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-    const threshold = 300
-
-    if (scrollWidth - (scrollLeft + clientWidth) < threshold) {
-      onLoadMore()
-    }
-  }, [hasMore, isLoading, onLoadMore, checkScroll])
-
-  useEffect(() => {
-    const container = scrollRef.current
-    if (!container) return
-
-    checkScroll()
-    container.addEventListener('scroll', handleScroll)
-    window.addEventListener('resize', checkScroll)
-
-    return () => {
-      container.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('resize', checkScroll)
-    }
-  }, [handleScroll, checkScroll])
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (!scrollRef.current) return
-    const scrollAmount = 400
-    scrollRef.current.scrollBy({
-      left: direction === 'left' ? -scrollAmount : scrollAmount,
-      behavior: 'smooth'
-    })
-  }
-
-  const getSlideTitle = (slide: any) => {
-    return slide.data?.name || slide.data?.title || slide.data?.clientName || "Untitled"
-  }
-
-  return (
-    <div className="relative group">
-      <div
-        ref={scrollRef}
-        className="flex gap-4 overflow-x-auto overflow-y-hidden pb-4 scrollbar-hide"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {slides.map((slide, idx) => (
-          <Card
-            key={slide.id}
-            className="flex-shrink-0 p-4 border-2 hover:border-primary/50 hover:shadow-xl transition-all duration-300 w-[300px]"
-          >
-            <div className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant="outline" className="text-xs">
-                    #{slide.order}
-                  </Badge>
-                  <Badge variant="secondary" className="text-xs capitalize">
-                    {type}
-                  </Badge>
-                </div>
-                <p className="text-sm font-semibold text-foreground line-clamp-1">
-                  {getSlideTitle(slide)}
-                </p>
-              </div>
-
-              {(slide.data?.image || slide.data?.avatar) && (
-                <div className="relative w-full h-40 bg-muted rounded-lg overflow-hidden">
-                  <img
-                    src={slide.data.image?.url || slide.data.avatar?.url}
-                    alt={slide.data.image?.alt || slide.data.avatar?.alt || getSlideTitle(slide)}
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-              )}
-
-              {slide.data?.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {slide.data.description}
-                </p>
-              )}
-            </div>
-          </Card>
-        ))}
-
-        {isLoading && (
-          <div className="flex-shrink-0 w-[300px] flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        )}
-
-        {!hasMore && slides.length > 0 && (
-          <div className="flex-shrink-0 w-[300px] flex items-center justify-center text-sm text-muted-foreground">
-            <div className="text-center">
-              <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No more slides</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {canScrollLeft && (
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity shadow-xl rounded-full"
-          onClick={() => scroll('left')}
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-      )}
-
-      {canScrollRight && (
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity shadow-xl rounded-full"
-          onClick={() => scroll('right')}
-        >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
-      )}
-    </div>
-  )
-}
 
 function SlidesLoader() {
   return (
