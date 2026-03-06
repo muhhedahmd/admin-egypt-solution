@@ -19,8 +19,8 @@ const SlideShowTable = dynamic(
 
 export default function SlideshowsPage() {
 
-  const {  currentLang} = useLanguage()
-  const t = slideshowsPageI18n [(currentLang?.toLowerCase() as  "en" | "ar" )|| 'en']
+  const { currentLang } = useLanguage()
+  const t = slideshowsPageI18n[(currentLang?.toLowerCase() as "en" | "ar") || 'en']
   const {
     data,
     isLoading,
@@ -31,8 +31,7 @@ export default function SlideshowsPage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
   const [slidesShowToOrder, setSlidesShowToOrder] = useState<minimalSlide[]>([])
-  const [isDragging, setIsDragging] = useState(false);
-  const [draggingSlide, setDraggingSlide] = useState<any | null>(null);
+
 
   useEffect(() => {
 
@@ -41,11 +40,6 @@ export default function SlideshowsPage() {
   }, [data?.data])
 
   const handleDragEnd = (event: DragEndEvent) => {
-
-
-    setIsDragging(false);
-    setDraggingSlide(null);
-
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 

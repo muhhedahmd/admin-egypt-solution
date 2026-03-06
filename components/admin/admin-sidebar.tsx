@@ -12,6 +12,7 @@ import {
   FileText,
   ImageIcon,
   Presentation,
+  ExternalLink,
   Mail,
   Star,
   Settings,
@@ -33,6 +34,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/app/_comp/theme-toggle"
 import { useLanguage } from "@/providers/lang"
 import { sidebarTranslations, tGroupTitle } from "@/i18n/sideBar"
@@ -83,7 +85,7 @@ const menuItems = [
     items: [
       { title: "Contacts", icon: Mail, href: "/admin/contacts" },
       // { title: "Media Library", icon: ImageIcon, href: "/admin/media" },
-      { title: "demo", icon: Presentation, href: "/admin/slideshow-relationships" },
+      { title: "Live Preview", icon: ExternalLink, href: "/admin/slideshow-relationships" },
       { title: "Settings", icon: Settings, href: "/admin/settings" },
     ],
   },
@@ -145,9 +147,14 @@ export function AdminSidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Star className="h-4 w-4 text-primary-foreground" />
           </div>
-          <div>
-            <h2 className="font-semibold text-sm">Admin Panel</h2>
-            <p className="text-xs text-muted-foreground">Software Company</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-sm">Egypt Solutions</h2>
+              <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10">
+                DEMO
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">Admin Dashboard</p>
           </div>
         </div>
       </SidebarHeader>

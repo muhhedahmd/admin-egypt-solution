@@ -1,17 +1,13 @@
-
 import React from 'react'
 
-const layout = () => {
+export default function SlideshowRelationshipsLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-<iframe
-  src="https://end-user-landing-manager.vercel.app/en"
-  width="100%"
-  height="100%"
->
-  
-</iframe>
-
+    <div className="w-full h-full">
+      {children}
+    </div>
   )
 }
-
-export default layout

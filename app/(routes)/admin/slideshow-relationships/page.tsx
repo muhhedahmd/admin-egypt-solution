@@ -1,138 +1,94 @@
-// "use client";
+"use client";
 
-// import { useState, useEffect } from "react";
-// import ContactForm from "./_comp/contact-form";
-// import Footer from "./_comp/Footer";
-// import Header from "./_comp/header";
-// import dynamic from "next/dynamic";
-// import AchievementsSection from "./_comp/achivements";
-// import { HeroSection } from "./_comp/Hero";
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ExternalLink, Eye, Layers, Monitor } from "lucide-react";
+import Link from "next/link";
 
-// const SlideShowsDemoPreview = dynamic(
-//   () =>
-//     import("./_comp/SlideShows").then((mod) => mod.slideShowsDemoPreview),
-//   {
-//     ssr: false,
-//     loading() {
-//       return <div>Loading...</div>;
-//     },
-//   }
-// );
-
-// // Loading Screen Component
-// const LoadingScreen = () => {
-//   const [progress, setProgress] = useState(0);
-
-//   useEffect(() => {
-//     const interval = setInterval(() => {
-//       setProgress((prev) => {
-//         if (prev >= 100) {
-//           clearInterval(interval);
-//           return 100;
-//         }
-//         return prev + 10;
-//       });
-//     }, 200);
-
-//     return () => clearInterval(interval);
-//   }, []);
-
-//   useEffect(()=>{
-//     if(progress < 100) {
-//       document.body.style.overflow = "hidden";
-//     }
-//     if(progress === 100){
-//       document.body.style.overflow = "auto";
-//     }
-
-//   } , [progress])
-
-//   return (
-//     <div className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center">
-//       <div className="mb-8 animate-pulse">
-//         <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center shadow-2xl">
-//           <span className="text-primary-foreground font-bold text-4xl">E</span>
-//         </div>
-//       </div>
-
-//       <p className="text-muted-foreground mb-8">Please wait while we prepare your experience</p>
-
-//       <div className="w-200 h-2 bg-muted rounded-full overflow-hidden">
-//         <div
-//           className="h-full bg-primary transition-all duration-300 ease-out rounded-full"
-//           style={{ width: `${progress}%` }}
-//         />
-//       </div>
-//     </div>
-//   );
-// };
-
-// const Page = () => {
-//   const [isLoading, setIsLoading] = useState(true);
-//   const [loadedComponents, setLoadedComponents] = useState({
-//     header: false,
-//     hero: false,
-//     slideShows: false,
-//   });
-
-//   // Check if all components are loaded
-//   useEffect(() => {
-//     const allLoaded = Object.values(loadedComponents).every((loaded) => loaded);
-    
-//     if (allLoaded) {
-//       // Add a small delay for smooth transition
-//       const timer = setTimeout(() => {
-//         setIsLoading(false);
-//       }, 5000);
-      
-//       return () => clearTimeout(timer);
-//     }
-//   }, [loadedComponents]);
-
-//   const handleComponentLoad = (component: keyof typeof loadedComponents) => {
-//     setLoadedComponents((prev) => ({
-//       ...prev,
-//       [component]: true,
-//     }));
-//   };
-
-//   return (
-//     <>
-//       {/* Loading Screen */}
-//       {isLoading && <LoadingScreen />}
-
-//       {/* Main Content */}
-//       <div
-//         className={`w-full transition-opacity duration-500 ${
-//           isLoading ? "opacity-0" : "opacity-100"
-//         }`}
-//       >
-//         <Header onLoad={() => handleComponentLoad("header")} />
-//         <HeroSection onLoad={() => handleComponentLoad("hero")} />
-
-//         <AchievementsSection/>
-
-//         <main className="w-full mx-auto px-4 py-12">
-//           <SlideShowsDemoPreview onLoad={() => handleComponentLoad("slideShows")} />
-//         </main>
-
-//         <ContactForm />
-//         <Footer />
-//       </div>
-//     </>
-//   );
-// };
-
-// export default Page;
-
-
-import React from 'react'
-
-const page = () => {
+const Page = () => {
   return (
-    <>
-    </>
-  )
-}
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Live Preview</h1>
+          <p className="text-muted-foreground">
+            Preview how your content appears on the live website
+          </p>
+        </div>
+        <Badge
+          variant="outline"
+          className="border-amber-500/50 text-amber-600 dark:text-amber-400 bg-amber-500/10"
+        >
+          DEMO
+        </Badge>
+      </div>
 
-export default page
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Live Site Card */}
+        <Card className="hover:border-primary/50 transition-colors cursor-pointer group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Public Website</CardTitle>
+            <Monitor className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-4">
+              View the live end-user landing page as visitors see it.
+            </p>
+            <Link
+              href="https://end-user-landing-manager.vercel.app/en"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              Open Live Site
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Slideshows Card */}
+        <Card className="hover:border-primary/50 transition-colors cursor-pointer group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Slideshows</CardTitle>
+            <Layers className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-4">
+              Manage and configure your slideshow content and relationships.
+            </p>
+            <Link
+              href="/admin/slideshows"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              Manage Slideshows
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Pages Preview Card */}
+        <Card className="hover:border-primary/50 transition-colors cursor-pointer group">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Hero Sections</CardTitle>
+            <Eye className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-4">
+              Preview and edit hero sections displayed on the landing page.
+            </p>
+            <Link
+              href="/admin/sections/hero"
+              className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+            >
+              Edit Hero
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Page;

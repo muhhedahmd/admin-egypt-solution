@@ -19,29 +19,35 @@ export const errorMiddleware: Middleware<{}, RootState> =
           "Request failed";
 
         if (payload.status === 401) {
+          if (process.env.NEXT_PUBLIC_FALLBACK_TOKEN) {
+            console.warn("Bypassing 401 Redirect for Demo Token");
+            return result;
+          }
           redirect("/auth/login");
         }
         if (payload.status === 403) {
+          if (process.env.NEXT_PUBLIC_FALLBACK_TOKEN) {
+            console.warn("Bypassing 403 Redirect for Demo Token");
+            return result;
+          }
           redirect("/auth/login");
         }
         if (payload.status === 404) {
           store.dispatch(
-
             showNotification({
               type: "error",
               message,
-            })
+            }),
           );
         }
-        if(payload.status === 400){
+        if (payload.status === 400) {
           store.dispatch(
             showNotification({
               type: "error",
               message,
-            })
+            }),
           );
         }
-
       } else if (action.type && action.type.endsWith("/rejected")) {
         const errMsg =
           (action as any).error?.message || "An operation was rejected";
@@ -49,7 +55,7 @@ export const errorMiddleware: Middleware<{}, RootState> =
           showNotification({
             type: "error",
             message: errMsg,
-          })
+          }),
         );
         console.error("[Action Rejected]", action);
       }
@@ -65,7 +71,7 @@ export const errorMiddleware: Middleware<{}, RootState> =
         showNotification({
           type: "error",
           message: errorMessage,
-        })
+        }),
       );
 
       throw error;

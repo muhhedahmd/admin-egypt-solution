@@ -7,8 +7,8 @@ import ToastListener from './_comp/TosterListener';
 import { LanguageProvider } from '@/providers/lang';
 
 export const metadata: Metadata = {
-  title: 'Company name',
-  description: 'admin panel',
+  title: 'Egypt Solutions - Admin Dashboard',
+  description: 'Admin dashboard for managing Egypt Solutions website content, services, and analytics.',
 }
 
 export default function RootLayout({
@@ -20,8 +20,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`font-sans antialiased`}>
         <StoreProvider>
-          <LanguageProvider 
-          initialIsRTL={false}
+          <LanguageProvider
+            initialIsRTL={false}
+            initialLang="en"
           >
 
 

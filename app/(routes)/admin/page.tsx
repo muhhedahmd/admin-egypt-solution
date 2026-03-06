@@ -4,35 +4,53 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
-
   Mail,
   Eye,
   MessageSquare,
   TrendingUp,
   TrendingDown,
+  AlertTriangle,
 } from "lucide-react";
 import { useGetAnalyticsOverviewQuery } from "@/lib/store/api/analytic-api";
 import { AnalyticsChart } from "@/components/admin/analytics-chart";
 import { useLanguage } from "@/providers/lang";
 import { adminDashboardTranslations } from "@/i18n/admin-dashboard";
 
+// Demo fallback data when backend is unavailable
+const DEMO_STATS = {
+  totalVisitors: 12847,
+  totalPageViews: 48293,
+  totalBlogViews: 3214,
+  totalContacts: 156,
+  avgBounceRate: 34.2,
+  avgSessionTime: 245,
+  chartData: Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (29 - i));
+    return {
+      date: date.toISOString().split("T")[0],
+      visitors: Math.floor(Math.random() * 500) + 200,
+      pageViews: Math.floor(Math.random() * 1500) + 800,
+      blogViews: Math.floor(Math.random() * 200) + 50,
+    };
+  }),
+};
+
 export default function AdminDashboard() {
   // Fetch analytics data for last 30 days
-  const { data: analyticsData, isLoading: analyticsLoading } =
+  const { data: analyticsData, isLoading: analyticsLoading, isError: analyticsError } =
     useGetAnalyticsOverviewQuery({ days: 30 });
-  const { 
-    currentLang , 
-
-
+  const {
+    currentLang,
   } = useLanguage()
-    const t = adminDashboardTranslations[currentLang?.toLowerCase() as "en" | "ar" as keyof typeof adminDashboardTranslations] || adminDashboardTranslations["en"];
-    // Fetch analytics for previous period (for comparison)
-    const { data: previousAnalytics } = useGetAnalyticsOverviewQuery({ days: 60 });
-    console.log(analyticsData , previousAnalytics)
+  const t = adminDashboardTranslations[currentLang?.toLowerCase() as "en" | "ar" as keyof typeof adminDashboardTranslations] || adminDashboardTranslations["en"];
+  // Fetch analytics for previous period (for comparison)
+  const { data: previousAnalytics, isError: previousError } = useGetAnalyticsOverviewQuery({ days: 60 });
 
-
-  const stats = analyticsData?.data;
-  const previousStats = previousAnalytics?.data;
+  // Use demo data when the backend returns errors (401, 429, etc.)
+  const useDemoData = analyticsError || previousError;
+  const stats = useDemoData ? DEMO_STATS : analyticsData?.data;
+  const previousStats = useDemoData ? DEMO_STATS : previousAnalytics?.data;
 
   // percentage 
   const calculateChange = (current: number, previous: number) => {
@@ -93,8 +111,20 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-   
-            {/* Analytics Metrics from Real Data */}
+      {/* Demo Data Banner */}
+      {useDemoData && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <div>
+            <p className="font-medium text-sm">Demo Mode – Simulated Data</p>
+            <p className="text-xs opacity-80">
+              The backend API is unavailable. Showing sample analytics data for demonstration purposes.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Metrics from Real Data */}
       <div className="grid gap-4 md:grid-cols-3">
         {/* Page Views */}
         <Card>
@@ -218,7 +248,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-      
+
       </div>
 
 
@@ -301,9 +331,9 @@ export default function AdminDashboard() {
                 <div className="text-2xl font-bold">
                   {stats
                     ? (
-                        (stats.totalContacts / stats.totalVisitors) *
-                        100
-                      ).toFixed(2)
+                      (stats.totalContacts / stats.totalVisitors) *
+                      100
+                    ).toFixed(2)
                     : "0"}
                   %
                 </div>
