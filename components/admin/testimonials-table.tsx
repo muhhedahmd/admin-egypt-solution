@@ -13,12 +13,12 @@ import { TestimonialWithTranslation, useDeleteTestimonialMutation, useGetTestimo
 import { BlurhashCanvas } from "react-blurhash"
 import { toast } from "sonner"
 import { useLanguage } from "@/providers/lang"
-import { tTestimonialsPagei18n , tTestimonialsTable } from "@/i18n/testimonals"
+import { tTestimonialsPagei18n, tTestimonialsTable } from "@/i18n/testimonals"
 
 
 export function TestimonialsTable() {
-const {currentLang } = useLanguage()
-const t = tTestimonialsTable[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
+  const { currentLang } = useLanguage()
+  const t = tTestimonialsTable[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
 
 
 
@@ -45,7 +45,7 @@ const t = tTestimonialsTable[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
   const [allTestimonial, setAllTtestimonial] = useState<TestimonialWithTranslation[]>([])
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [del, { isLoading: isLoadingDelete, isError: isErrorDelete }] = useDeleteTestimonialMutation()
-  
+
 
   useEffect(() => {
     if (teamData?.data) {
@@ -119,7 +119,7 @@ const t = tTestimonialsTable[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {allTestimonial.map((testimonial) => {
           const currentTranslation = testimonial.translation?.find(t => t.lang?.toLocaleLowerCase() === currentLang?.toLocaleLowerCase())
-         return  <article
+          return <article
             key={testimonial.testimonial.id}
             className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-lg transition-all duration-300"
           >
@@ -169,7 +169,7 @@ const t = tTestimonialsTable[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
                 <>
                   {
                     testimonial.avatar.blurHash &&
-                    <BlurhashCanvas hash={testimonial.avatar.blurHash}  className=" absolute top-0 left-0 w-full h-full" />
+                    <BlurhashCanvas hash={testimonial.avatar.blurHash} className=" absolute top-0 left-0 w-full h-full" />
                   }
 
                   <Blurredimage
@@ -226,10 +226,10 @@ const t = tTestimonialsTable[currentLang?.toLowerCase() as 'en' | 'ar' || "en"]
               </div>
 
 
-         
+
             </div>
           </article>
-        
+
         })}
       </div>
 

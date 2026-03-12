@@ -25,8 +25,8 @@ export function ProjectsTable() {
     threshold: .1
   })
 
-  const {currentLang} = useLanguage()
-  const t = projectsTableI18n[(currentLang?.toLowerCase() as  "en" | "ar" )|| 'en']
+  const { currentLang } = useLanguage()
+  const t = projectsTableI18n[(currentLang?.toLowerCase() as "en" | "ar") || 'en']
   // const currenttranslation 
   const {
     data: projectsData,
@@ -43,7 +43,7 @@ export function ProjectsTable() {
   const [allProjects, setAllProjects] = useState<{
     project: Project;
     image: Image | null;
-    translation : any[] ,
+    translation: any[],
     technologies: Partial<Technology>[];
   }[]>([]);
 
@@ -230,7 +230,7 @@ export function ProjectsTable() {
                 </DropdownMenu>
               </div>
 
-         
+
             </div>
 
             {/* Content */}
@@ -310,7 +310,7 @@ export function ProjectsTable() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Layers className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground">{t.table.badges.technologies  }</span>
+                    <span className="text-xs font-medium text-muted-foreground">{t.table.badges.technologies}</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {item.technologies.map((tech, index) => (
@@ -351,16 +351,16 @@ export function ProjectsTable() {
                 }
                 <div className="flex items-center justify-start flex-[.9] gap-3">
 
-                {
-                  item?.translation?.map((translation , index) => (
-                    <Badge variant={"default"} key={index} className="flex items-center gap-2">
-                      {/* <Languages className="h-3.5 w-3.5" /> */}
-                      <span>{translation.lang}</span>
-                      {/* <span>•</span> */}
-                      {/* <span>{translation.status}</span> */}
-                    </Badge>
-                  ))
-                }
+                  {
+                    item?.translation?.map((translation, index) => (
+                      <Badge variant={"default"} key={index} className="flex items-center gap-2">
+                        {/* <Languages className="h-3.5 w-3.5" /> */}
+                        <span>{translation.lang}</span>
+                        {/* <span>•</span> */}
+                        {/* <span>{translation.status}</span> */}
+                      </Badge>
+                    ))
+                  }
 
                 </div>
                 {
@@ -375,7 +375,7 @@ export function ProjectsTable() {
 
             </div>
           </article>
-            })}
+        })}
       </div>
 
       {/* Infinite scroll trigger */}
@@ -403,7 +403,7 @@ export function ProjectsTable() {
         onOpenChange={(open) => !open && setDeleteId(null)}
         onConfirm={async () => await handleDelete(deleteId!)}
         title={t.table.deleteDialog.title}
-        description={t.table.deleteDialog.description }
+        description={t.table.deleteDialog.description}
       />
     </>
   )

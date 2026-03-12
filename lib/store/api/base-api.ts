@@ -23,7 +23,6 @@ const baseQuery = fetchBaseQuery({
     if (fallbackRefreshToken) {
       headers.set("x-refresh-token", fallbackRefreshToken);
     }
-    
 
     return headers;
   },
