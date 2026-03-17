@@ -4,13 +4,19 @@ import { useStatsQuery } from "@/lib/store/api/contact-api"
 import { Mail, Clock, CheckCircle2, AlertCircle } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
+import { useLanguage } from "@/providers/lang"
+import { tContacts } from "@/i18n/contacts"
+
 export function ContactsStats() {
-  const { 
+  const { currentLang } = useLanguage();
+  const t = tContacts[(currentLang?.toLowerCase() as "en" | "ar") || "en"];
+
+  const {
     data: statsData,
     isLoading,
   } = useStatsQuery()
 
-  const stats = statsData?.data
+  const stats = (statsData as any)?.data
 
   // Calculate weekly change (you can adjust this logic based on your API data)
   const weeklyChange = stats ? Math.round(stats.total * 0.08) : 0 // Example: 8% of total
@@ -38,20 +44,20 @@ export function ContactsStats() {
     <div className="grid gap-4 md:grid-cols-4">
       <Card className="transition-all hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total Inquiries</CardTitle>
+          <CardTitle className="text-sm font-medium">{t.stats.totalInquiries}</CardTitle>
           <Mail className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{stats?.total || 0}</div>
           <p className="text-xs text-muted-foreground">
-            <span className="text-green-600">+{weeklyChange}</span> this week
+            <span className="text-green-600">+{weeklyChange}</span> {t.stats.thisWeek}
           </p>
         </CardContent>
       </Card>
 
       <Card className="transition-all hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Pending</CardTitle>
+          <CardTitle className="text-sm font-medium">{t.stats.pending}</CardTitle>
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -59,14 +65,14 @@ export function ContactsStats() {
           <p className="text-xs text-muted-foreground">
             <span className={stats?.pendingPercentage > 50 ? "text-orange-600" : "text-blue-600"}>
               {stats?.pendingPercentage || 0}%
-            </span> of total
+            </span> {t.stats.ofTotal}
           </p>
         </CardContent>
       </Card>
 
       <Card className="transition-all hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Resolved</CardTitle>
+          <CardTitle className="text-sm font-medium">{t.stats.resolved}</CardTitle>
           <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -74,14 +80,14 @@ export function ContactsStats() {
           <p className="text-xs text-muted-foreground">
             <span className={stats?.resolutionRate > 0 ? "text-green-600" : "text-gray-600"}>
               {stats?.resolutionRate || 0}%
-            </span> resolution rate
+            </span> {t.stats.resolutionRate}
           </p>
         </CardContent>
       </Card>
 
       <Card className="transition-all hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Urgent</CardTitle>
+          <CardTitle className="text-sm font-medium">{t.stats.urgent}</CardTitle>
           <AlertCircle className={`h-4 w-4 ${stats?.urgent > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
         </CardHeader>
         <CardContent>
@@ -90,9 +96,9 @@ export function ContactsStats() {
           </div>
           <p className="text-xs text-muted-foreground">
             {stats?.urgent > 0 ? (
-              <span className="text-red-600">Requires attention</span>
+              <span className="text-red-600">{t.stats.requiresAttention}</span>
             ) : (
-              <span className="text-green-600">All clear</span>
+              <span className="text-green-600">{t.stats.allClear}</span>
             )}
           </p>
         </CardContent>

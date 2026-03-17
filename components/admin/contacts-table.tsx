@@ -4,8 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { 
-  MoreHorizontal, Eye, Mail, Trash2, CheckCircle, 
+import {
+  MoreHorizontal, Eye, Mail, Trash2, CheckCircle,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   Search, Filter, X, Loader2
 } from "lucide-react"
@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@uidotdev/usehooks"
+import { useLanguage } from "@/providers/lang"
+import { tContacts } from "@/i18n/contacts"
 
 type FilterType = "email" | "name" | "phone" | "company" | "subject" | "message" | "category" | "status" | "priority" | "budget" | "timeline" | "dateRange"
 
@@ -28,6 +30,8 @@ export function ContactsTable() {
   const [activeFilters, setActiveFilters] = useState<Partial<Record<FilterType, any>>>({})
   const [showFilters, setShowFilters] = useState(false)
 
+  const { currentLang } = useLanguage()
+  const t = tContacts[(currentLang?.toLowerCase() as "en" | "ar") || "en"]
   const router = useRouter()
 
   // Filter state
@@ -44,11 +48,11 @@ export function ContactsTable() {
   const [triggerFilter, { data: filterData, isLoading: isFilterLoading }] = useLazyFilterQuery()
 
   // Determine which data to display
-  const displayData = isSearching 
-    ? searchData 
-    : Object.keys(activeFilters).length > 0 
-    ? filterData 
-    : contactsData
+  const displayData = isSearching
+    ? searchData
+    : Object.keys(activeFilters).length > 0
+      ? filterData
+      : contactsData
 
   const contacts = displayData?.data || []
   const pagination = displayData?.pagination
@@ -68,14 +72,14 @@ export function ContactsTable() {
   // Handle filter application
   const applyFilters = () => {
     const filters: Partial<Record<FilterType, any>> = {}
-    
+
     if (statusFilter && statusFilter !== "all") filters.status = statusFilter
     if (priorityFilter && priorityFilter !== "all") filters.priority = priorityFilter
     if (categoryFilter && categoryFilter !== "all") filters.category = categoryFilter
 
     setActiveFilters(filters)
     setCurrentPage(0)
-    
+
     if (Object.keys(filters).length > 0) {
       triggerFilter({ filters, skip: 0, take: 10 })
     }
@@ -114,7 +118,7 @@ export function ContactsTable() {
       delete newFilters.category
       setActiveFilters(newFilters)
     }
-    
+
     // Re-apply remaining filters
     setTimeout(() => applyFilters(), 0)
   }
@@ -167,27 +171,27 @@ export function ContactsTable() {
   const getPriorityColor = (priority: string) => {
     switch (priority?.toLowerCase()) {
       case 'urgent':
-      case 'high': 
+      case 'high':
         return 'destructive'
-      case 'medium': 
+      case 'medium':
         return 'default'
-      case 'low': 
+      case 'low':
         return 'secondary'
-      default: 
+      default:
         return 'outline'
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'resolved': 
+      case 'resolved':
         return 'default'
-      case 'pending': 
+      case 'pending':
         return 'secondary'
       case 'in_progress':
-      case 'in progress': 
+      case 'in progress':
         return 'outline'
-      default: 
+      default:
         return 'outline'
     }
   }
@@ -203,7 +207,7 @@ export function ContactsTable() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search contacts by name, email, company, subject..."
+              placeholder={t.table.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-9 transition-all"
@@ -229,7 +233,7 @@ export function ContactsTable() {
             className="w-full sm:w-auto transition-all"
           >
             <Filter className="mr-2 h-4 w-4" />
-            Filters
+            {t.table.filters}
             {hasActiveFilters && (
               <Badge variant="destructive" className="ml-2 px-1.5 py-0 h-5 text-xs animate-pulse">
                 {Object.keys(activeFilters).length + (isSearching ? 1 : 0)}
@@ -243,7 +247,7 @@ export function ContactsTable() {
               onClick={clearFilters}
               className="w-full sm:w-auto"
             >
-              Clear All
+              {t.table.clearAll}
             </Button>
           )}
         </div>
@@ -254,48 +258,51 @@ export function ContactsTable() {
         <Card className="p-4 animate-in slide-in-from-top duration-300 border-primary/20">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
+              <label className="text-sm font-medium">{t.table.filterLabels.status}</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All statuses" />
+                  <SelectValue placeholder={t.table.statuses.all} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                  <SelectItem value="RESOLVED">Resolved</SelectItem>
+                  <SelectItem value="all">{t.table.statuses.all}</SelectItem>
+                  <SelectItem value="NEW">{t.table.statuses.new}</SelectItem>
+                  <SelectItem value="READ">{t.table.statuses.read}</SelectItem>
+                  <SelectItem value="PENDING">{t.table.statuses.pending}</SelectItem>
+                  <SelectItem value="IN_PROGRESS">{t.table.statuses.inProgress}</SelectItem>
+                  <SelectItem value="RESOLVED">{t.table.statuses.resolved}</SelectItem>
+                  <SelectItem value="CLOSED">{t.table.statuses.closed}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Priority</label>
+              <label className="text-sm font-medium">{t.table.filterLabels.priority}</label>
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All priorities" />
+                  <SelectValue placeholder={t.table.priorities.all} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All priorities</SelectItem>
-                  <SelectItem value="LOW">Low</SelectItem>
-                  <SelectItem value="MEDIUM">Medium</SelectItem>
-                  <SelectItem value="HIGH">High</SelectItem>
-                  <SelectItem value="URGENT">Urgent</SelectItem>
+                  <SelectItem value="all">{t.table.priorities.all}</SelectItem>
+                  <SelectItem value="LOW">{t.table.priorities.low}</SelectItem>
+                  <SelectItem value="MEDIUM">{t.table.priorities.medium}</SelectItem>
+                  <SelectItem value="HIGH">{t.table.priorities.high}</SelectItem>
+                  <SelectItem value="URGENT">{t.table.priorities.urgent}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Category</label>
+              <label className="text-sm font-medium">{t.table.filterLabels.category}</label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All categories" />
+                  <SelectValue placeholder={t.table.categories.all} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  <SelectItem value="GENERAL">General</SelectItem>
-                  <SelectItem value="SUPPORT">Support</SelectItem>
-                  <SelectItem value="SALES">Sales</SelectItem>
-                  <SelectItem value="FEEDBACK">Feedback</SelectItem>
+                  <SelectItem value="all">{t.table.categories.all}</SelectItem>
+                  <SelectItem value="GENERAL">{t.table.categories.general}</SelectItem>
+                  <SelectItem value="SUPPORT">{t.table.categories.support}</SelectItem>
+                  <SelectItem value="SALES">{t.table.categories.sales}</SelectItem>
+                  <SelectItem value="FEEDBACK">{t.table.categories.feedback}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -307,11 +314,11 @@ export function ContactsTable() {
               setPriorityFilter("all")
               setCategoryFilter("all")
             }}>
-              Reset
+              {t.table.reset}
             </Button>
             <Button onClick={applyFilters} disabled={isFilterLoading}>
               {isFilterLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Apply Filters
+              {t.table.applyFilters}
             </Button>
           </div>
         </Card>
@@ -321,43 +328,43 @@ export function ContactsTable() {
       {hasActiveFilters && !isLoadingAny && (
         <div className="flex flex-wrap gap-2 animate-in fade-in duration-300">
           {isSearching && (
-            <Badge 
-              variant="secondary" 
+            <Badge
+              variant="secondary"
               className="px-3 py-1.5 cursor-pointer hover:bg-secondary/80 transition-colors"
               onClick={() => removeFilter('search')}
             >
               <Search className="mr-1 h-3 w-3" />
-              Search: "{searchQuery}"
+              {currentLang === 'ar' ? 'بحث' : 'Search'}: "{searchQuery}"
               <X className="ml-2 h-3 w-3" />
             </Badge>
           )}
           {statusFilter && statusFilter !== "all" && (
-            <Badge 
-              variant="secondary" 
+            <Badge
+              variant="secondary"
               className="px-3 py-1.5 cursor-pointer hover:bg-secondary/80 transition-colors"
               onClick={() => removeFilter('status')}
             >
-              Status: {statusFilter}
+              {t.table.filterLabels.status}: {t.table.statuses[statusFilter.toLowerCase() as keyof typeof t.table.statuses] || statusFilter}
               <X className="ml-2 h-3 w-3" />
             </Badge>
           )}
           {priorityFilter && priorityFilter !== "all" && (
-            <Badge 
-              variant="secondary" 
+            <Badge
+              variant="secondary"
               className="px-3 py-1.5 cursor-pointer hover:bg-secondary/80 transition-colors"
               onClick={() => removeFilter('priority')}
             >
-              Priority: {priorityFilter}
+              {t.table.filterLabels.priority}: {t.table.priorities[priorityFilter.toLowerCase() as keyof typeof t.table.priorities] || priorityFilter}
               <X className="ml-2 h-3 w-3" />
             </Badge>
           )}
           {categoryFilter && categoryFilter !== "all" && (
-            <Badge 
-              variant="secondary" 
+            <Badge
+              variant="secondary"
               className="px-3 py-1.5 cursor-pointer hover:bg-secondary/80 transition-colors"
               onClick={() => removeFilter('category')}
             >
-              Category: {categoryFilter}
+              {t.table.filterLabels.category}: {t.table.categories[categoryFilter.toLowerCase() as keyof typeof t.table.categories] || categoryFilter}
               <X className="ml-2 h-3 w-3" />
             </Badge>
           )}
@@ -370,14 +377,14 @@ export function ContactsTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Contact</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead>Message</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>category</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t.table.headers.contact}</TableHead>
+                <TableHead>{t.table.headers.subject}</TableHead>
+                <TableHead>{t.table.headers.message}</TableHead>
+                <TableHead>{t.table.headers.priority}</TableHead>
+                <TableHead>{t.table.headers.status}</TableHead>
+                <TableHead>{t.table.headers.category}</TableHead>
+                <TableHead>{t.table.headers.date}</TableHead>
+                <TableHead className="text-right">{t.table.headers.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -401,11 +408,11 @@ export function ContactsTable() {
                     <div className="flex flex-col items-center gap-2">
                       <Search className="h-12 w-12 opacity-20" />
                       <p className="font-medium">
-                        {hasActiveFilters ? "No contacts found matching your filters" : "No contacts found"}
+                        {hasActiveFilters ? t.table.empty.noMatchingContacts : t.table.empty.noContacts}
                       </p>
                       {hasActiveFilters && (
                         <Button variant="link" onClick={clearFilters}>
-                          Clear filters to see all contacts
+                          {t.table.empty.clearFilters}
                         </Button>
                       )}
                     </div>
@@ -414,8 +421,8 @@ export function ContactsTable() {
               )}
 
               {!isLoadingAny && contacts.map((contact, index) => (
-                <TableRow 
-                  key={contact.id} 
+                <TableRow
+                  key={contact.id}
                   className={cn(
                     "transition-all hover:bg-muted/50 animate-in fade-in",
                     `duration-${Math.min(300 + index * 50, 800)}`
@@ -433,17 +440,17 @@ export function ContactsTable() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={getPriorityColor(contact.priority)} className="transition-all">
-                      {contact.priority}
+                      {t.table.priorities[contact.priority?.toLowerCase() as keyof typeof t.table.priorities] || contact.priority}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusColor(contact.status)} className="transition-all">
-                      {contact.status}
+                      {t.table.statuses[contact.status?.toLowerCase() as keyof typeof t.table.statuses] || contact.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getPriorityColor(contact.status)} className="transition-all">
-                      {contact.category}
+                    <Badge variant="outline" className="transition-all">
+                      {t.table.categories[contact.category?.toLowerCase() as keyof typeof t.table.categories] || contact.category}
                     </Badge>
                   </TableCell>
                   <TableCell>{new Date(contact.createdAt).toLocaleDateString()}</TableCell>
@@ -457,19 +464,19 @@ export function ContactsTable() {
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem onClick={() => router.push(`/admin/contacts/${contact.id}`)}>
                           <Eye className="mr-2 h-4 w-4" />
-                          View Details
+                          {t.table.actions.viewDetails}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => router.push(`/admin/contacts/${contact.id}/reply`)}>
                           <Mail className="mr-2 h-4 w-4" />
-                          Reply
+                          {t.table.actions.reply}
                         </DropdownMenuItem>
                         <DropdownMenuItem>
                           <CheckCircle className="mr-2 h-4 w-4" />
-                          Mark Resolved
+                          {t.table.actions.markResolved}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive">
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          {t.table.actions.delete}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -485,7 +492,7 @@ export function ContactsTable() {
       {pagination && totalPages > 1 && !isLoadingAny && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4 animate-in fade-in duration-300">
           <div className="text-sm text-muted-foreground">
-            Showing page {currentPage + 1} of {totalPages} ({pagination.totalItems || 0} total items)
+            {t.table.pagination.showing} {currentPage + 1} {t.table.pagination.of} {totalPages} ({pagination.totalItems || 0} {t.table.pagination.items})
           </div>
 
           <div className="flex items-center gap-2">

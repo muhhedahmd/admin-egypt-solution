@@ -31,15 +31,16 @@ import {
 import { useGetContactByIdQuery, useUpdateContactMutation, useReplayContactMutation } from "@/lib/store/api/contact-api"
 import { toast } from "sonner"
 import { ContactPriority, ContactStatus } from "@/types/schema"
+import { useLanguage } from "@/providers/lang"
+import { tContacts } from "@/i18n/contacts"
 
 export default function ContactDetailPage() {
+    const { currentLang } = useLanguage();
+    const t = tContacts[(currentLang?.toLowerCase() as "en" | "ar") || "en"];
     const params = useParams()
     const router = useRouter()
     const contactId = params?.id as string
 
-    console.log({
-        contactId
-    })
 
     const [isReplying, setIsReplying] = useState(false)
     const [replyMessage, setReplyMessage] = useState("")
@@ -71,10 +72,10 @@ export default function ContactDetailPage() {
             setIsReplying(false)
             setReplyMessage("")
             setReplySubject("")
-            toast.success("Reply sent successfully!")
+            toast.success(t.details.toasts.successReply)
         } catch (error) {
             console.error("Failed to send reply:", error)
-            toast.error("Failed to send reply. Please try again.")
+            toast.error(t.details.toasts.errorReply)
         }
     }
 
@@ -86,9 +87,9 @@ export default function ContactDetailPage() {
                     status: newStatus as ContactStatus,
                 }
             }).unwrap()
-            toast.success("Status updated successfully! to " + newStatus)
+            toast.success(t.details.toasts.successStatus + newStatus)
         } catch (error) {
-            toast.error("Failed to update status. Please try again.")
+            toast.error(t.details.toasts.errorStatus)
             console.error("Failed to update status:", error)
         }
     }
@@ -102,9 +103,9 @@ export default function ContactDetailPage() {
 
                 }
             }).unwrap()
-            toast.success("Priority updated successfully! to " + newPriority)
+            toast.success(t.details.toasts.successPriority + newPriority)
         } catch (error) {
-            toast.error("Failed to update priority. Please try again.")
+            toast.error(t.details.toasts.errorPriority)
             console.error("Failed to update priority:", error)
         }
     }
@@ -117,21 +118,21 @@ export default function ContactDetailPage() {
                     notes: notes,
                 }
             }).unwrap()
-            toast.success("Notes saved successfully!")
+            toast.success(t.details.toasts.successNotes)
         } catch (error) {
-            toast.error("Failed to save notes. Please try again.")
+            toast.error(t.details.toasts.errorNotes)
             console.error("Failed to save notes:", error)
         }
     }
 
     const handleDelete = async () => {
-        if (confirm("Are you sure you want to delete this contact?")) {
+        if (confirm(t.details.toasts.confirmDelete)) {
             try {
                 // Add delete mutation here
 
                 router.push("/admin/contacts")
             } catch (error) {
-                toast.error("Failed to delete contact. Please try again.")
+                toast.error(t.details.toasts.errorDelete)
                 console.error("Failed to delete contact:", error)
             }
         }
@@ -186,13 +187,13 @@ export default function ContactDetailPage() {
                 <Card className="w-full max-w-md">
                     <CardContent className="pt-6 text-center">
                         <CircleAlert className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">Contact Not Found</h3>
+                        <h3 className="text-lg font-semibold mb-2">{t.details.notFound.title}</h3>
                         <p className="text-sm text-muted-foreground mb-4">
-                            The contact you're looking for doesn't exist or has been deleted.
+                            {t.details.notFound.description}
                         </p>
                         <Button onClick={handleBack}>
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Contacts
+                            {t.details.notFound.back}
                         </Button>
                     </CardContent>
                 </Card>
@@ -209,20 +210,20 @@ export default function ContactDetailPage() {
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div>
-                        <h2 className="text-3xl font-bold tracking-tight">Contact Details</h2>
+                        <h2 className="text-3xl font-bold tracking-tight">{t.details.header}</h2>
                         <p className="text-muted-foreground">
-                            View and manage contact inquiry
+                            {t.details.subheader}
                         </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => handleUpdateStatus("RESOLVED")}>
                         <CheckCircle className="mr-2 h-4 w-4" />
-                        Mark Resolved
+                        {t.table.actions.markResolved}
                     </Button>
                     <Button variant="destructive" size="sm" onClick={handleDelete}>
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {t.table.actions.delete}
                     </Button>
                 </div>
             </div>
@@ -237,15 +238,15 @@ export default function ContactDetailPage() {
                                 <div className="space-y-1">
                                     <CardTitle>{contact.subject}</CardTitle>
                                     <CardDescription>
-                                        From {contact.name} • {new Date(contact.createdAt).toLocaleString()}
+                                        {t.details.from} {contact.name} • {new Date(contact.createdAt).toLocaleString()}
                                     </CardDescription>
                                 </div>
                                 <div className="flex gap-2">
                                     <Badge variant={getPriorityColor(contact.priority)}>
-                                        {contact.priority}
+                                        {t.table.priorities[contact.priority?.toLowerCase() as keyof typeof t.table.priorities] || contact.priority}
                                     </Badge>
                                     <Badge variant={getStatusColor(contact.status)}>
-                                        {contact.status}
+                                        {t.table.statuses[contact.status?.toLowerCase() as keyof typeof t.table.statuses] || contact.status}
                                     </Badge>
                                 </div>
                             </div>
@@ -263,7 +264,7 @@ export default function ContactDetailPage() {
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2 text-sm font-medium">
                                             <Mail className="h-4 w-4" />
-                                            Reply Sent
+                                            {t.details.replySent}
                                             {contact.respondedAt && (
                                                 <span className="text-muted-foreground font-normal">
                                                     • {new Date(contact.respondedAt).toLocaleString()}
@@ -285,35 +286,35 @@ export default function ContactDetailPage() {
                     {!isReplying && !contact.response && (
                         <Button onClick={() => setIsReplying(true)} className="w-full">
                             <Mail className="mr-2 h-4 w-4" />
-                            Reply to Contact
+                            {t.details.sendReply.replyToContact}
                         </Button>
                     )}
 
                     {isReplying && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Send Reply</CardTitle>
+                                <CardTitle>{t.details.sendReply.title}</CardTitle>
                                 <CardDescription>
-                                    Compose your response to {contact.name}
+                                    {t.details.sendReply.description} {contact.name}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="reply-subject">Subject</Label>
+                                    <Label htmlFor="reply-subject">{t.details.sendReply.subject}</Label>
                                     <Input
-                                    disabled
+                                        disabled
                                         id="reply-subject"
-                                        placeholder="Re: Your inquiry"
+                                        placeholder={t.details.sendReply.subjectPlaceholder}
                                         value={replySubject || "Re:" + " " + contact.subject}
                                         onChange={(e) => setReplySubject(e.target.value)}
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="reply-message">Message</Label>
+                                    <Label htmlFor="reply-message">{t.details.sendReply.message}</Label>
                                     <Textarea
                                         id="reply-message"
-                                        placeholder="Type your response here..."
+                                        placeholder={t.details.sendReply.messagePlaceholder}
                                         rows={8}
                                         value={replyMessage}
                                         onChange={(e) => setReplyMessage(e.target.value)}
@@ -323,10 +324,10 @@ export default function ContactDetailPage() {
                                 <div className="flex gap-2">
                                     <Button
                                         onClick={handleSendReply}
-                                        disabled={!replyMessage.trim() || isUpdating}
+                                        disabled={!replyMessage.trim() || isReplaing}
                                     >
                                         <Send className="mr-2 h-4 w-4" />
-                                        {isUpdating ? "Sending..." : "Send Reply"}
+                                        {isReplaing ? t.details.sendReply.sending : t.details.sendReply.send}
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -336,7 +337,7 @@ export default function ContactDetailPage() {
                                             setReplySubject("")
                                         }}
                                     >
-                                        Cancel
+                                        {t.details.sendReply.cancel}
                                     </Button>
                                 </div>
                             </CardContent>
@@ -346,20 +347,20 @@ export default function ContactDetailPage() {
                     {/* Internal Notes */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Internal Notes</CardTitle>
+                            <CardTitle>{t.details.internalNotes.title}</CardTitle>
                             <CardDescription>
-                                Add private notes about this contact (not visible to customer)
+                                {t.details.internalNotes.description}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <Textarea
-                                placeholder="Add your notes here..."
+                                placeholder={t.details.internalNotes.placeholder}
                                 rows={4}
                                 value={notes || contact.notes || ""}
                                 onChange={(e) => setNotes(e.target.value)}
                             />
                             <Button onClick={handleSaveNotes} disabled={isUpdating}>
-                                Save Notes
+                                {t.details.internalNotes.save}
                             </Button>
                         </CardContent>
                     </Card>
@@ -370,14 +371,14 @@ export default function ContactDetailPage() {
                     {/* Contact Information */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-lg">Contact Information</CardTitle>
+                            <CardTitle className="text-lg">{t.details.info.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-3">
                                 <div className="flex items-start gap-3">
                                     <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
                                     <div className="flex-1 space-y-1">
-                                        <p className="text-sm font-medium">Name</p>
+                                        <p className="text-sm font-medium">{t.details.info.name}</p>
                                         <p className="text-sm text-muted-foreground">{contact.name}</p>
                                     </div>
                                 </div>
@@ -385,7 +386,7 @@ export default function ContactDetailPage() {
                                 <div className="flex items-start gap-3">
                                     <Mail className="h-4 w-4 mt-0.5 text-muted-foreground" />
                                     <div className="flex-1 space-y-1">
-                                        <p className="text-sm font-medium">Email</p>
+                                        <p className="text-sm font-medium">{t.details.info.email}</p>
                                         <a
                                             href={`mailto:${contact.email}`}
                                             className="text-sm text-blue-600 hover:underline"
@@ -399,7 +400,7 @@ export default function ContactDetailPage() {
                                     <div className="flex items-start gap-3">
                                         <Phone className="h-4 w-4 mt-0.5 text-muted-foreground" />
                                         <div className="flex-1 space-y-1">
-                                            <p className="text-sm font-medium">Phone</p>
+                                            <p className="text-sm font-medium">{t.details.info.phone}</p>
                                             <a
                                                 href={`tel:${contact.phone}`}
                                                 className="text-sm text-blue-600 hover:underline"
@@ -414,7 +415,7 @@ export default function ContactDetailPage() {
                                     <div className="flex items-start gap-3">
                                         <Building2 className="h-4 w-4 mt-0.5 text-muted-foreground" />
                                         <div className="flex-1 space-y-1">
-                                            <p className="text-sm font-medium">Company</p>
+                                            <p className="text-sm font-medium">{t.details.info.company}</p>
                                             <p className="text-sm text-muted-foreground">{contact.company}</p>
                                         </div>
                                     </div>
@@ -426,11 +427,11 @@ export default function ContactDetailPage() {
                     {/* Status & Priority */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-lg">Manage Contact</CardTitle>
+                            <CardTitle className="text-lg">{t.details.manage.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Status</Label>
+                                <Label>{t.details.manage.status}</Label>
                                 <Select
                                     value={status || contact.status}
                                     onValueChange={(value) => {
@@ -442,17 +443,17 @@ export default function ContactDetailPage() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="NEW">New</SelectItem>
-                                        <SelectItem value="READ">Read</SelectItem>
-                                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                        <SelectItem value="RESOLVED">Resolved</SelectItem>
-                                        <SelectItem value="CLOSED">Closed</SelectItem>
+                                        <SelectItem value="NEW">{t.table.statuses.pending}</SelectItem>
+                                        <SelectItem value="READ">{t.table.statuses.pending}</SelectItem>
+                                        <SelectItem value="IN_PROGRESS">{t.table.statuses.inProgress}</SelectItem>
+                                        <SelectItem value="RESOLVED">{t.table.statuses.resolved}</SelectItem>
+                                        <SelectItem value="CLOSED">{t.table.statuses.resolved}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Priority</Label>
+                                <Label>{t.details.manage.priority}</Label>
                                 <Select
                                     value={priority || contact.priority}
                                     onValueChange={(value) => {
@@ -464,10 +465,10 @@ export default function ContactDetailPage() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="LOW">Low</SelectItem>
-                                        <SelectItem value="MEDIUM">Medium</SelectItem>
-                                        <SelectItem value="HIGH">High</SelectItem>
-                                        <SelectItem value="URGENT">Urgent</SelectItem>
+                                        <SelectItem value="LOW">{t.table.priorities.low}</SelectItem>
+                                        <SelectItem value="MEDIUM">{t.table.priorities.medium}</SelectItem>
+                                        <SelectItem value="HIGH">{t.table.priorities.high}</SelectItem>
+                                        <SelectItem value="URGENT">{t.table.priorities.urgent}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -477,24 +478,26 @@ export default function ContactDetailPage() {
                     {/* Additional Info */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-lg">Additional Details</CardTitle>
+                            <CardTitle className="text-lg">{t.details.additional.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3 text-sm">
                             <div className="flex items-center justify-between">
-                                <span className="text-muted-foreground">Category</span>
-                                <Badge variant="outline">{contact.category}</Badge>
+                                <span className="text-muted-foreground">{t.details.additional.category}</span>
+                                <Badge variant="outline">
+                                    {t.table.categories[contact.category?.toLowerCase() as keyof typeof t.table.categories] || contact.category}
+                                </Badge>
                             </div>
 
                             {contact.budget && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Budget</span>
+                                    <span className="text-muted-foreground">{t.details.additional.budget}</span>
                                     <span className="font-medium">{contact.budget}</span>
                                 </div>
                             )}
 
                             {contact.timeline && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Timeline</span>
+                                    <span className="text-muted-foreground">{t.details.additional.timeline}</span>
                                     <span className="font-medium">{contact.timeline}</span>
                                 </div>
                             )}
@@ -502,20 +505,20 @@ export default function ContactDetailPage() {
                             <Separator />
 
                             <div className="flex items-center justify-between">
-                                <span className="text-muted-foreground">Views</span>
+                                <span className="text-muted-foreground">{t.details.additional.views}</span>
                                 <span className="font-medium">{contact.viewCount || 0}</span>
                             </div>
 
                             {contact.source && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">Source</span>
+                                    <span className="text-muted-foreground">{t.details.additional.source}</span>
                                     <span className="font-medium">{contact.source}</span>
                                 </div>
                             )}
 
                             {contact.ipAddress && (
                                 <div className="flex items-center justify-between">
-                                    <span className="text-muted-foreground">IP Address</span>
+                                    <span className="text-muted-foreground">{t.details.additional.ipAddress}</span>
                                     <span className="font-mono text-xs">{contact.ipAddress}</span>
                                 </div>
                             )}
